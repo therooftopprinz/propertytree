@@ -1,0 +1,220 @@
+[ RUN      ] ClientServerTests.shouldDeleteResponseNotEmpty
+4512171us t45 DBG MessageCreator MessageSignInResponseCreator::create size:13
+4512192us t45 DBG MessageCreator MessageCreateRequestCreator::create(): vsize:0 plen:5
+4512205us t45 DBG ClientServer ClientServer::setup(): Setup begin...
+4512208us t45 DBG ClientServerMonitor adding client server to monitor 0xd594b0
+4512211us t45 DBG ClientServer Creating incomingThread.
+4512230us t45 DBG ClientServer Creating outgoingThread
+4512245us t39 DBG ClientServer handleIncoming: Spawned.
+4512247us t45 DBG ClientServer Created threads detached.
+4512249us t39 DBG ClientServer handleIncoming: Waiting for header.
+4512255us t39 DBG EndPointMock Dispatching request with 9 byte(s):
+4512276us t39 DBG PrintRaw Buffer(9): 2a 11 0 0 0 0 0 0 0 
+4512280us t39 DBG PrintRaw BufTxt(9): *........
+4512284us t39 DBG ClientServer Header received expecting message size: 17 with type 42
+4512291us t39 DBG ClientServer handleIncoming: Waiting for message with size: 8 ( total 17) with header size: 9.
+4512295us t39 DBG EndPointMock Dispatching request with 8 byte(s):
+4512301us t39 DBG PrintRaw Buffer(8): 0 0 0 0 64 0 0 0 
+4512304us t39 DBG PrintRaw BufTxt(8): ....d...
+4512306us t39 DBG ClientServer handleIncoming: Message complete.
+4512308us t39 DBG ClientServer ClientServer::processMessage()
+4512310us t39 DBG SigninRequest SigninRequest
+4512312us t39 DBG SigninRequest Version not supported: 0
+4512314us t39 DBG ClientServer ClientServer state signed in.
+4512316us t39 DBG SigninRequest inteval: 100
+4512319us t39 DBG EndPointMock Send sz:9
+4512335us t39 DBG EndPointMock Send expected size:13
+4512338us t39 WRN EndPointMock Send is waiting for the message to complete 9/13
+4512340us t39 DBG EndPointMock Send sz:4
+4512340us t39 DBG EndPointMock Send called with:
+4512345us t39 DBG PrintRaw Buffer(13): 2b d 0 0 0 0 0 0 0 0 0 0 0 
+4512348us t39 DBG PrintRaw BufTxt(13): +............
+4512350us t39 DBG EndPointMock Matching failed for index: 0
+4512353us t39 DBG EndPointMock Matched! id:3
+4512355us t39 DBG MessageSender MessageSignInResponse sent!! size:13
+4512358us t39 DBG ClientServer handleIncoming: Waiting for header.
+4512360us t39 DBG EndPointMock Dispatching request with 9 byte(s):
+4512366us t39 DBG PrintRaw Buffer(9): 2c 14 0 0 0 1 0 0 0 
+4512369us t39 DBG PrintRaw BufTxt(9): ,........
+4512374us t39 DBG ClientServer Header received expecting message size: 20 with type 44
+4512379us t39 DBG ClientServer handleIncoming: Waiting for message with size: 11 ( total 20) with header size: 9.
+4512381us t39 DBG EndPointMock Dispatching request with 11 byte(s):
+4512386us t39 DBG PrintRaw Buffer(11): 0 0 0 0 1 2f 54 65 73 74 0 
+4512389us t39 DBG PrintRaw BufTxt(11): ...../Test.
+4512391us t39 DBG ClientServer handleIncoming: Message complete.
+4512392us t39 DBG ClientServer ClientServer::processMessage()
+4512395us t39 DBG CreateRequest value sz: 0
+4512396us t39 DBG CreateRequest path: /Test
+4512398us t39 DBG CreateRequest Node to be created.
+4512402us t39 DBG getParentAndChildNames / Test
+4512405us t39 DBG PTree Creating: Test under /
+4512407us t39 DBG PTree Get Node:/
+4512412us t39 DBG PTree uuid:100
+4512417us t39 DBG EndPointMock Send sz:9
+4512419us t39 DBG EndPointMock Send expected size:14
+4512422us t39 WRN EndPointMock Send is waiting for the message to complete 9/14
+4512424us t39 DBG EndPointMock Send sz:1
+4512428us t39 WRN EndPointMock Send is waiting for the message to complete 10/14
+4512430us t39 DBG EndPointMock Send sz:4
+4512431us t39 DBG EndPointMock Send called with:
+4512461us t39 DBG PrintRaw Buffer(14): 2d e 0 0 0 1 0 0 0 0 0 0 0 0 
+4512467us t39 DBG PrintRaw BufTxt(14): -.............
+4512472us t39 DBG EndPointMock Matching failed for index: 0
+4512475us t39 DBG EndPointMock Matching failed for index: 2
+4512479us t39 DBG EndPointMock Matched! id:4
+4512483us t39 DBG ClientServer notifyCreation for: 100
+4512485us t39 DBG ClientServer notification queued!
+4512491us t39 DBG CreateRequest is created: 1
+4512495us t39 DBG ClientServer handleIncoming: Waiting for header.
+4512543us t33 DBG ClientServer Meta Notifaction available!
+4512555us t33 DBG EndPointMock Send sz:9
+4512565us t33 DBG EndPointMock Send expected size:21
+4512579us t33 WRN EndPointMock Send is waiting for the message to complete 9/21
+4512587us t33 DBG MessageSender Creating creation entry for : /Test
+4512593us t33 DBG EndPointMock Send sz:1
+4512601us t33 WRN EndPointMock Send is waiting for the message to complete 10/21
+4512610us t33 DBG EndPointMock Send sz:4
+4512618us t33 WRN EndPointMock Send is waiting for the message to complete 14/21
+4512625us t33 DBG EndPointMock Send sz:1
+4512638us t33 WRN EndPointMock Send is waiting for the message to complete 15/21
+4512641us t33 DBG EndPointMock Send sz:6
+4512642us t33 DBG EndPointMock Send called with:
+4512655us t33 DBG PrintRaw Buffer(21): 2e 15 0 0 0 ff ff ff ff 0 64 0 0 0 1 2f 54 65 73 74 0 
+4512659us t33 DBG PrintRaw BufTxt(21): ..........d..../Test.
+4512664us t33 DBG EndPointMock Matched! id:1
+4512667us t33 DBG TEST /Test is created with uuid: 100
+4512672us t33 DBG MessageCreator MessageCreateRequestCreator::create(): vsize:4 plen:11
+4512690us t33 DBG EndPointMock Matching failed for index: 1
+4512693us t33 DBG EndPointMock Matching failed for index: 2
+4512693us t39 DBG EndPointMock Dispatching request with 9 byte(s):
+4512696us t33 DBG EndPointMock Matching failed for index: 3
+4512699us t33 DBG EndPointMock Matching failed for index: 4
+4512702us t39 DBG PrintRaw Buffer(9): 2c 1e 0 0 0 2 0 0 0 
+4512702us t33 DBG EndPointMock Matching failed for index: 5
+4512704us t33 DBG ClientServer MetaUpdateNotification sent!
+4512706us t39 DBG PrintRaw BufTxt(9): ,........
+4512710us t39 DBG ClientServer Header received expecting message size: 30 with type 44
+4512715us t39 DBG ClientServer handleIncoming: Waiting for message with size: 21 ( total 30) with header size: 9.
+4512717us t39 DBG EndPointMock Dispatching request with 21 byte(s):
+4512723us t39 DBG PrintRaw Buffer(21): 4 0 0 0 0 2a 0 0 0 2f 54 65 73 74 2f 56 61 6c 75 65 0 
+4512725us t39 DBG PrintRaw BufTxt(21): .....*.../Test/Value.
+4512727us t39 DBG ClientServer handleIncoming: Message complete.
+4512728us t39 DBG ClientServer ClientServer::processMessage()
+4512730us t39 DBG CreateRequest value sz: 4
+4512732us t39 DBG CreateRequest path: /Test/Value
+4512733us t39 DBG CreateRequest Value to be created.
+4512736us t39 DBG getParentAndChildNames /Test Value
+4512739us t39 DBG PTree Creating: Value under /Test
+4512740us t39 DBG PTree Get Node:/Test
+4512743us t39 DBG PTree get[4]: Test
+4512749us t39 DBG PTree uuid:101
+4512755us t39 DBG PrintRaw Buffer(4): 2a 0 0 0 
+4512759us t39 DBG PrintRaw BufTxt(4): *...
+4512762us t39 DBG EndPointMock Send sz:9
+4512764us t39 DBG EndPointMock Send expected size:14
+4512767us t39 WRN EndPointMock Send is waiting for the message to complete 9/14
+4512768us t39 DBG EndPointMock Send sz:1
+4512770us t39 WRN EndPointMock Send is waiting for the message to complete 10/14
+4512772us t39 DBG EndPointMock Send sz:4
+4512773us t39 DBG EndPointMock Send called with:
+4512778us t39 DBG PrintRaw Buffer(14): 2d e 0 0 0 2 0 0 0 0 0 0 0 0 
+4512780us t39 DBG PrintRaw BufTxt(14): -.............
+4512783us t39 DBG EndPointMock Matching failed for index: 0
+4512784us t39 DBG EndPointMock Matching failed for index: 1
+4512786us t39 DBG EndPointMock Matching failed for index: 2
+4512788us t39 DBG EndPointMock Matching failed for index: 3
+4512790us t39 DBG EndPointMock Matched! id:5
+4512793us t39 DBG ClientServer notifyCreation for: 101
+4512795us t39 DBG ClientServer notification queued!
+4512800us t39 DBG CreateRequest is created: 1
+4512804us t39 DBG ClientServer handleIncoming: Waiting for header.
+4512820us t33 DBG ClientServer Meta Notifaction available!
+4512829us t33 DBG EndPointMock Send sz:9
+4512838us t33 DBG EndPointMock Send expected size:27
+4512865us t33 WRN EndPointMock Send is waiting for the message to complete 9/27
+4512871us t33 DBG MessageSender Creating creation entry for : /Test/Value
+4512879us t33 DBG EndPointMock Send sz:1
+4512890us t33 WRN EndPointMock Send is waiting for the message to complete 10/27
+4512897us t33 DBG EndPointMock Send sz:4
+4512908us t33 WRN EndPointMock Send is waiting for the message to complete 14/27
+4512914us t33 DBG EndPointMock Send sz:1
+4512925us t33 WRN EndPointMock Send is waiting for the message to complete 15/27
+4512931us t33 DBG EndPointMock Send sz:12
+4512936us t33 DBG EndPointMock Send called with:
+4512967us t33 DBG PrintRaw Buffer(27): 2e 1b 0 0 0 ff ff ff ff 0 65 0 0 0 0 2f 54 65 73 74 2f 56 61 6c 75 65 0 
+4512978us t33 DBG PrintRaw BufTxt(27): ..........e..../Test/Value.
+4512987us t33 DBG EndPointMock Matching failed for index: 0
+4512987us t33 DBG EndPointMock �� failed for index: 0
+*** Error in `../bin/server/server_ut': double free or corruption (fasttop): 0x00007f05980012e0 ***
+======= Backtrace: =========
+/lib/x86_64-linux-gnu/libc.so.6(+0x777e5)[0x7f05a66ee7e5]
+/lib/x86_64-linux-gnu/libc.so.6(+0x7fe0a)[0x7f05a66f6e0a]
+/lib/x86_64-linux-gnu/libc.so.6(cfree+0x4c)[0x7f05a66fa98c]
+../bin/server/server_ut[0x451a32]
+../bin/server/server_ut[0x46164e]
+../bin/server/server_ut[0x46166e]
+../bin/server/server_ut[0x4615a1]
+../bin/server/server_ut[0x460f7e]
+../bin/server/server_ut[0x460580]
+../bin/server/server_ut[0x462839]
+../bin/server/server_ut[0x46278d]
+../bin/server/server_ut[0x4626e3]
+../bin/server/server_ut[0x4626a8]
+../bin/server/server_ut[0x4625fe]
+../bin/server/server_ut[0x46258e]
+/usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0xb8c80)[0x7f05a6d0ec80]
+/lib/x86_64-linux-gnu/libpthread.so.0(+0x770a)[0x7f05a6fdf70a]
+/lib/x86_64-linux-gnu/libc.so.6(clone+0x6d)[0x7f05a677d82d]
+======= Memory map: ========
+00400000-0050a000 r-xp 00000000 fc:01 5771694                            /home/prinzrainer/FlyingComputer/bin/server/server_ut
+0070a000-0070b000 r--p 0010a000 fc:01 5771694                            /home/prinzrainer/FlyingComputer/bin/server/server_ut
+0070b000-0070c000 rw-p 0010b000 fc:01 5771694                            /home/prinzrainer/FlyingComputer/bin/server/server_ut
+0070c000-0070d000 rw-p 00000000 00:00 0 
+00d42000-00d74000 rw-p 00000000 00:00 0                                  [heap]
+7f0598000000-7f0598021000 rw-p 00000000 00:00 0 
+7f0598021000-7f059c000000 ---p 00000000 00:00 0 
+7f059c000000-7f059c021000 rw-p 00000000 00:00 0 
+7f059c021000-7f05a0000000 ---p 00000000 00:00 0 
+7f05a0000000-7f05a0021000 rw-p 00000000 00:00 0 
+7f05a0021000-7f05a4000000 ---p 00000000 00:00 0 
+7f05a4b6b000-7f05a4b6c000 ---p 00000000 00:00 0 
+7f05a4b6c000-7f05a536c000 rw-p 00000000 00:00 0 
+7f05a536c000-7f05a536d000 ---p 00000000 00:00 0 
+7f05a536d000-7f05a5b6d000 rw-p 00000000 00:00 0 
+7f05a5b6d000-7f05a5b6e000 ---p 00000000 00:00 0 
+7f05a5b6e000-7f05a636e000 rw-p 00000000 00:00 0 
+7f05a636e000-7f05a6476000 r-xp 00000000 fc:01 9961699                    /lib/x86_64-linux-gnu/libm-2.23.so
+7f05a6476000-7f05a6675000 ---p 00108000 fc:01 9961699                    /lib/x86_64-linux-gnu/libm-2.23.so
+7f05a6675000-7f05a6676000 r--p 00107000 fc:01 9961699                    /lib/x86_64-linux-gnu/libm-2.23.so
+7f05a6676000-7f05a6677000 rw-p 00108000 fc:01 9961699                    /lib/x86_64-linux-gnu/libm-2.23.so
+7f05a6677000-7f05a6836000 r-xp 00000000 fc:01 9961713                    /lib/x86_64-linux-gnu/libc-2.23.so
+7f05a6836000-7f05a6a36000 ---p 001bf000 fc:01 9961713                    /lib/x86_64-linux-gnu/libc-2.23.so
+7f05a6a36000-7f05a6a3a000 r--p 001bf000 fc:01 9961713                    /lib/x86_64-linux-gnu/libc-2.23.so
+7f05a6a3a000-7f05a6a3c000 rw-p 001c3000 fc:01 9961713                    /lib/x86_64-linux-gnu/libc-2.23.so
+7f05a6a3c000-7f05a6a40000 rw-p 00000000 00:00 0 
+7f05a6a40000-7f05a6a56000 r-xp 00000000 fc:01 9965954                    /lib/x86_64-linux-gnu/libgcc_s.so.1
+7f05a6a56000-7f05a6c55000 ---p 00016000 fc:01 9965954                    /lib/x86_64-linux-gnu/libgcc_s.so.1
+7f05a6c55000-7f05a6c56000 rw-p 00015000 fc:01 9965954                    /lib/x86_64-linux-gnu/libgcc_s.so.1
+7f05a6c56000-7f05a6dc8000 r-xp 00000000 fc:01 30671117                   /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7f05a6dc8000-7f05a6fc8000 ---p 00172000 fc:01 30671117                   /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7f05a6fc8000-7f05a6fd2000 r--p 00172000 fc:01 30671117                   /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7f05a6fd2000-7f05a6fd4000 rw-p 0017c000 fc:01 30671117                   /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7f05a6fd4000-7f05a6fd8000 rw-p 00000000 00:00 0 
+7f05a6fd8000-7f05a6ff0000 r-xp 00000000 fc:01 9961712                    /lib/x86_64-linux-gnu/libpthread-2.23.so
+7f05a6ff0000-7f05a71ef000 ---p 00018000 fc:01 9961712                    /lib/x86_64-linux-gnu/libpthread-2.23.so
+7f05a71ef000-7f05a71f0000 r--p 00017000 fc:01 9961712                    /lib/x86_64-linux-gnu/libpthread-2.23.so
+7f05a71f0000-7f05a71f1000 rw-p 00018000 fc:01 9961712                    /lib/x86_64-linux-gnu/libpthread-2.23.so
+7f05a71f1000-7f05a71f5000 rw-p 00000000 00:00 0 
+7f05a71f5000-7f05a721b000 r-xp 00000000 fc:01 9961707                    /lib/x86_64-linux-gnu/ld-2.23.so
+7f05a73ea000-7f05a73f0000 rw-p 00000000 00:00 0 
+7f05a7417000-7f05a741a000 rw-p 00000000 00:00 0 
+7f05a741a000-7f05a741b000 r--p 00025000 fc:01 9961707                    /lib/x86_64-linux-gnu/ld-2.23.so
+7f05a741b000-7f05a741c000 rw-p 00026000 fc:01 9961707                    /lib/x86_64-linux-gnu/ld-2.23.so
+7f05a741c000-7f05a741d000 rw-p 00000000 00:00 0 
+7ffea3f86000-7ffea3fa7000 rw-p 00000000 00:00 0                          [stack]
+7ffea3fc5000-7ffea3fc7000 r--p 00000000 00:00 0                          [vvar]
+7ffea3fc7000-7ffea3fc9000 r-xp 00000000 00:00 0                          [vdso]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+Makefile:53: recipe for target 'server_ut_run' failed
+make: *** [server_ut_run] Aborted (core dumped)
+prinzrainer@rooftopprinz:~/FlyingComputer/PropertyTree$ 

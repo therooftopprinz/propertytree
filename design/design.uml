@@ -1,0 +1,68 @@
+@startuml
+class ClientServer {
+    +ClientServer(EndPointPtr, PTreePtr, IdGenPtr)
+    +void setup()
+    +void teardown()
+    ..
+    -void handleIncoming()
+    -void handleOutgoing()
+}
+
+class MessageHandlers {
+    +MessageHandlers(PTreePtr, IdGenPtr)
+    +handle(EndpointPtr, HeaderPtr, MessagePtr)
+}
+MessageHandlers ..> IEndpoint : uses
+MessageHandlers ..> IPTree : uses
+MessageHandlers ..> IIdGenerator : uses
+interface IEndpoint{
+    +ssize_t send(void* data, size_t size)
+    +ssize_t receive(void* data, size_t size)
+}
+ClientServer ..> MessageHandlers : uses
+
+interface IIdGenerator{
+    +uint32_t getId()
+    +void returnId(uint32_t id)
+}
+
+interface IPTree{
+    +PropertyPtr getProperty(std::string path)
+    +PropertyPtr getProperty(uint32_t uuid)
+    +PropertyPtr createProperty(std::string path, PropertyPtr property)
+    +bool deleteProperty(std::string path)
+}
+
+class PTree{
+    +PropertyPtr getProperty(std::string path)
+    +PropertyPtr getProperty(uint32_t uuid)
+    +PropertyPtr createProperty(std::string path, PropertyPtr property)
+    +bool deleteProperty(std::string path)
+}
+PTree -|>  IPTree
+
+
+class Node{
+    +void deleteProperty()
+    +PropertyPtr getProperty()
+    +void createProperty()
+    +Properties getChildrens()
+}
+PTree ..> Node : uses
+
+class Value{
+    +ValueContainer getValue()
+    +void setValue(ValueContainer value)
+    +void addWatcher(WatcherId id, ValueWatcher watcher)
+    +void removeWatcher(WatcherId id)
+}
+Node ..> Value : uses
+
+class Rpc{
+    +void setHandler(RcpHandler handler)
+    +void unsetHandler()
+}
+
+Node ..> Rpc : uses
+
+@enduml
