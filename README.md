@@ -6,4 +6,4 @@ The PropertyTree Server Application handles the communication and storage of all
 
 The PropertyTree Client Library provides the interface in communicating the PropertyTree.
 
-Please see the (wiki)[https://github.com/rooftopprinz/propertytree/wiki].
+Please see the [wiki](https://github.com/rooftopprinz/propertytree/wiki).
