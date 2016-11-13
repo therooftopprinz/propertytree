@@ -8,7 +8,7 @@ The PropertyTree Client Library provides the interface in communicating the Prop
 
 Please see the [wiki](https://github.com/rooftopprinz/propertytree/wiki).
 
-Building
+## Building
 ```
 #!/bin/sh
 
