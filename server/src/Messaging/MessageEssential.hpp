@@ -17,9 +17,14 @@ class BlockArray
 public:
     BlockArray(){}
 
-    void push_back(T& v)
+    std::vector<T>& operator*()
     {
-        values.push_back(v);
+        return values;
+    }
+
+    std::vector<T>* operator->()
+    {
+        return &values;
     }
 
     inline Buffer generate()
@@ -34,7 +39,28 @@ public:
             x.insert(x.end(), v.begin(), v.end());
         }
 
-        return std::move(x);
+        return x;
+    }
+
+    inline uint8_t* parse(uint8_t *start, uint8_t *limit)
+    {
+        uint32_t size = *(uint32_t*)(start);
+        if (start >= limit)
+        {
+            return start;
+        }
+
+        start+=sizeof(uint32_t);
+        values.resize(size);
+        for (uint32_t i=0; i<size; i++)
+        {
+            start = values[i].parse(start, limit);
+            if (start>=limit)
+            {
+                break;
+            }
+        }
+        return start;
     }
 
 private:
@@ -46,8 +72,12 @@ class String
 public:
     String(){}
 
-    String(std::string value):
+    String(std::string& value):
         value(value)
+    {}
+
+    String(std::string&& value):
+        value(std::move(value))
     {}
 
     String& operator =(std::string& t)
@@ -61,7 +91,6 @@ public:
         return value;
     }
 
-
     operator std::string& ()
     {
         return value;
@@ -72,7 +101,7 @@ public:
         // std::cout << __PRETTY_FUNCTION__ << std::endl;
         Buffer x(value.size()+1);
         std::memcpy(x.data(), value.c_str(), value.size()+1);
-        return std::move(x);
+        return x;
     }
 
     inline uint8_t* parse(uint8_t *start, uint8_t *limit)
@@ -92,16 +121,33 @@ class BufferBlock
 public:
     BufferBlock(){}
 
-    BufferBlock(Buffer value):
+    BufferBlock(Buffer& value):
         value(value)
+    {}
+
+    BufferBlock(Buffer&& value):
+        value(std::move(value))
     {}
 
     inline Buffer generate()
     {
-        Buffer x(value.size());
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
-        std::memcpy(x.data(), value.data(), value.size());
-        return std::move(x);
+        // std::cout << __PRETTY_FUNCTION__ << std::endl;
+        Buffer x(sizeof(uint32_t)+value.size());
+        *(uint32_t*)(x.data()) = value.size();
+        std::memcpy(x.data()+sizeof(uint32_t), value.data(), value.size());
+        return x;
+    }
+
+    inline uint8_t* parse(uint8_t* start, uint8_t* limit)
+    {
+        uint32_t size = *(uint32_t*)(start);
+        if (start+size > limit)
+        {
+            return limit;
+        }
+        value.resize(size);
+        std::memcpy(value.data(), start+sizeof(uint32_t), size);
+        return start + size;
     }
 
 private:
@@ -114,27 +160,37 @@ class Simple
 public:
     Simple(){}
 
-    Simple(T value):
+    Simple(T& value):
         value(value)
     {}
 
-    T& operator *()
+    Simple(T&& value):
+        value(std::move(value))
+    {}
+
+    T& operator*()
     {
         return value;
     }
 
-    T* operator ->()
+    T* operator->()
     {
         return &value;
     }
 
-    T& operator =(T t)
+    T& operator=(T& t)
     {
         value = t;
         return value;
     }
 
-    operator T& ()
+    T& operator=(T&& t)
+    {
+        value = t;
+        return value;
+    }
+
+    operator T&()
     {
         return value;
     }
@@ -144,7 +200,7 @@ public:
         // std::cout << __PRETTY_FUNCTION__ << std::endl;
         Buffer x(sizeof(T));
         *(T*)(x.data()) = value;
-        return std::move(x);
+        return x;
     }
 
     inline uint8_t* parse(uint8_t* start, uint8_t* limit)
@@ -226,7 +282,6 @@ public:
 private:
     uint8_t* start;
     uint8_t* limit;
-    Buffer codedData;
 };
 
 // THUG CPP
@@ -248,7 +303,7 @@ inline Buffer generate()\
 {\
     Encoder en;\
     *this >> en;\
-    return std::move(en.data());\
+    return en.data();\
 }\
 inline uint8_t* parse(uint8_t* start, uint8_t* limit)\
 {\
