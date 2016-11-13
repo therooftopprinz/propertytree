@@ -6,6 +6,8 @@
 #include <server/src/Utils.hpp>
 #include <server/src/Logger.hpp>
 
+#include "MessageHelpers/MessageCreateRequestCreator.hpp"
+
 using namespace testing;
 
 namespace ptree
@@ -55,6 +57,21 @@ struct PersonArray
 };
 
 
+struct MessageCreateRequest
+{
+    MessageCreateRequest(){}
+
+    Simple<protocol::MessageType> mtype;
+    Simple<uint32_t> msize;
+    Simple<uint32_t> tid;
+
+    Simple<uint32_t> valueSize;
+    Simple<protocol::PropertyType> ptype;
+    BufferBlock value;
+    String path;
+    MESSAGE_FIELDS(mtype, msize, tid, valueSize, ptype, value, path);
+};
+
 struct MessagingTests : public ::testing::Test
 {
     MessagingTests():
@@ -64,11 +81,6 @@ struct MessagingTests : public ::testing::Test
     logger::Logger log;
 };
 
-// TEST_F(MessagingTests, shouldEncodeSimpleType)
-// {
-//     Simple<int> val;
-// }
-
 TEST_F(MessagingTests, shouldEncodeSimpleType)
 {
     SimpleBlock val;
@@ -76,9 +88,12 @@ TEST_F(MessagingTests, shouldEncodeSimpleType)
     val.b = 2;
     val.c = 3;
     Buffer comval{01,00,00,00,02,03,00};
-    Encoder en;
+
+    Buffer enbuff(val.size());
+    BufferView enbuffv(enbuff);
+    Encoder en(enbuffv);
     val >> en;
-    EXPECT_EQ(comval, en.data());
+    EXPECT_EQ(comval, enbuff);
 }
 
 TEST_F(MessagingTests, shouldEncodeSimpleTypeWithString)
@@ -88,9 +103,11 @@ TEST_F(MessagingTests, shouldEncodeSimpleTypeWithString)
     val.b = std::string("wow!");
     val.c = 'D';
     Buffer comval{42,00,00,00,'w','o','w','!',0,'D'};
-    Encoder en;
+    Buffer enbuff(val.size());
+    BufferView enbuffv(enbuff);
+    Encoder en(enbuffv);
     val >> en;
-    EXPECT_EQ(comval, en.data());
+    EXPECT_EQ(comval, enbuff);
 }
 
 TEST_F(MessagingTests, shouldEncodeNested)
@@ -109,9 +126,11 @@ TEST_F(MessagingTests, shouldEncodeNested)
     nes.b = val2;
 
     Buffer comval{01,00,00,00,02,03,00,42,00,00,00,'w','o','w','!',0,'D'};
-    Encoder en;
+    Buffer enbuff(nes.size());
+    BufferView enbuffv(enbuff);
+    Encoder en(enbuffv);
     nes >> en;
-    EXPECT_EQ(comval, en.data());
+    EXPECT_EQ(comval, enbuff);
 }
 
 TEST_F(MessagingTests, shouldEncodeArray)
@@ -131,14 +150,19 @@ TEST_F(MessagingTests, shouldEncodeArray)
     plist.persons->push_back(b);
     plist.persons->push_back(c);
 
-    Encoder en;
+    Buffer buffer(plist.size());
+    BufferView buffv(buffer);
+    BufferView buffx(buffer);
+
+    Encoder en(buffv);
     plist >> en;
 
-    utils::printRaw(en.data().data(),en.data().size());
-    utils::printRawAscii(en.data().data(),en.data().size());
+    utils::printRaw(buffer.data(),plist.size());
+    utils::printRawAscii(buffer.data(),plist.size());
+
 
     PersonArray deplist;
-    Decoder de(en.data().data(),en.data().data()+en.data().size());
+    Decoder de(buffx.start, buffx.limit);
     deplist << de;
 
     for(auto& i : *(deplist.persons))
@@ -173,6 +197,47 @@ TEST_F(MessagingTests, shouldDecodeArray)
         log << logger::DEBUG << "sex  "<< i.sex;
         log << logger::DEBUG << "fav  "<< i.favenumber;
     }
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1ms);
+}
+
+TEST_F(MessagingTests, benchMarkingGeneration)
+{
+    BufferPtr value = std::make_shared<Buffer>(Buffer{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0});
+
+    auto t1 = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    for(uint32_t i=0; i<1000; i++)
+    {
+        MessageCreateRequestCreator createTestRequest(0);
+        createTestRequest.setPath("/Test");
+        createTestRequest.setValue(value);
+        createTestRequest.setType(protocol::PropertyType::Value);
+        createTestRequest.create();
+    }
+
+    auto t2 = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+
+    for(uint32_t i=0; i<1000; i++)
+    {
+        MessageCreateRequest createTestRequest;
+        createTestRequest.mtype = protocol::MessageType::CreateRequest;
+        createTestRequest.msize = sizeof(protocol::MessageHeader)+sizeof(protocol::CreateRequest);
+        createTestRequest.tid = 0;
+        createTestRequest.valueSize = value->size();
+        createTestRequest.ptype = protocol::PropertyType::Value;
+        createTestRequest.value = std::move(*value);
+        createTestRequest.path = std::string("/Test");
+
+        Buffer buff(createTestRequest.size());
+        BufferView buffView(buff);
+
+        Encoder en(buffView);
+        createTestRequest >> en;
+    }
+    auto t3 = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+
+    log << logger::DEBUG << "test 1  "<< double(t2-t1)/(1000.0*1000.0);
+    log << logger::DEBUG << "test 2  "<< double(t3-t2)/(1000.0*1000.0);
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(1ms);
 }

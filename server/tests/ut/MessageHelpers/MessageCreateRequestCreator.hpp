@@ -24,7 +24,6 @@ public:
     Buffer create();
     void setPath(const std::string& path);
     void setValue(BufferPtr bufferptr);
-    void setValue(Buffer buffer);
     void setType(protocol::PropertyType type);
     
 private:

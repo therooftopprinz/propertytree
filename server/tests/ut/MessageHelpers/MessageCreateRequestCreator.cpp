@@ -19,8 +19,8 @@ Buffer MessageCreateRequestCreator::create()
     }
 
     const uint32_t sz = sizeof(protocol::MessageHeader) + 4 + 1 + value->size() + path.length() + 1;
-    log << logger::DEBUG << "MessageCreateRequestCreator::create(): vsize:" << value->size() << " plen:" <<
-        path.length();
+    // log << logger::DEBUG << "MessageCreateRequestCreator::create(): vsize:" << value->size() << " plen:" <<
+    //     path.length();
 
     Buffer message(sz);
     createHeader(message.data(), protocol::MessageType::CreateRequest, sz);

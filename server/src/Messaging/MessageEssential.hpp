@@ -11,6 +11,21 @@ namespace server
 
 using Buffer = std::vector<uint8_t>;
 
+struct BufferView
+{
+    BufferView(Buffer& buffer):
+        start(buffer.data()),
+        limit((uint8_t*)buffer.data()+buffer.size())
+    {}
+    BufferView(uint8_t* start, uint8_t* limit):
+        start(start),
+        limit(limit)
+    {}
+
+    uint8_t* start;
+    uint8_t* limit;
+};
+
 template <typename T>
 class BlockArray
 {
@@ -27,19 +42,18 @@ public:
         return &values;
     }
 
-    inline Buffer generate()
+    void generate(BufferView& data)
     {
         // std::cout << __PRETTY_FUNCTION__ << std::endl;
-        Buffer x(sizeof(uint32_t));
-        *(uint32_t*)(x.data()) = values.size();
+        if (data.start+sizeof(uint32_t)>data.limit)
+            return;
+        *(uint32_t*)(data.start) = values.size();
+        data.start += sizeof(uint32_t);
 
         for (auto& i : values)
         {
-            auto v = i.generate();
-            x.insert(x.end(), v.begin(), v.end());
+            i.generate(data);
         }
-
-        return x;
     }
 
     inline uint8_t* parse(uint8_t *start, uint8_t *limit)
@@ -61,6 +75,16 @@ public:
             }
         }
         return start;
+    }
+
+    uint32_t size()
+    {
+        uint32_t sz = sizeof(uint32_t);
+        for (auto& i : values)
+        {
+            sz += i.size();
+        }
+        return sz;
     }
 
 private:
@@ -96,12 +120,13 @@ public:
         return value;
     }
 
-    inline Buffer generate()
+    void generate(BufferView& data)
     {
         // std::cout << __PRETTY_FUNCTION__ << std::endl;
-        Buffer x(value.size()+1);
-        std::memcpy(x.data(), value.c_str(), value.size()+1);
-        return x;
+        if (data.start+value.size()+1>data.limit)
+            return;
+        std::memcpy(data.start, value.c_str(), value.size()+1);
+        data.start += value.size()+1;
     }
 
     inline uint8_t* parse(uint8_t *start, uint8_t *limit)
@@ -110,6 +135,11 @@ public:
         while (nullf<limit && *(nullf++));
         value = std::string((char*)start, nullf-start);
         return nullf;
+    }
+
+    uint32_t size()
+    {
+        return value.size()+1;
     }
 
 private:
@@ -129,13 +159,14 @@ public:
         value(std::move(value))
     {}
 
-    inline Buffer generate()
+    void generate(BufferView& data)
     {
-        // std::cout << __PRETTY_FUNCTION__ << std::endl;
-        Buffer x(sizeof(uint32_t)+value.size());
-        *(uint32_t*)(x.data()) = value.size();
-        std::memcpy(x.data()+sizeof(uint32_t), value.data(), value.size());
-        return x;
+        if (data.start+value.size()+sizeof(uint32_t)>data.limit)
+            return;
+
+        *((uint32_t*)(data.start)) = value.size();
+        data.start += sizeof(uint32_t);
+        std::memcpy(data.start, value.data(), value.size());
     }
 
     inline uint8_t* parse(uint8_t* start, uint8_t* limit)
@@ -148,6 +179,11 @@ public:
         value.resize(size);
         std::memcpy(value.data(), start+sizeof(uint32_t), size);
         return start + size;
+    }
+
+    uint32_t size()
+    {
+        return value.size();
     }
 
 private:
@@ -195,12 +231,13 @@ public:
         return value;
     }
 
-    inline Buffer generate()
+    void generate(BufferView& data)
     {
         // std::cout << __PRETTY_FUNCTION__ << std::endl;
-        Buffer x(sizeof(T));
-        *(T*)(x.data()) = value;
-        return x;
+        if (data.start+sizeof(T)>data.limit)
+            return;
+        *((T*)(data.start)) = value;
+        data.start += sizeof(T);
     }
 
     inline uint8_t* parse(uint8_t* start, uint8_t* limit)
@@ -209,34 +246,56 @@ public:
         {
             return limit;
         }
-
         value = *((T*)start);
         return start + sizeof(T);
+    }
+
+    uint32_t size()
+    {
+        return sizeof(T);
     }
 
 private:
     T value;
 };
 
+class SizeReader
+{
+public:
+    SizeReader():currentsize(0) {}
+
+    template <typename T>
+    void translate(T& head)
+    {
+        currentsize += head.size();
+    }
+    template <typename T, typename... Tt>
+    void translate(T& head, Tt&... tail)
+    {
+        translate(head);
+        translate(tail...);
+    }
+    uint32_t size()
+    {
+        return currentsize;
+    }
+private:
+    uint32_t currentsize;
+};
+
 class Encoder
 {
 public:
-    Encoder(){}
-    template <typename T, typename... Tt>
+    Encoder(BufferView& codedData):
+        encodeCursor(codedData)
+    {}
+
+    template <typename T>
     void translate(T& head)
     {
         // std::cout << __PRETTY_FUNCTION__ << std::endl;
-        auto v = head.generate();
-        // std::cout << "adding:" << std::endl;
-        // for (const auto& i : v)
-        // {
-        //     std::cout << (int)i << " ";
-        // }
-        // std::cout << "\n\n";
-
-        codedData.insert(codedData.end(), v.begin(), v.end());
+        head.generate(encodeCursor);
     }
-
     template <typename T, typename... Tt>
     void translate(T& head, Tt&... tail)
     {
@@ -244,14 +303,8 @@ public:
         translate(head);
         translate(tail...);
     }
-
-    Buffer& data()
-    {
-        return codedData;
-    }
-
 private:
-    Buffer codedData;
+    BufferView& encodeCursor;
 };
 
 class Decoder
@@ -267,7 +320,6 @@ public:
         // std::cout << __PRETTY_FUNCTION__ << std::endl;
         start = head.parse(start, limit);
     }
-
     template <typename T, typename... Tt>
     void translate(T& head, Tt&... tail)
     {
@@ -299,17 +351,22 @@ inline void operator << (Decoder& de)\
 {\
     operate(de);\
 }\
-inline Buffer generate()\
+void generate(BufferView& data)\
 {\
-    Encoder en;\
+    Encoder en(data);\
     *this >> en;\
-    return en.data();\
 }\
 inline uint8_t* parse(uint8_t* start, uint8_t* limit)\
 {\
     Decoder de(start, limit);\
     *this << de;\
     return de.getNext();\
+}\
+uint32_t size()\
+{\
+    SizeReader sr;\
+    sr.translate(__VA_ARGS__);\
+    return sr.size();\
 }
 // END THUG
 
