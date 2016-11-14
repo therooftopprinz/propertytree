@@ -8,7 +8,8 @@ The PropertyTree Client Library provides the interface in communicating the Prop
 
 Please see the [wiki](https://github.com/rooftopprinz/propertytree/wiki).
 
-Continous Integration Status 0[![CircleCI](https://circleci.com/gh/rooftopprinz/propertytree/tree/master.svg?style=svg)](https://circleci.com/gh/rooftopprinz/propertytree/tree/master)
+#### Continous integration status: 
+ [![CircleCI](https://circleci.com/gh/rooftopprinz/propertytree/tree/master.svg?style=svg)](https://circleci.com/gh/rooftopprinz/propertytree/tree/master)
 
 ## Building
 ```
