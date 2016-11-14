@@ -1,7 +1,7 @@
 #Compiler and Linker
 CC                 := g++
 MAKE               := make
-CFLAGS             := -std=c++14 -Wall -Werror
+CFLAGS             := -std=gnu++14 -Wall -Werror
 
 #Top level
 TLD                := ..
