@@ -70,7 +70,7 @@ $(SERVER_TESTS_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
 server_ut_gcov: $(GTEST) $(SERVER_OBJECTS_GCOV) $(SERVER_TESTS_OBJECTS_GCOV)
 	@mkdir -p $(SERVER_TARGET)
 	@echo Linking $(SERVER_TARGET)/server_ut
-	@$(CC) -g $(GTEST) $(SERVER_UT_LD_GCC) $(SERVER_OBJECTS_GCOV) $(SERVER_TESTS_OBJECTS_GCOV) -lgcov --coverage -o $(SERVER_TARGET)/server_ut_gcov
+	@$(CC) $(GTEST) $(SERVER_UT_LD_GCC) $(SERVER_OBJECTS_GCOV) $(SERVER_TESTS_OBJECTS_GCOV) -lgcov --coverage -o $(SERVER_TARGET)/server_ut_gcov
 
 server_ut_gcov_run: server_ut_gcov
 	$(SERVER_TARGET)/server_ut_gcov $(TESTFLAG)
@@ -78,12 +78,12 @@ server_ut_gcov_run: server_ut_gcov
 $(SERVER_OBJECTS_GCOV): $(BUILDDIR_GCOV)/%.cpp.o : %.cpp
 	@mkdir -p $(@D)
 	@echo "Building SOURCE_GCOV" $@
-	@$(CC) $(CFLAGS) -fprofile-arcs -ftest-coverage --coverage $(SERVER_INCDIR_GCC) -g -c $(patsubst $(BUILDDIR_GCOV)/%.cpp.o,%.cpp,$@) -o $@
+	@$(CC) $(CFLAGS) -fprofile-arcs -ftest-coverage --coverage $(SERVER_INCDIR_GCC) -lgcov -c $(patsubst $(BUILDDIR_GCOV)/%.cpp.o,%.cpp,$@) -o $@
 
 $(SERVER_TESTS_OBJECTS_GCOV): $(BUILDDIR_GCOV)/%.cpp.o : %.cpp
 	@mkdir -p $(@D)
 	@echo "Building TEST" $@
-	@$(CC) $(CFLAGS) $(SERVER_TESTINCDIR_GCC) -g -c $(patsubst $(BUILDDIR_GCOV)/%.cpp.o,%.cpp,$@) -o $@
+	@$(CC) $(CFLAGS) $(SERVER_TESTINCDIR_GCC) -fprofile-arcs -ftest-coverage --coverage -lgcov -c $(patsubst $(BUILDDIR_GCOV)/%.cpp.o,%.cpp,$@) -o $@
 
 ## MISC #########################################################################
 

@@ -115,7 +115,7 @@ struct PACKED MetaUpdateNotification
 
 struct PACKED DeleteRequest
 {
-    uint8_t path[];
+    uint8_t path[1];
 };
 
 /*
