@@ -121,6 +121,7 @@ void ClientServer::processMessage(protocol::MessageHeaderPtr header, BufferPtr m
     processMessageRunning++;
     log << logger::DEBUG << "ClientServer::processMessage()";
     auto type = header->type;
+    /** TODO: Extract to factory **/
     if (type == protocol::MessageType::SignInRequest)
     {
         std::lock_guard<std::mutex> guard(sendLock);

@@ -137,15 +137,16 @@ TEST_F(MessagingTests, shouldEncodeArray)
 {
     PersonArray plist;
     Person a, b, c;
-    a.name = std::string("Prokorpyo");
+    a.name = "Prokorpyo";
     a.sex = 'M';
     a.favenumber = 69;
-    b.name = std::string("Dinisa");
+    b.name = "Dinisa";
     b.sex = 'S';
     b.favenumber = 89;
-    c.name = std::string("Rodi");
+    c.name = "Rodi";
     c.sex = 'M';
     c.favenumber = 42;
+
     plist.persons->push_back(a);
     plist.persons->push_back(b);
     plist.persons->push_back(c);
@@ -157,21 +158,12 @@ TEST_F(MessagingTests, shouldEncodeArray)
     Encoder en(buffv);
     plist >> en;
 
-    utils::printRaw(buffer.data(),plist.size());
-    utils::printRawAscii(buffer.data(),plist.size());
+    Buffer tocomp {
+        0x3, 0x0, 0x0, 0x0, 0x50, 0x72, 0x6f, 0x6b, 0x6f, 0x72, 0x70, 0x79, 0x6f, 0x0,
+        0x4d, 0x45, 0x0, 0x0, 0x0, 0x44, 0x69, 0x6e, 0x69, 0x73, 0x61, 0x0, 0x53, 0x59,
+        0x0, 0x0, 0x0, 0x52, 0x6f, 0x64, 0x69, 0x0, 0x4d, 0x2a, 0x0, 0x0, 0x0};
 
-
-    PersonArray deplist;
-    Decoder de(buffx.start, buffx.limit);
-    deplist << de;
-
-    for(auto& i : *(deplist.persons))
-    {
-        log << logger::DEBUG << "name "<< (std::string)i.name;
-        log << logger::DEBUG << "sex  "<< i.sex;
-        log << logger::DEBUG << "fav  "<< i.favenumber;
-    }
-
+    EXPECT_EQ(buffer, tocomp);
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(1ms);
 }

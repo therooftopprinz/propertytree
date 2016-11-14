@@ -42,6 +42,11 @@ public:
         return &values;
     }
 
+    T& operator[](int32_t index)
+    {
+        return values[index];
+    }
+
     void generate(BufferView& data)
     {
         // std::cout << __PRETTY_FUNCTION__ << std::endl;
@@ -96,6 +101,10 @@ class String
 public:
     String(){}
 
+    String(const char* cpvalue):
+        value(cpvalue)
+    {}
+
     String(std::string& value):
         value(value)
     {}
@@ -110,10 +119,28 @@ public:
         return *this;
     }
 
+    String& operator =(std::string&& t)
+    {
+        value = std::move(t);
+        return *this;
+    }
+
+    String& operator =(const char* cpvalue)
+    {
+        value = cpvalue;
+        return *this;
+    }
+
     std::string& operator *()
     {
         return value;
     }
+
+    std::string* operator->()
+    {
+        return &value;
+    }
+
 
     operator std::string& ()
     {
@@ -133,7 +160,7 @@ public:
     {
         uint8_t *nullf=start;
         while (nullf<limit && *(nullf++));
-        value = std::string((char*)start, nullf-start);
+        value = std::string((char*)start, nullf-1-start);
         return nullf;
     }
 
@@ -158,6 +185,11 @@ public:
     BufferBlock(Buffer&& value):
         value(std::move(value))
     {}
+
+    Buffer& operator*()
+    {
+        return value;
+    }
 
     void generate(BufferView& data)
     {
@@ -222,7 +254,7 @@ public:
 
     T& operator=(T&& t)
     {
-        value = t;
+        value = std::move(t);
         return value;
     }
 
