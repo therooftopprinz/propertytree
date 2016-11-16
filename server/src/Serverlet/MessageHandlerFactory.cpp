@@ -1,4 +1,5 @@
 #include "MessageHandlerFactory.hpp"
+#include <server/src/Logger.hpp>
 
 namespace ptree
 {
@@ -7,15 +8,17 @@ namespace server
 
 class MessageHandler;
 
-MessageHandler
+std::unique_ptr<MessageHandler>
     MessageHandlerFactory::
         get(protocol::MessageType type, ClientServer& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon)
 {
+    logger::Logger log("MessageHandlerFactory");
     using Enum = uint8_t;
     switch (uint8_t(type))
     {
         case (Enum) protocol::MessageType::SigninRequest:
-            return SigninRequestMessageHandler(cs, ep, pt, csmon);
+            log << logger::DEBUG << "SigninRequestHandler";
+            return std::make_unique<SigninRequestMessageHandler>(cs, ep, pt, csmon);
     }
     // if (type == protocol::MessageType::SignInRequest)
     // {
@@ -62,7 +65,7 @@ MessageHandler
     // {
     //     log << logger::ERROR << "processMessage: header invalid type!! ";
     // }
-    return MessageHandler(cs, ep, pt, csmon);
+    return std::make_unique<MessageHandler>(cs, ep, pt, csmon);
 }
 
 } // namespace server

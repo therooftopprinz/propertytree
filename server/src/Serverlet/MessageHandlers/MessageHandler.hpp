@@ -3,6 +3,7 @@
 
 #include <server/src/PTree.hpp>
 #include <server/src/Types.hpp>
+#include <server/src/Logger.hpp>
 
 namespace ptree
 {
@@ -28,8 +29,10 @@ struct MessageHandler
         monitor(csmon)
     {}
 
-    inline virtual void handle(protocol::MessageHeaderPtr header, BufferPtr message)
+    virtual void handle(protocol::MessageHeaderPtr header, BufferPtr message)
     {
+        logger::Logger log("MessageHandler");
+        log << logger::WARNING << "GAGO";
     }
 
     ClientServer& clientServer;

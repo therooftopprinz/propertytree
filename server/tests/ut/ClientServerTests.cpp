@@ -69,12 +69,15 @@ struct ClientServerTests : public ::testing::Test
             endpoint->queueToReceive(signinRequestMsg);
 
             auto signinResponseMsg = createSigninResponseMessage(signinRqstTid, 1);
-            endpoint->queueToReceive(signinRequestMsg);
             signinRspMsgMatcher = std::make_shared<MessageMatcher>(signinResponseMsg);
-    //     endpoint->queueToReceive(createTestRequest.create());
 
     }
 
+    void TearDown()
+    {
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(1ms);
+    }
 
     Buffer createHeader(protocol::MessageType type, uint32_t size, uint32_t transactionId)
     {
@@ -91,14 +94,15 @@ struct ClientServerTests : public ::testing::Test
         protocol::SigninRequest signin;
         signin.version = version;
         signin.refreshRate = refreshRate;
-        uint32_t sz = signin.size();
+        uint32_t sz = signin.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::SigninRequest, sz, transactionId);
-        Buffer enbuff(sz);
+        Buffer enbuff(signin.size());
         protocol::BufferView enbuffv(enbuff);
         protocol::Encoder en(enbuffv);
         signin >> en;
         message.insert(message.end(), enbuff.begin(), enbuff.end());
+
         return message;
     }
 
@@ -106,16 +110,15 @@ struct ClientServerTests : public ::testing::Test
     {
         protocol::SigninResponse signin;
         signin.version = version;
-        uint32_t sz = signin.size();
+        uint32_t sz = signin.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::SigninResponse, sz, transactionId);
-        Buffer enbuff(sz);
+        Buffer enbuff(signin.size());
         protocol::BufferView enbuffv(enbuff);
         protocol::Encoder en(enbuffv);
         signin >> en;
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
-        log << logger::DEBUG << "Message size:" << sz;
         return message;
     }
     // template <class T>
@@ -244,7 +247,7 @@ public:
     MOCK_METHOD1(notifyDeletion, void(uint32_t));
 };
 
-TEST_F(ClientServerTests, DISABLED_shouldSigninRequestAndRespondSameVersionForOk)
+TEST_F(ClientServerTests, shouldSigninRequestAndRespondSameVersionForOk)
 {
     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
 

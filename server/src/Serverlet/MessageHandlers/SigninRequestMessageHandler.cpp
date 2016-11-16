@@ -1,5 +1,6 @@
 #include "SigninRequestMessageHandler.hpp"
 #include <server/src/Serverlet/ClientServer.hpp>
+#include <server/src/Logger.hpp>
 
 namespace ptree
 {
@@ -13,7 +14,7 @@ SigninRequestMessageHandler::
 
 inline void SigninRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
 {
-    logger::Logger log("SigninRequest");
+    logger::Logger log("SigninRequestMessageHandler");
 
     protocol::SigninRequest request;
     protocol::Decoder de(message->data(),message->data()+message->size());
@@ -22,23 +23,30 @@ inline void SigninRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
     bool supported = true;
     if (request.version != 1)
     {
-        log << logger::DEBUG << "Version not supported: " <<
+        log << logger::WARNING << "Version not supported: " <<
             request.version;
         supported = false;
     }
 
     clientServer.setUpdateInterval(request.refreshRate);
     clientServer.clientSigned();
-    log << logger::DEBUG << "inteval: " << request.refreshRate;
 
     protocol::SigninResponse response;
     response.version = supported ? *request.version : 0;
 
-    Buffer responseMessageBuffer(response.size());
-    protocol::BufferView responseMessageBufferView(responseMessageBuffer);
+    uint32_t sz = response.size()+sizeof(protocol::MessageHeader);
+    Buffer responseMessageBuffer(sz);
+    protocol::BufferView responseMessageBufferView(
+        responseMessageBuffer.data()+sizeof(protocol::MessageHeader),
+        (uint8_t*)responseMessageBuffer.data()+responseMessageBuffer.size());
+    protocol::MessageHeader& rspHead = *((protocol::MessageHeader*)responseMessageBuffer.data());
+    rspHead.type = protocol::MessageType::SigninResponse;
+    rspHead.size = sz;
+    rspHead.transactionId = header->transactionId; 
     protocol::Encoder en(responseMessageBufferView);
     response >> en;
     endpoint.send(responseMessageBuffer.data(), responseMessageBuffer.size());
+    log << logger::DEBUG << "response size: " << sz;
 }
 
 } // namespace server

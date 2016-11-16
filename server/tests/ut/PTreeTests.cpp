@@ -17,7 +17,7 @@ namespace core
 struct PTreeTests : public ::testing::Test
 {
 
-    void tearDown()
+    void TearDown()
     {
         using namespace std::chrono_literals;
         std::this_thread::sleep_for(1ms);

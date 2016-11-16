@@ -113,7 +113,7 @@ void ClientServer::processMessage(protocol::MessageHeaderPtr header, BufferPtr m
     /** TODO: Extract to factory **/
     std::lock_guard<std::mutex> guard(sendLock);
     auto h = messageHandlerFactory.get(type, *this, *endpoint, *ptree, *monitor);
-    h.handle(header, message);
+    h->handle(header, message);
 
     processMessageRunning--;
 }
