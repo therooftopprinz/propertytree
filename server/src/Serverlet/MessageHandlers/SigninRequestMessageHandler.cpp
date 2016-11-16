@@ -35,14 +35,11 @@ inline void SigninRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
     response.version = supported ? *request.version : 0;
 
     uint32_t sz = response.size()+sizeof(protocol::MessageHeader);
-    Buffer responseMessageBuffer(sz);
-    protocol::BufferView responseMessageBufferView(
-        responseMessageBuffer.data()+sizeof(protocol::MessageHeader),
-        (uint8_t*)responseMessageBuffer.data()+responseMessageBuffer.size());
-    protocol::MessageHeader& rspHead = *((protocol::MessageHeader*)responseMessageBuffer.data());
-    rspHead.type = protocol::MessageType::SigninResponse;
-    rspHead.size = sz;
-    rspHead.transactionId = header->transactionId; 
+    Buffer rspheader = createHeader(protocol::MessageType::SigninResponse, sz, header->transactionId);
+    endpoint.send(rspheader.data(), rspheader.size());
+    
+    Buffer responseMessageBuffer(response.size());
+    protocol::BufferView responseMessageBufferView(responseMessageBuffer);
     protocol::Encoder en(responseMessageBufferView);
     response >> en;
     endpoint.send(responseMessageBuffer.data(), responseMessageBuffer.size());

@@ -29,11 +29,8 @@ struct MessageHandler
         monitor(csmon)
     {}
 
-    virtual void handle(protocol::MessageHeaderPtr header, BufferPtr message)
-    {
-        logger::Logger log("MessageHandler");
-        log << logger::WARNING << "GAGO";
-    }
+    virtual void handle(protocol::MessageHeaderPtr header, BufferPtr message);
+    static Buffer createHeader(protocol::MessageType type, uint32_t size, uint32_t transactionId);
 
     ClientServer& clientServer;
     IEndPoint& endpoint;
