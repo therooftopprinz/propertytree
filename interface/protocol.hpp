@@ -76,6 +76,44 @@ struct SigninResponse
 };
 
 
+struct CreateRequest
+{
+    Simple<uint32_t> valueSize;
+    Simple<PropertyType> type;
+    BufferBlock data;
+    String path;
+    MESSAGE_FIELDS(valueSize, type, data, path);
+};
+
+struct CreateResponse
+{
+    enum class Response : uint8_t {OK, PARENT_NOT_FOUND, MALFORMED_PATH, ALREADY_EXIST, TYPE_ERROR};
+    Simple<Response> response;
+    MESSAGE_FIELDS(response);
+};
+
+struct MetaCreate
+{
+    Simple<Uuid> uuid;
+    Simple<PropertyType> propertyType;
+    String path;
+    MESSAGE_FIELDS(uuid, propertyType, path);
+};
+
+struct MetaDelete
+{
+    Simple<Uuid> uuid;
+    MESSAGE_FIELDS(uuid);
+};
+
+struct MetaUpdateNotification
+{
+    BlockArray<MetaCreate> creations;
+    BlockArray<MetaDelete> deletetions;
+    MESSAGE_FIELDS(creations, deletetions);
+};
+
+
 typedef std::shared_ptr<MessageHeader> MessageHeaderPtr;
 
 } // namespace protocol

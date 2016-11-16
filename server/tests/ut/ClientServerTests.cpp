@@ -30,8 +30,6 @@ struct ClientServerTests : public ::testing::Test
     ClientServerTests() :
         // signinRqst(signinRqstTid),
         // signinRsp(signinRqstTid),
-        // createTestRequest(createMessageNodeCreateRequestCreator("/Test", createTestRequestTid)),
-        // createValueRequest(createMessageValueCreateRequestCreator("/Test/Value", 42, createValueRequestTid)),
         // deleteValueRqst(deleteValueRequestTid),
         // deleteTestRqst(deleteTestRequestTid),
         // setValueInd(setValueInd1stTid),
@@ -44,12 +42,10 @@ struct ClientServerTests : public ::testing::Test
         // getValueResponse(getValueReqTid),
 
     //     signinRspMsgMatcher(signinRsp.create()),
-    //     testCreationMatcher("/Test"),
-    //     valueCreationMatcher("/Test/Value"),
     //     createTestResponseMatcher(createTestRequestTid),
     //     createValueResponseMatcher(createValueRequestTid),
 
-    //     testCreationAction(std::bind(&ClientServerTests::propTestCreationAction, this)),
+        testCreationAction(std::bind(&ClientServerTests::propTestCreationAction, this)),
     //     valueCreationDeleteImmediatelyAction(std::bind(&ClientServerTests::propValueCreationActionValueDelete, this)),
     //     valueCreationSubscribeAction(std::bind(&ClientServerTests::propValueCreationActionSubscribe, this)),
         endpoint(std::make_shared<EndPointMock>()),
@@ -71,12 +67,23 @@ struct ClientServerTests : public ::testing::Test
             auto signinResponseMsg = createSigninResponseMessage(signinRqstTid, 1);
             signinRspMsgMatcher = std::make_shared<MessageMatcher>(signinResponseMsg);
 
+            testCreationMatcher = std::make_shared<CreateObjectMetaUpdateNotificationMatcher>("/Test");
+            valueCreationMatcher = std::make_shared<CreateObjectMetaUpdateNotificationMatcher>("/Test/Value");
+
     }
 
     void TearDown()
     {
         using namespace std::chrono_literals;
         std::this_thread::sleep_for(1ms);
+    }
+
+    template<typename T>
+    Buffer valueToBuffer(T in)
+    {
+        Buffer bf(sizeof(in));
+        *((T*)bf.data()) = in;
+        return bf;
     }
 
     Buffer createHeader(protocol::MessageType type, uint32_t size, uint32_t transactionId)
@@ -121,6 +128,27 @@ struct ClientServerTests : public ::testing::Test
 
         return message;
     }
+
+    Buffer createCreateRequestMessage(uint32_t transactionId, Buffer valueContainer, protocol::PropertyType type,
+        std::string path)
+    {
+        protocol::CreateRequest createReq;
+        createReq.valueSize = valueContainer.size();
+        createReq.type = type;
+        createReq.data = valueContainer;
+        createReq.path = path;
+
+        uint32_t sz = createReq.size() + sizeof(protocol::MessageHeader);
+
+        Buffer message = createHeader(protocol::MessageType::CreateRequest, sz, transactionId);
+        Buffer enbuff(createReq.size());
+        protocol::BufferView enbuffv(enbuff);
+        protocol::Encoder en(enbuffv);
+        createReq >> en;
+        message.insert(message.end(), enbuff.begin(), enbuff.end());
+
+        return message;
+    }
     // template <class T>
     // static MessageCreateRequestCreator createMessageValueCreateRequestCreator(std::string path,
     //     T value, uint32_t transactionId)
@@ -141,11 +169,16 @@ struct ClientServerTests : public ::testing::Test
     //     return createValueRequest;
     // }
 
-    // void propTestCreationAction()
-    // {
-    //     this->log << logger::DEBUG << "/Test is created with uuid: " << this->testCreationMatcher.getUuidOfLastMatched();
-    //     this->endpoint->queueToReceive(this->createValueRequest.create());
-    // }
+    void propTestCreationAction()
+    {
+        this->log << logger::DEBUG << "/Test is created with uuid: " <<
+            this->testCreationMatcher->getUuidOfLastMatched();
+
+        createValueRequestMessage = createCreateRequestMessage(createValueRequestTid, valueToBuffer<uint32_t>(42),
+            protocol::PropertyType::Value, "/Test/Value");
+
+        this->endpoint->queueToReceive(createValueRequestMessage);
+    }
 
     // void propValueCreationActionValueDelete()
     // {
@@ -214,17 +247,19 @@ Test common timeline
     // MessageSetValueIndicationCreator setValueInd3rd;
     // MessageGetValueRequestCreator getValueRequest;
     // MessageGetValueResponseCreator getValueResponse;
+    Buffer createTestRequestMessage;
+    Buffer createValueRequestMessage;
 
     std::shared_ptr<MessageMatcher> signinRspMsgMatcher;
-    // CreateObjectMetaUpdateNotificationMatcher testCreationMatcher;
-    // CreateObjectMetaUpdateNotificationMatcher valueCreationMatcher;
+    std::shared_ptr<CreateObjectMetaUpdateNotificationMatcher> testCreationMatcher;
+    std::shared_ptr<CreateObjectMetaUpdateNotificationMatcher> valueCreationMatcher;
     // DeleteObjectMetaUpdateNotificationMatcher valueDeletionMatcher;
     // MessageCreateResponseCreator createTestResponseMatcher;
     // MessageCreateResponseCreator createValueResponseMatcher;
     // MessageMatcher createTestResponseFullMatcher;
     // MessageMatcher createValueResponseFullMatcher;
 
-    // std::function<void()> testCreationAction;
+    std::function<void()> testCreationAction;
     // std::function<void()> valueCreationDeleteImmediatelyAction;
     // std::function<void()> valueCreationSubscribeAction;
 
@@ -258,27 +293,31 @@ TEST_F(ClientServerTests, shouldSigninRequestAndRespondSameVersionForOk)
     server->teardown();
 }
 
-// TEST_F(ClientServerTests, shouldCreateOnPTreeWhenCreateRequested)
-// {
-//     std::function<void()> valueCreationAction = [this]()
-//     {
-//         log << logger::DEBUG << "fetching /Test/Value";
-//         log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher.getUuidOfLastMatched();
-//         core::ValuePtr val;
-//         ASSERT_NO_THROW(val = this->ptree->getPropertyByPath<core::Value>("/Test/Value"));
-//         EXPECT_EQ(42u, val->getValue<uint32_t>());
-//     };
+TEST_F(ClientServerTests, DISABLED_shouldCreateOnPTreeWhenCreateRequested)
+{
+    createTestRequestMessage = createCreateRequestMessage(createValueRequestTid, Buffer(),
+        protocol::PropertyType::Node, "/Test");
 
-//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher.get(), testCreationAction);
-//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher.get(), valueCreationAction);
-//     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher.get(), DefaultAction::get());
+    std::function<void()> valueCreationAction = [this]()
+    {
+        log << logger::DEBUG << "fetching /Test/Value";
+        log << logger::DEBUG << "/Test/Value is created with uuid: " <<
+            this->valueCreationMatcher->getUuidOfLastMatched();
+        core::ValuePtr val;
+        ASSERT_NO_THROW(val = this->ptree->getPropertyByPath<core::Value>("/Test/Value"));
+        EXPECT_EQ(42u, val->getValue<uint32_t>());
+    };
 
-//     server->setup();
-//     endpoint->waitForAllSending(2500.0);
-//     server->teardown();
+    // endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
+    endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
 
-//     logger::loggerServer.waitEmpty();
-// }
+    server->setup();
+    endpoint->waitForAllSending(2500.0);
+    server->teardown();
+
+    logger::loggerServer.waitEmpty();
+}
 
 // TEST_F(ClientServerTests, shouldGenerateMessageCreateResponse)
 // {
