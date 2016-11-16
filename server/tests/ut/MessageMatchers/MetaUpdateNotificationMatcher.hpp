@@ -14,7 +14,6 @@ class MetaUpdateNotificationMatcher : public Matcher
 public:
     MetaUpdateNotificationMatcher();
     ~MetaUpdateNotificationMatcher() {}   
-    void* getNextEntry(void* start, void* end);
 protected:
     virtual bool match(const void *buffer, uint32_t size) = 0;
     logger::Logger log;

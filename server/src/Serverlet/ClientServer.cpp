@@ -3,18 +3,7 @@
 #include <algorithm>
 #include <thread>
 #include "ClientServer.hpp"
-#include "Utils.hpp"
-
-#include "MessageHelpers/MessageMetaUpdateNotificationSender.hpp"
-#include "MessageHelpers/MessagePropertyUpdateNotificationSender.hpp"
-
-#include "MessageHandlers/SigninRequest.hpp"
-#include "MessageHandlers/CreateRequest.hpp"
-#include "MessageHandlers/DeleteRequest.hpp"
-#include "MessageHandlers/SetValueIndication.hpp"
-#include "MessageHandlers/SubscribeUpdateRequest.hpp"
-#include "MessageHandlers/UnsubscribeUpdateRequest.hpp"
-#include "MessageHandlers/GetValueRequest.hpp"
+#include <server/src/Utils.hpp>
 
 namespace ptree
 {
@@ -122,51 +111,9 @@ void ClientServer::processMessage(protocol::MessageHeaderPtr header, BufferPtr m
     log << logger::DEBUG << "ClientServer::processMessage()";
     auto type = header->type;
     /** TODO: Extract to factory **/
-    if (type == protocol::MessageType::SignInRequest)
-    {
-        std::lock_guard<std::mutex> guard(sendLock);
-        SigninRequestHandler mh(endpoint, shared_from_this());
-        mh.handle(header, message);
-    }
-    else if (type == protocol::MessageType::CreateRequest)
-    {
-        std::lock_guard<std::mutex> guard(sendLock);
-        CreateRequestHandler mh(endpoint, ptree, monitor, shared_from_this());
-        mh.handle(header, message);
-    }
-    else if (type == protocol::MessageType::DeleteRequest)
-    {
-        std::lock_guard<std::mutex> guard(sendLock);
-        DeleteRequestHandler mh(endpoint, ptree, monitor, shared_from_this());
-        mh.handle(header, message);
-    }
-    else if (type == protocol::MessageType::SetValueIndication)
-    {
-        SetValueIndicationHandler mh(endpoint, ptree, monitor, shared_from_this());
-        mh.handle(header, message);
-    }
-    else if (type == protocol::MessageType::SubscribePropertyUpdateRequest)
-    {
-        std::lock_guard<std::mutex> guard(sendLock);
-        SubscribePropertyUpdateRequestHandler mh(endpoint, ptree, shared_from_this());
-        mh.handle(header, message);
-    }
-    else if (type == protocol::MessageType::UnsubscribePropertyUpdateRequest)
-    {
-        std::lock_guard<std::mutex> guard(sendLock);
-        UnsubscribePropertyUpdateRequestHandler mh(endpoint, ptree, shared_from_this());
-        mh.handle(header, message);
-    }
-    else if (type == protocol::MessageType::GetValueRequest)
-    {
-        std::lock_guard<std::mutex> guard(sendLock);
-        GetValueRequestHandler mh(endpoint, ptree, shared_from_this());
-        mh.handle(header, message);
-    }
-    else
-    {
-        log << logger::ERROR << "processMessage: header invalid type!! ";
-    }
+    std::lock_guard<std::mutex> guard(sendLock);
+    auto h = messageHandlerFactory.get(type, *this, *endpoint, *ptree, *monitor);
+    h.handle(header, message);
 
     processMessageRunning--;
 }
@@ -287,52 +234,52 @@ void ClientServer::notifyValueUpdate(core::ValuePtr value)
 void ClientServer::notifyCreation(uint32_t uuid, protocol::PropertyType type,
     std::string path)
 {
-    std::lock_guard<std::mutex> guard(metaUpdateNotificationMutex);
-    log << logger::DEBUG << "notifyCreation for: " << uuid;
-    auto it = metaUpdateNotification.find(uuid);
-    if (metaUpdateNotification.find(uuid) == metaUpdateNotification.end())
-    {
-        log << logger::DEBUG << "notification queued!";
-        ActionTypeAndPath a;
-        a.utype = protocol::MetaUpdateNotification::UpdateType::CREATE_OBJECT;
-        a.ptype = type;
-        a.path = path;
-        metaUpdateNotification[uuid] = a;
-    }
-    else if (metaUpdateNotification[uuid].utype ==
-        protocol::MetaUpdateNotification::UpdateType::DELETE_OBJECT)
-    {
-        log << logger::DEBUG << "Delete was already queued! Canceling.";
-        metaUpdateNotification.erase(it);
-    }
-    else
-    {
-        log << logger::ERROR << "Error queued again!";
-    }
+    // std::lock_guard<std::mutex> guard(metaUpdateNotificationMutex);
+    // log << logger::DEBUG << "notifyCreation for: " << uuid;
+    // auto it = metaUpdateNotification.find(uuid);
+    // if (metaUpdateNotification.find(uuid) == metaUpdateNotification.end())
+    // {
+    //     log << logger::DEBUG << "notification queued!";
+    //     ActionTypeAndPath a;
+    //     a.utype = protocol::MetaUpdateNotification::UpdateType::CREATE_OBJECT;
+    //     a.ptype = type;
+    //     a.path = path;
+    //     metaUpdateNotification[uuid] = a;
+    // }
+    // else if (metaUpdateNotification[uuid].utype ==
+    //     protocol::MetaUpdateNotification::UpdateType::DELETE_OBJECT)
+    // {
+    //     log << logger::DEBUG << "Delete was already queued! Canceling.";
+    //     metaUpdateNotification.erase(it);
+    // }
+    // else
+    // {
+    //     log << logger::ERROR << "Error queued again!";
+    // }
 }
 
 void ClientServer::notifyDeletion(uint32_t uuid)
 {
-    log << logger::DEBUG << "notifyDeletion for:" << uuid;
-    std::lock_guard<std::mutex> guard(metaUpdateNotificationMutex);
-    auto it = metaUpdateNotification.find(uuid);
-    if (metaUpdateNotification.find(uuid) == metaUpdateNotification.end())
-    {
-        log << logger::DEBUG << "notifaction queued!";
-        ActionTypeAndPath a;
-        a.utype = protocol::MetaUpdateNotification::UpdateType::DELETE_OBJECT;
-        metaUpdateNotification[uuid] = a;
-    }
-    else if (metaUpdateNotification[uuid].utype ==
-        protocol::MetaUpdateNotification::UpdateType::CREATE_OBJECT)
-    {
-        log << logger::DEBUG << "Create was already queued! Canceling.";
-        metaUpdateNotification.erase(it);
-    }
-    else
-    {
-        log << logger::ERROR << "Error queued again!";
-    }
+    // log << logger::DEBUG << "notifyDeletion for:" << uuid;
+    // std::lock_guard<std::mutex> guard(metaUpdateNotificationMutex);
+    // auto it = metaUpdateNotification.find(uuid);
+    // if (metaUpdateNotification.find(uuid) == metaUpdateNotification.end())
+    // {
+    //     log << logger::DEBUG << "notifaction queued!";
+    //     ActionTypeAndPath a;
+    //     a.utype = protocol::MetaUpdateNotification::UpdateType::DELETE_OBJECT;
+    //     metaUpdateNotification[uuid] = a;
+    // }
+    // else if (metaUpdateNotification[uuid].utype ==
+    //     protocol::MetaUpdateNotification::UpdateType::CREATE_OBJECT)
+    // {
+    //     log << logger::DEBUG << "Create was already queued! Canceling.";
+    //     metaUpdateNotification.erase(it);
+    // }
+    // else
+    // {
+    //     log << logger::ERROR << "Error queued again!";
+    // }
 }
 
 void ClientServer::setUpdateInterval(uint32_t interval)
@@ -362,8 +309,8 @@ void ClientServer::handleOutgoing()
             std::lock_guard<std::mutex> updatenotifGuard(metaUpdateNotificationMutex);
             std::lock_guard<std::mutex> sendGuard(sendLock);
 
-            MessageMetaUpdateNotificationSender updateNotif(metaUpdateNotification, endpoint);
-            updateNotif.send();
+            // MessageMetaUpdateNotificationSender updateNotif(metaUpdateNotification, endpoint);
+            // updateNotif.send();
 
             log << logger::DEBUG << "MetaUpdateNotification sent!";
             metaUpdateNotification.clear();
@@ -375,8 +322,8 @@ void ClientServer::handleOutgoing()
             std::lock_guard<std::mutex> updatenotifGuard(valueUpdateNotificationMutex);
             std::lock_guard<std::mutex> sendGuard(sendLock);
 
-            MessagePropertyUpdateNotificationSender updateNotif(valueUpdateNotification, endpoint);
-            updateNotif.send();
+            // MessagePropertyUpdateNotificationSender updateNotif(valueUpdateNotification, endpoint);
+            // updateNotif.send();
 
             log << logger::DEBUG << "PropertyUpdateNotification sent!";
             valueUpdateNotification.clear();

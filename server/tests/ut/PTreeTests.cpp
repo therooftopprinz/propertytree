@@ -17,6 +17,12 @@ namespace core
 struct PTreeTests : public ::testing::Test
 {
 
+    void tearDown()
+    {
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(1ms);
+    }
+
     ValueContainer makeValue(void* value, size_t size)
     {
         ValueContainer container;

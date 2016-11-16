@@ -2,18 +2,19 @@
 #include <gmock/gmock.h>
 #include <ctime>
 #include <thread>
-#include <server/src/Messaging/MessageEssential.hpp>
+#include <interface/protocol.hpp>
+#include <interface/MessageEssential.hpp>
 #include <server/src/Utils.hpp>
 #include <server/src/Logger.hpp>
-
-#include "MessageHelpers/MessageCreateRequestCreator.hpp"
 
 using namespace testing;
 
 namespace ptree
 {
-namespace server
+namespace protocol
 {
+
+using namespace ptree::server;
 
 struct SimpleBlock
 {
@@ -61,12 +62,12 @@ struct MessageCreateRequest
 {
     MessageCreateRequest(){}
 
-    Simple<protocol::MessageType> mtype;
+    Simple<MessageType> mtype;
     Simple<uint32_t> msize;
     Simple<uint32_t> tid;
 
     Simple<uint32_t> valueSize;
-    Simple<protocol::PropertyType> ptype;
+    Simple<PropertyType> ptype;
     BufferBlock value;
     String path;
     MESSAGE_FIELDS(mtype, msize, tid, valueSize, ptype, value, path);
@@ -193,46 +194,46 @@ TEST_F(MessagingTests, shouldDecodeArray)
     std::this_thread::sleep_for(1ms);
 }
 
-TEST_F(MessagingTests, benchMarkingGeneration)
-{
-    BufferPtr value = std::make_shared<Buffer>(Buffer{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0});
+// TEST_F(MessagingTests, benchMarkingGeneration)
+// {
+//     BufferPtr value = std::make_shared<Buffer>(Buffer{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0});
 
-    auto t1 = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-    for(uint32_t i=0; i<1000; i++)
-    {
-        MessageCreateRequestCreator createTestRequest(0);
-        createTestRequest.setPath("/Test");
-        createTestRequest.setValue(value);
-        createTestRequest.setType(protocol::PropertyType::Value);
-        createTestRequest.create();
-    }
+//     auto t1 = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+//     // for(uint32_t i=0; i<1000; i++)
+//     // {
+//     //     MessageCreateRequestCreator createTestRequest(0);
+//     //     createTestRequest.setPath("/Test");
+//     //     createTestRequest.setValue(value);
+//     //     createTestRequest.setType(protocol::PropertyType::Value);
+//     //     createTestRequest.create();
+//     // }
 
-    auto t2 = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+//     auto t2 = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 
-    for(uint32_t i=0; i<1000; i++)
-    {
-        MessageCreateRequest createTestRequest;
-        createTestRequest.mtype = protocol::MessageType::CreateRequest;
-        createTestRequest.msize = sizeof(protocol::MessageHeader)+sizeof(protocol::CreateRequest);
-        createTestRequest.tid = 0;
-        createTestRequest.valueSize = value->size();
-        createTestRequest.ptype = protocol::PropertyType::Value;
-        createTestRequest.value = std::move(*value);
-        createTestRequest.path = std::string("/Test");
+//     for(uint32_t i=0; i<1000; i++)
+//     {
+//         MessageCreateRequest createTestRequest;
+//         createTestRequest.mtype = MessageType::CreateRequest;
+//         createTestRequest.msize = sizeof(MessageHeader)+sizeof(CreateRequest);
+//         createTestRequest.tid = 0;
+//         createTestRequest.valueSize = value->size();
+//         createTestRequest.ptype = PropertyType::Value;
+//         createTestRequest.value = std::move(*value);
+//         createTestRequest.path = std::string("/Test");
 
-        Buffer buff(createTestRequest.size());
-        BufferView buffView(buff);
+//         Buffer buff(createTestRequest.size());
+//         BufferView buffView(buff);
 
-        Encoder en(buffView);
-        createTestRequest >> en;
-    }
-    auto t3 = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+//         Encoder en(buffView);
+//         createTestRequest >> en;
+//     }
+//     auto t3 = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 
-    log << logger::DEBUG << "test 1  "<< double(t2-t1)/(1000.0*1000.0);
-    log << logger::DEBUG << "test 2  "<< double(t3-t2)/(1000.0*1000.0);
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(1ms);
-}
+//     log << logger::DEBUG << "test 1  "<< double(t2-t1)/(1000.0*1000.0);
+//     log << logger::DEBUG << "test 2  "<< double(t3-t2)/(1000.0*1000.0);
+//     using namespace std::chrono_literals;
+//     std::this_thread::sleep_for(1ms);
+// }
 
 
 } // namespace server

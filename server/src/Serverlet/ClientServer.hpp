@@ -3,10 +3,12 @@
 
 #include <mutex>
 #include <interface/protocol.hpp>
-#include "PTreeTcpServer.hpp"
-#include "PTree.hpp"
-#include "Logger.hpp"
-#include "Types.hpp"
+#include <server/src/PTreeTcpServer.hpp>
+#include <server/src/PTree.hpp>
+#include <server/src/Logger.hpp>
+#include <server/src/Types.hpp>
+
+#include "MessageHandlerFactory.hpp"
 
 namespace ptree
 {
@@ -39,6 +41,8 @@ private:
     logger::Logger log;
 };
 
+
+struct MessageHandlerFactory;
 class ClientServer : public std::enable_shared_from_this<ClientServer>
 {
 public:
@@ -80,7 +84,7 @@ public:
 
     struct ActionTypeAndPath
     {
-        protocol::MetaUpdateNotification::UpdateType utype;
+        // protocol::MetaUpdateNotification::UpdateType utype;
         protocol::PropertyType ptype;
         std::string path;
     };
@@ -119,6 +123,7 @@ private:
         ERROR_MESSAGE_TIMEOUT
     };
     EIncomingState incomingState;
+    MessageHandlerFactory messageHandlerFactory;
     logger::Logger log;
 };
 

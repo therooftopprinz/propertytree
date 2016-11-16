@@ -1,12 +1,13 @@
-#ifndef SERVER_MESSAGING_MESSAGEESSENTIAL_HPP_
-#define SERVER_MESSAGING_MESSAGEESSENTIAL_HPP_
+#ifndef INTERFACE_MESSAGEESSENTIAL_HPP_
+#define INTERFACE_MESSAGEESSENTIAL_HPP_
 
 #include <vector>
 #include <cstring>  
 
 namespace ptree
 {
-namespace server
+
+namespace protocol
 {
 
 using Buffer = std::vector<uint8_t>;
@@ -402,7 +403,7 @@ uint32_t size()\
 }
 // END THUG
 
-} // namespace server
+} // namespace protocol
 } // namespace ptree
 
 #endif  // SERVER_MESSAGING_MESSAGEESSENTIAL_HPP_
