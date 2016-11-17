@@ -84,7 +84,8 @@ public:
 
     struct ActionTypeAndPath
     {
-        // protocol::MetaUpdateNotification::UpdateType utype;
+        enum class UpdateType {CREATE_OBJECT, DELETE_OBJECT};
+        UpdateType utype;
         protocol::PropertyType ptype;
         std::string path;
     };

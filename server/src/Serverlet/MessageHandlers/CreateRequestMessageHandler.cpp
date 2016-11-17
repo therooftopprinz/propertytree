@@ -79,7 +79,7 @@ inline void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
     }
     log << logger::DEBUG << "is created: " << created;  
 
-    Buffer rspheader = createHeader(protocol::MessageType::SigninResponse, response.size(), header->transactionId);
+    Buffer rspheader = createHeader(protocol::MessageType::CreateResponse, response.size(), header->transactionId);
     endpoint.send(rspheader.data(), rspheader.size());
     
     Buffer responseMessageBuffer(response.size());

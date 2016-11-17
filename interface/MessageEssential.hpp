@@ -212,7 +212,7 @@ public:
         }
         value.resize(size);
         std::memcpy(value.data(), start+sizeof(uint32_t), size);
-        return start + size;
+        return start + sizeof(uint32_t) + size;
     }
 
     uint32_t size()

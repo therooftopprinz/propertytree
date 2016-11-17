@@ -292,7 +292,7 @@ TEST_F(ClientServerTests, shouldSigninRequestAndRespondSameVersionForOk)
     server->teardown();
 }
 
-TEST_F(ClientServerTests, DISABLED_shouldCreateOnPTreeWhenCreateRequested)
+TEST_F(ClientServerTests, shouldCreateOnPTreeWhenCreateRequested)
 {
     createTestRequestMessage = createCreateRequestMessage(createValueRequestTid, Buffer(),
         protocol::PropertyType::Node, "/Test");
@@ -309,7 +309,7 @@ TEST_F(ClientServerTests, DISABLED_shouldCreateOnPTreeWhenCreateRequested)
     };
 
     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    // endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
 
     using namespace std::chrono_literals;

@@ -110,11 +110,8 @@ void ClientServer::processMessage(protocol::MessageHeaderPtr header, BufferPtr m
     processMessageRunning++;
     log << logger::DEBUG << "ClientServer::processMessage()";
     auto type = header->type;
-    /** TODO: Extract to factory **/
     std::lock_guard<std::mutex> guard(sendLock);
-    auto h = messageHandlerFactory.get(type, *this, *endpoint, *ptree, *monitor);
-    h->handle(header, message);
-
+    messageHandlerFactory.get(type, *this, *endpoint, *ptree, *monitor)->handle(header, message);
     processMessageRunning--;
 }
 
@@ -127,6 +124,7 @@ void ClientServer::handleIncoming()
 
     while (!killHandleIncoming)
     {
+        // Header is a shared for the reason that I might not block processMessage
         protocol::MessageHeaderPtr header = std::make_shared<protocol::MessageHeader>();
 
         if (incomingState == EIncomingState::WAIT_FOR_HEADER_EMPTY)
@@ -165,6 +163,7 @@ void ClientServer::handleIncoming()
                     log << logger::DEBUG <<
                         "handleIncoming: Header receive failed!";
                     incomingState = EIncomingState::ERROR_HEADER_TIMEOUT;
+                    // TODO: ERROR HANDLING
                     break;
                 }
             }
@@ -234,28 +233,28 @@ void ClientServer::notifyValueUpdate(core::ValuePtr value)
 void ClientServer::notifyCreation(uint32_t uuid, protocol::PropertyType type,
     std::string path)
 {
-    // std::lock_guard<std::mutex> guard(metaUpdateNotificationMutex);
-    // log << logger::DEBUG << "notifyCreation for: " << uuid;
-    // auto it = metaUpdateNotification.find(uuid);
-    // if (metaUpdateNotification.find(uuid) == metaUpdateNotification.end())
-    // {
-    //     log << logger::DEBUG << "notification queued!";
-    //     ActionTypeAndPath a;
-    //     a.utype = protocol::MetaUpdateNotification::UpdateType::CREATE_OBJECT;
-    //     a.ptype = type;
-    //     a.path = path;
-    //     metaUpdateNotification[uuid] = a;
-    // }
-    // else if (metaUpdateNotification[uuid].utype ==
-    //     protocol::MetaUpdateNotification::UpdateType::DELETE_OBJECT)
-    // {
-    //     log << logger::DEBUG << "Delete was already queued! Canceling.";
-    //     metaUpdateNotification.erase(it);
-    // }
-    // else
-    // {
-    //     log << logger::ERROR << "Error queued again!";
-    // }
+    std::lock_guard<std::mutex> guard(metaUpdateNotificationMutex);
+    log << logger::DEBUG << "notifyCreation for: " << uuid;
+    auto it = metaUpdateNotification.find(uuid);
+    if (metaUpdateNotification.find(uuid) == metaUpdateNotification.end())
+    {
+        log << logger::DEBUG << "notification queued!";
+        ActionTypeAndPath a;
+        a.utype = ActionTypeAndPath::UpdateType::CREATE_OBJECT;
+        a.ptype = type;
+        a.path = path;
+        metaUpdateNotification[uuid] = a;
+    }
+    else if (metaUpdateNotification[uuid].utype ==
+        ActionTypeAndPath::UpdateType::DELETE_OBJECT)
+    {
+        log << logger::DEBUG << "Delete was already queued! Canceling.";
+        metaUpdateNotification.erase(it);
+    }
+    else
+    {
+        log << logger::ERROR << "Error queued again!";
+    }
 }
 
 void ClientServer::notifyDeletion(uint32_t uuid)
@@ -302,15 +301,35 @@ void ClientServer::handleOutgoing()
         {
             continue;
         }
-
         if (metaUpdateNotification.size())
         {
             log << logger::DEBUG << "Meta Notifaction available!";
             std::lock_guard<std::mutex> updatenotifGuard(metaUpdateNotificationMutex);
             std::lock_guard<std::mutex> sendGuard(sendLock);
 
-            // MessageMetaUpdateNotificationSender updateNotif(metaUpdateNotification, endpoint);
-            // updateNotif.send();
+            protocol::MetaUpdateNotification metaUpdateNotif;
+            for(const auto& i : metaUpdateNotification)
+            {
+                if (i.second.utype == ActionTypeAndPath::UpdateType::CREATE_OBJECT)
+                {
+                    metaUpdateNotif.creations->push_back(protocol::MetaCreate(i.first, i.second.ptype, i.second.path));
+                }
+                else
+                {
+                    metaUpdateNotif.deletions->push_back(protocol::MetaDelete(i.first));
+                }
+            }
+
+            Buffer notifheader =
+                MessageHandler::createHeader(protocol::MessageType::MetaUpdateNotification, metaUpdateNotif.size(),
+                    static_cast<uint32_t>(-1));
+            endpoint->send(notifheader.data(), notifheader.size());
+
+            Buffer enbuff(metaUpdateNotif.size());
+            protocol::BufferView enbuffv(enbuff);
+            protocol::Encoder en(enbuffv);
+            metaUpdateNotif >> en;
+            endpoint->send(enbuff.data(), enbuff.size());
 
             log << logger::DEBUG << "MetaUpdateNotification sent!";
             metaUpdateNotification.clear();

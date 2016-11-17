@@ -247,6 +247,15 @@ TEST_F(MessagingTests, emptyString)
     utils::printRaw(enbuff.data(),enbuff.size());
     utils::printRawAscii(enbuff.data(),enbuff.size());
     EXPECT_EQ(enbuff, comval);
+
+    PersonName deva;;
+    Decoder de(enbuff.data(),enbuff.data()+enbuff.size());
+    deva << de;
+
+    log << logger::DEBUG << "f "<< (std::string)deva.first;
+    log << logger::DEBUG << "m "<< (std::string)deva.middle;
+    log << logger::DEBUG << "l "<< (std::string)deva.last;
+
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(1ms);
 }

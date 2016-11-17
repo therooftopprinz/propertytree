@@ -93,6 +93,13 @@ struct CreateResponse
 
 struct MetaCreate
 {
+    MetaCreate()
+    {}
+
+    MetaCreate(Uuid uuid, PropertyType ptype, std::string path):
+        uuid(uuid), propertyType(ptype), path(path)
+    {}
+
     Simple<Uuid> uuid;
     Simple<PropertyType> propertyType;
     String path;
@@ -101,6 +108,13 @@ struct MetaCreate
 
 struct MetaDelete
 {
+    MetaDelete()
+    {}
+
+    MetaDelete(Uuid uuid):
+        uuid(uuid)
+    {}
+
     Simple<Uuid> uuid;
     MESSAGE_FIELDS(uuid);
 };
@@ -108,8 +122,8 @@ struct MetaDelete
 struct MetaUpdateNotification
 {
     BlockArray<MetaCreate> creations;
-    BlockArray<MetaDelete> deletetions;
-    MESSAGE_FIELDS(creations, deletetions);
+    BlockArray<MetaDelete> deletions;
+    MESSAGE_FIELDS(creations, deletions);
 };
 
 
