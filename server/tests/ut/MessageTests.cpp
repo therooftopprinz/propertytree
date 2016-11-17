@@ -73,6 +73,26 @@ struct MessageCreateRequest
     MESSAGE_FIELDS(mtype, msize, tid, valueSize, ptype, value, path);
 };
 
+struct SimpleBufferAndValue
+{
+    Simple<uint8_t> a;
+    BufferBlock b;
+    Simple<uint8_t> c;
+    MESSAGE_FIELDS(a,b,c);
+};
+
+
+struct PersonName
+{
+    String first;
+    String middle;
+    String last;
+
+    MESSAGE_FIELDS(first,middle,last);
+};
+
+
+
 struct MessagingTests : public ::testing::Test
 {
     MessagingTests():
@@ -193,6 +213,44 @@ TEST_F(MessagingTests, shouldDecodeArray)
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(1ms);
 }
+
+
+TEST_F(MessagingTests, emptyBuffer)
+{
+    SimpleBufferAndValue val;
+    val.a = 4;
+    val.b = Buffer();
+    val.c = 4;
+    Buffer comval{4,0,0,0,0,4};
+
+    Buffer enbuff(val.size());
+    BufferView enbuffv(enbuff);
+    Encoder en(enbuffv);
+    val >> en;
+    utils::printRaw(enbuff.data(),enbuff.size());
+    utils::printRawAscii(enbuff.data(),enbuff.size());
+    EXPECT_EQ(enbuff, comval);
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1ms);
+}
+
+TEST_F(MessagingTests, emptyString)
+{
+    PersonName val;
+    val.middle = std::string("tickle");
+    Buffer comval{0,'t','i','c','k','l','e',0,0};
+
+    Buffer enbuff(val.size());
+    BufferView enbuffv(enbuff);
+    Encoder en(enbuffv);
+    val >> en;
+    utils::printRaw(enbuff.data(),enbuff.size());
+    utils::printRawAscii(enbuff.data(),enbuff.size());
+    EXPECT_EQ(enbuff, comval);
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1ms);
+}
+
 
 // TEST_F(MessagingTests, benchMarkingGeneration)
 // {

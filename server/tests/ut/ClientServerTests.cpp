@@ -133,7 +133,6 @@ struct ClientServerTests : public ::testing::Test
         std::string path)
     {
         protocol::CreateRequest createReq;
-        createReq.valueSize = valueContainer.size();
         createReq.type = type;
         createReq.data = valueContainer;
         createReq.path = path;
@@ -297,6 +296,7 @@ TEST_F(ClientServerTests, DISABLED_shouldCreateOnPTreeWhenCreateRequested)
 {
     createTestRequestMessage = createCreateRequestMessage(createValueRequestTid, Buffer(),
         protocol::PropertyType::Node, "/Test");
+    endpoint->queueToReceive(createTestRequestMessage);
 
     std::function<void()> valueCreationAction = [this]()
     {
@@ -308,9 +308,12 @@ TEST_F(ClientServerTests, DISABLED_shouldCreateOnPTreeWhenCreateRequested)
         EXPECT_EQ(42u, val->getValue<uint32_t>());
     };
 
+    endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
     // endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
-    endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1s);
 
     server->setup();
     endpoint->waitForAllSending(2500.0);

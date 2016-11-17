@@ -78,11 +78,10 @@ struct SigninResponse
 
 struct CreateRequest
 {
-    Simple<uint32_t> valueSize;
     Simple<PropertyType> type;
     BufferBlock data;
     String path;
-    MESSAGE_FIELDS(valueSize, type, data, path);
+    MESSAGE_FIELDS(type, data, path);
 };
 
 struct CreateResponse

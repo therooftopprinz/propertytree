@@ -200,6 +200,7 @@ public:
         *((uint32_t*)(data.start)) = value.size();
         data.start += sizeof(uint32_t);
         std::memcpy(data.start, value.data(), value.size());
+        data.start += value.size();
     }
 
     inline uint8_t* parse(uint8_t* start, uint8_t* limit)
@@ -216,7 +217,7 @@ public:
 
     uint32_t size()
     {
-        return value.size();
+        return sizeof(uint32_t)+value.size();
     }
 
 private:
