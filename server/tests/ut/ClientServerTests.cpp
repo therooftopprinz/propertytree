@@ -55,12 +55,6 @@ struct ClientServerTests : public ::testing::Test
         server(std::make_shared<ClientServer>(endpoint, ptree, monitor)),
         log("TEST")
     {
-    //     createTestResponseMatcher.setResponse(protocol::CreateResponse::Response::OK);
-    //     createValueResponseMatcher.setResponse(protocol::CreateResponse::Response::OK);
-    //     createTestResponseFullMatcher = MessageMatcher(createTestResponseMatcher.create());
-    //     createValueResponseFullMatcher = MessageMatcher(createValueResponseMatcher.create());
-    //     deleteTestRqst.setPath("/Test");
-    //     deleteValueRqst.setPath("/Test/Value");
             auto signinRequestMsg = createSigninRequestMessage(signinRqstTid, 1, 100);
             endpoint->queueToReceive(signinRequestMsg);
 
@@ -69,6 +63,32 @@ struct ClientServerTests : public ::testing::Test
 
             testCreationMatcher = std::make_shared<CreateObjectMetaUpdateNotificationMatcher>("/Test");
             valueCreationMatcher = std::make_shared<CreateObjectMetaUpdateNotificationMatcher>("/Test/Value");
+            createTestResponseFullMatcher = 
+                std::make_shared<MessageMatcher>(
+                    createCreateResponseMessage(createTestRequestTid, protocol::CreateResponse::Response::OK));
+            createValueResponseFullMatcher =
+                std::make_shared<MessageMatcher>(
+                    createCreateResponseMessage(createValueRequestTid, protocol::CreateResponse::Response::OK));
+            createValueResponseAlreadyExistFullMatcher =
+                std::make_shared<MessageMatcher>(
+                    createCreateResponseMessage(createValueRequest2Tid, protocol::CreateResponse::Response::ALREADY_EXIST)); // nolint
+            createValueResponseInvalidPathFullMatcher =
+                std::make_shared<MessageMatcher>(
+                    createCreateResponseMessage(createValueRequestTid, protocol::CreateResponse::Response::MALFORMED_PATH)); // nolint
+            createValueResponseInvalidParentFullMatcher =
+                std::make_shared<MessageMatcher>(
+                    createCreateResponseMessage(createValueRequestTid, protocol::CreateResponse::Response::PARENT_NOT_FOUND)); // nolint
+
+            auto testVal = valueToBuffer<uint32_t>(42);
+            createTestRequestMessage = createCreateRequestMessage(
+                createTestRequestTid, Buffer(), protocol::PropertyType::Node, "/Test");
+            createValueRequestMessage = createCreateRequestMessage(
+                createValueRequestTid, testVal, protocol::PropertyType::Value, "/Test/Value");
+            createValueRequestMessageForAlreadyExist = createCreateRequestMessage(
+                createValueRequest2Tid, testVal, protocol::PropertyType::Value, "/Test/Value");
+            createValueRequestMessageForAlreadyInvalidPath = createCreateRequestMessage(
+                createValueRequestTid, testVal, protocol::PropertyType::Value, "/Test//Value");
+
 
     }
 
@@ -148,7 +168,7 @@ struct ClientServerTests : public ::testing::Test
 
         return message;
     }
-    Buffer createCreateResponsetMessage(uint32_t transactionId, protocol::CreateResponse::Response response)
+    Buffer createCreateResponseMessage(uint32_t transactionId, protocol::CreateResponse::Response response)
     {
         protocol::CreateResponse createRsp;
         createRsp.response = response;
@@ -264,6 +284,8 @@ Test common timeline
     // MessageGetValueResponseCreator getValueResponse;
     Buffer createTestRequestMessage;
     Buffer createValueRequestMessage;
+    Buffer createValueRequestMessageForAlreadyExist;
+    Buffer createValueRequestMessageForAlreadyInvalidPath;
 
     std::shared_ptr<MessageMatcher> signinRspMsgMatcher;
     std::shared_ptr<CreateObjectMetaUpdateNotificationMatcher> testCreationMatcher;
@@ -273,7 +295,9 @@ Test common timeline
     // MessageCreateResponseCreator createValueResponseMatcher;
     std::shared_ptr<MessageMatcher> createTestResponseFullMatcher;
     std::shared_ptr<MessageMatcher> createValueResponseFullMatcher;
-    std::shared_ptr<MessageMatcher> createValueResponseInvalidFullMatcher;
+    std::shared_ptr<MessageMatcher> createValueResponseAlreadyExistFullMatcher;
+    std::shared_ptr<MessageMatcher> createValueResponseInvalidPathFullMatcher;
+    std::shared_ptr<MessageMatcher> createValueResponseInvalidParentFullMatcher;
     std::function<void()> testCreationAction;
     // std::function<void()> valueCreationDeleteImmediatelyAction;
     // std::function<void()> valueCreationSubscribeAction;
@@ -302,7 +326,7 @@ TEST_F(ClientServerTests, shouldSigninRequestAndRespondSameVersionForOk)
     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
 
     using namespace std::chrono_literals;
-
+    std::this_thread::sleep_for(1ms);
     server->setup();
     endpoint->waitForAllSending(2500.0);
     server->teardown();
@@ -310,8 +334,6 @@ TEST_F(ClientServerTests, shouldSigninRequestAndRespondSameVersionForOk)
 
 TEST_F(ClientServerTests, shouldCreateOnPTreeWhenCreateRequested)
 {
-    createTestRequestMessage = createCreateRequestMessage(createValueRequestTid, Buffer(),
-        protocol::PropertyType::Node, "/Test");
     endpoint->queueToReceive(createTestRequestMessage);
 
     std::function<void()> valueCreationAction = [this]()
@@ -329,7 +351,7 @@ TEST_F(ClientServerTests, shouldCreateOnPTreeWhenCreateRequested)
     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
 
     using namespace std::chrono_literals;
-    std::this_thread::sleep_for(1s);
+    std::this_thread::sleep_for(100ms);
 
     server->setup();
     endpoint->waitForAllSending(2500.0);
@@ -340,16 +362,7 @@ TEST_F(ClientServerTests, shouldCreateOnPTreeWhenCreateRequested)
 
 TEST_F(ClientServerTests, shouldGenerateMessageCreateResponse)
 {
-    createTestRequestMessage = createCreateRequestMessage(createTestRequestTid, Buffer(),
-        protocol::PropertyType::Node, "/Test");
     endpoint->queueToReceive(createTestRequestMessage);;
-
-    createTestResponseFullMatcher = 
-        std::make_shared<MessageMatcher>(
-            createCreateResponsetMessage(createTestRequestTid, protocol::CreateResponse::Response::OK));
-    createValueResponseFullMatcher =
-        std::make_shared<MessageMatcher>(
-            createCreateResponsetMessage(createValueRequestTid, protocol::CreateResponse::Response::OK));
 
     std::function<void()> valueCreationAction = [this]()
     {
@@ -372,17 +385,13 @@ TEST_F(ClientServerTests, shouldGenerateMessageCreateResponse)
 
 TEST_F(ClientServerTests, shouldNotCreateWhenAlreadyExisting)
 {
-    auto createValueRequest2 = createCreateRequestMessage(
-        createValueRequest2Tid, valueToBuffer<uint32_t>(42), protocol::PropertyType::Value, "/Test/Value");
+    endpoint->queueToReceive(createTestRequestMessage);
 
-    createValueResponseInvalidFullMatcher = std::make_shared<MessageMatcher>(
-        createCreateResponsetMessage(createValueRequest2Tid, protocol::CreateResponse::Response::ALREADY_EXIST));
-
-    std::function<void()> valueCreationAction = [this, &createValueRequest2]()
+    std::function<void()> valueCreationAction = [this]()
     {
         log << logger::DEBUG << "/Test/Value is created with uuid: " <<
             this->valueCreationMatcher->getUuidOfLastMatched();
-        endpoint->queueToReceive(createValueRequest2);
+        endpoint->queueToReceive(this->createValueRequestMessageForAlreadyExist);
     };
 
     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
@@ -390,7 +399,7 @@ TEST_F(ClientServerTests, shouldNotCreateWhenAlreadyExisting)
     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
     endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
     endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(6, 0, false, 1, createValueResponseInvalidFullMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(6, 0, false, 1, createValueResponseAlreadyExistFullMatcher->get(), DefaultAction::get());
 
     server->setup();
     endpoint->waitForAllSending(2500.0);
@@ -399,51 +408,41 @@ TEST_F(ClientServerTests, shouldNotCreateWhenAlreadyExisting)
     logger::loggerServer.waitEmpty();
 }
 
+TEST_F(ClientServerTests, shouldNotCreateWhenPathIsMalformed)
+{
+    endpoint->queueToReceive(createTestRequestMessage);
 
-// TODO: make the messages to be used in the fixture
+    std::function<void()> testCreationAction = [this]()
+    {
+        this->log << logger::DEBUG << "/Test is created with uuid: " << this->testCreationMatcher->getUuidOfLastMatched();  //nolint
+        endpoint->queueToReceive(createValueRequestMessageForAlreadyInvalidPath);
+    };
 
-// TEST_F(ClientServerTests, shouldNotCreateWhenPathIsMalformed)
-// {
-//     createValueRequest = createCreateRequestMessage(createTestRequestTid, Buffer(),
-//         protocol::PropertyType::Node, "/Test//Value");
+    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+    endpoint->expectSend(2, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(3, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(4, 0, false, 1, createValueResponseInvalidPathFullMatcher->get(), DefaultAction::get());
 
-//     MessageCreateResponseCreator createValueResponseInvalid(createValueRequestTid);
-//     createValueResponseInvalid.setResponse(protocol::CreateResponse::Response::MALFORMED_PATH);
-//     MessageMatcher createValueResponseInvalidFullMatcher(createValueResponseInvalid.create());
+    server->setup();
+    endpoint->waitForAllSending(10000.0);
+    server->teardown();
 
-//     createValueResponseInvalidFullMatcher = std::make_shared<MessageMatcher>(
-//         createCreateResponsetMessage(createValueRequest2Tid, protocol::CreateResponse::Response::MALFORMED_PATH));
+    logger::loggerServer.waitEmpty();
+}
 
-//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
-//     endpoint->expectSend(2, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-//     endpoint->expectSend(3, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
-//     endpoint->expectSend(4, 0, false, 1, createValueResponseInvalidFullMatcher->get(), DefaultAction::get());
+TEST_F(ClientServerTests, shouldNotCreateWhenParentObjectIsInvalid)
+{
+    endpoint->queueToReceive(createValueRequestMessage);
 
-//     server->setup();
-//     endpoint->waitForAllSending(10000.0);
-//     server->teardown();
+    endpoint->expectSend(2, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(4, 0, false, 1, createValueResponseInvalidParentFullMatcher->get(), DefaultAction::get());
 
-//     logger::loggerServer.waitEmpty();
-// }
+    server->setup();
+    endpoint->waitForAllSending(10000.0);
+    server->teardown();
 
-// TEST_F(ClientServerTests, shouldNotCreateWhenParentObjectIsInvalid)
-// {
-//     createValueRequest = createMessageValueCreateRequestCreator("/Tests/Value", 42, createValueRequestTid);
-//     MessageCreateResponseCreator createValueResponseInvalid(createValueRequestTid);
-//     createValueResponseInvalid.setResponse(protocol::CreateResponse::Response::PARENT_NOT_FOUND);
-//     MessageMatcher createValueResponseInvalidFullMatcher(createValueResponseInvalid.create());
-
-//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher.get(), testCreationAction);
-//     endpoint->expectSend(2, 0, false, 1, signinRspMsgMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(3, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(4, 0, false, 1, createValueResponseInvalidFullMatcher.get(), DefaultAction::get());
-
-//     server->setup();
-//     endpoint->waitForAllSending(10000.0);
-//     server->teardown();
-
-//     logger::loggerServer.waitEmpty();
-// }
+    logger::loggerServer.waitEmpty();
+}
 
 // TEST_F(ClientServerTests, shouldDeleteOnPTree)
 // {
