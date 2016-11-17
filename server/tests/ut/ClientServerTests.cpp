@@ -148,6 +148,22 @@ struct ClientServerTests : public ::testing::Test
 
         return message;
     }
+    Buffer createCreateResponsetMessage(uint32_t transactionId, protocol::CreateResponse::Response response)
+    {
+        protocol::CreateResponse createRsp;
+        createRsp.response = response;
+
+        uint32_t sz = createRsp.size() + sizeof(protocol::MessageHeader);
+
+        Buffer message = createHeader(protocol::MessageType::CreateResponse, sz, transactionId);
+        Buffer enbuff(createRsp.size());
+        protocol::BufferView enbuffv(enbuff);
+        protocol::Encoder en(enbuffv);
+        createRsp >> en;
+        message.insert(message.end(), enbuff.begin(), enbuff.end());
+
+        return message;
+    }
     // template <class T>
     // static MessageCreateRequestCreator createMessageValueCreateRequestCreator(std::string path,
     //     T value, uint32_t transactionId)
@@ -255,9 +271,9 @@ Test common timeline
     // DeleteObjectMetaUpdateNotificationMatcher valueDeletionMatcher;
     // MessageCreateResponseCreator createTestResponseMatcher;
     // MessageCreateResponseCreator createValueResponseMatcher;
-    // MessageMatcher createTestResponseFullMatcher;
-    // MessageMatcher createValueResponseFullMatcher;
-
+    std::shared_ptr<MessageMatcher> createTestResponseFullMatcher;
+    std::shared_ptr<MessageMatcher> createValueResponseFullMatcher;
+    std::shared_ptr<MessageMatcher> createValueResponseInvalidFullMatcher;
     std::function<void()> testCreationAction;
     // std::function<void()> valueCreationDeleteImmediatelyAction;
     // std::function<void()> valueCreationSubscribeAction;
@@ -308,9 +324,9 @@ TEST_F(ClientServerTests, shouldCreateOnPTreeWhenCreateRequested)
         EXPECT_EQ(42u, val->getValue<uint32_t>());
     };
 
-    endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
+    endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
 
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(1s);
@@ -322,66 +338,86 @@ TEST_F(ClientServerTests, shouldCreateOnPTreeWhenCreateRequested)
     logger::loggerServer.waitEmpty();
 }
 
-// TEST_F(ClientServerTests, shouldGenerateMessageCreateResponse)
-// {
-//     std::function<void()> valueCreationAction = [this]()
-//     {
-//         log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher.getUuidOfLastMatched();
-//     };
+TEST_F(ClientServerTests, shouldGenerateMessageCreateResponse)
+{
+    createTestRequestMessage = createCreateRequestMessage(createTestRequestTid, Buffer(),
+        protocol::PropertyType::Node, "/Test");
+    endpoint->queueToReceive(createTestRequestMessage);;
 
-//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher.get(), testCreationAction);
-//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher.get(), valueCreationAction);
-//     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(0, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(0, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
+    createTestResponseFullMatcher = 
+        std::make_shared<MessageMatcher>(
+            createCreateResponsetMessage(createTestRequestTid, protocol::CreateResponse::Response::OK));
+    createValueResponseFullMatcher =
+        std::make_shared<MessageMatcher>(
+            createCreateResponsetMessage(createValueRequestTid, protocol::CreateResponse::Response::OK));
 
-//     server->setup();
-//     endpoint->waitForAllSending(2500.0);
-//     server->teardown();
+    std::function<void()> valueCreationAction = [this]()
+    {
+        log << logger::DEBUG << "/Test/Value is created with uuid: " <<
+            this->valueCreationMatcher->getUuidOfLastMatched();
+    };
 
-//     logger::loggerServer.waitEmpty();
-// }
+    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
+    endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(0, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(0, 0, false, 1, createValueResponseFullMatcher->get(), DefaultAction::get());
 
-// TEST_F(ClientServerTests, shouldNotCreateWhenAlreadyExisting)
-// {
-//     MessageCreateRequestCreator createValueRequest2 = createMessageValueCreateRequestCreator("/Test/Value", 42, createValueRequest2Tid);
-//     MessageCreateResponseCreator createValueResponseInvalid(createValueRequest2Tid);
-//     createValueResponseInvalid.setResponse(protocol::CreateResponse::Response::ALREADY_EXIST);
-//     MessageMatcher createValueResponseInvalidFullMatcher(createValueResponseInvalid.create());
+    server->setup();
+    endpoint->waitForAllSending(2500.0);
+    server->teardown();
 
-//     std::function<void()> valueCreationAction = [this, &createValueRequest2]()
-//     {
-//         log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher.getUuidOfLastMatched();
-//         endpoint->queueToReceive(createValueRequest2.create());
-//     };
+    logger::loggerServer.waitEmpty();
+}
 
-//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher.get(), testCreationAction);
-//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher.get(), valueCreationAction);
-//     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(6, 0, false, 1, createValueResponseInvalidFullMatcher.get(), DefaultAction::get());
+TEST_F(ClientServerTests, shouldNotCreateWhenAlreadyExisting)
+{
+    auto createValueRequest2 = createCreateRequestMessage(
+        createValueRequest2Tid, valueToBuffer<uint32_t>(42), protocol::PropertyType::Value, "/Test/Value");
 
-//     server->setup();
-//     endpoint->waitForAllSending(2500.0);
-//     server->teardown();
+    createValueResponseInvalidFullMatcher = std::make_shared<MessageMatcher>(
+        createCreateResponsetMessage(createValueRequest2Tid, protocol::CreateResponse::Response::ALREADY_EXIST));
 
-//     logger::loggerServer.waitEmpty();
-// }
+    std::function<void()> valueCreationAction = [this, &createValueRequest2]()
+    {
+        log << logger::DEBUG << "/Test/Value is created with uuid: " <<
+            this->valueCreationMatcher->getUuidOfLastMatched();
+        endpoint->queueToReceive(createValueRequest2);
+    };
 
+    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
+    endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(6, 0, false, 1, createValueResponseInvalidFullMatcher->get(), DefaultAction::get());
+
+    server->setup();
+    endpoint->waitForAllSending(2500.0);
+    server->teardown();
+
+    logger::loggerServer.waitEmpty();
+}
+
+
+// TODO: make the messages to be used in the fixture
 
 // TEST_F(ClientServerTests, shouldNotCreateWhenPathIsMalformed)
 // {
-//     createValueRequest = createMessageValueCreateRequestCreator("/Test//Value", 42, createValueRequestTid);
+//     createValueRequest = createCreateRequestMessage(createTestRequestTid, Buffer(),
+//         protocol::PropertyType::Node, "/Test//Value");
 
 //     MessageCreateResponseCreator createValueResponseInvalid(createValueRequestTid);
 //     createValueResponseInvalid.setResponse(protocol::CreateResponse::Response::MALFORMED_PATH);
 //     MessageMatcher createValueResponseInvalidFullMatcher(createValueResponseInvalid.create());
 
-//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher.get(), testCreationAction);
-//     endpoint->expectSend(2, 0, false, 1, signinRspMsgMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(3, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(4, 0, false, 1, createValueResponseInvalidFullMatcher.get(), DefaultAction::get());
+//     createValueResponseInvalidFullMatcher = std::make_shared<MessageMatcher>(
+//         createCreateResponsetMessage(createValueRequest2Tid, protocol::CreateResponse::Response::MALFORMED_PATH));
+
+//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+//     endpoint->expectSend(2, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+//     endpoint->expectSend(3, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
+//     endpoint->expectSend(4, 0, false, 1, createValueResponseInvalidFullMatcher->get(), DefaultAction::get());
 
 //     server->setup();
 //     endpoint->waitForAllSending(10000.0);

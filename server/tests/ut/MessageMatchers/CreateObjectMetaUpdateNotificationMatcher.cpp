@@ -26,12 +26,12 @@ bool CreateObjectMetaUpdateNotificationMatcher::match(const void *buffer, uint32
     protocol::MessageHeader *head = (protocol::MessageHeader*)buffer;
     if (head->type != protocol::MessageType::MetaUpdateNotification)
     {
-        log << logger::WARNING << "Not a MetaUpdateNotification...";
+        // log << logger::WARNING << "Not a MetaUpdateNotification...";
         return false;
     }
 
 
-    log << logger::WARNING << "Matching Create MetaUpdateNotification...";
+    // log << logger::WARNING << "Matching Create MetaUpdateNotification...";
 
     protocol::MetaUpdateNotification  createMetaNotif;
     protocol::Decoder de(cursor, end);
@@ -39,9 +39,10 @@ bool CreateObjectMetaUpdateNotificationMatcher::match(const void *buffer, uint32
 
     for(auto& i : *createMetaNotif.creations)
     {
-        log << logger::WARNING << "created object: " << *i.path << " with uuid:" << *i.uuid;
+        // log << logger::WARNING << "created object: " << *i.path << " with uuid:" << *i.uuid;
         if (path == *i.path)
         {
+            lastMatched = *i.uuid;
             return true;
         }
     }

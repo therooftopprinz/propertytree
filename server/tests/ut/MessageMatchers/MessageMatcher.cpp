@@ -20,21 +20,22 @@ MessageMatcher::MessageMatcher(const Buffer msg) :
 
 bool MessageMatcher::match(const void *buffer, uint32_t size)
 {
-    // log << logger::DEBUG << "Trying full match with:";
+    // log << logger::WARNING << "Trying full match with:";
     // utils::printRaw(msg.data(), msg.size());
     if(msg.size()!=size)
     {            
-        // log << logger::DEBUG << "Inequal sizes!";
+        // log << logger::WARNING << "Inequal sizes!";
         return false;
     }
 
     if (!std::memcmp(buffer, msg.data(), size))
     {
-        // log << logger::DEBUG << "Send: sent and expected. ";
+        utils::printRaw(msg.data(), msg.size());
+        log << logger::WARNING << "Send: sent and expected. ";
         return true;
     }
 
-    // log << logger::DEBUG << "Message didn't match. ";
+    log << logger::WARNING << "Message didn't match. ";
     return false;
 }
 
