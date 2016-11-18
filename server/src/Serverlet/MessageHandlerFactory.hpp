@@ -6,6 +6,7 @@
 #include "MessageHandlers/MessageHandler.hpp"
 #include "MessageHandlers/SigninRequestMessageHandler.hpp"
 #include "MessageHandlers/CreateRequestMessageHandler.hpp"
+#include "MessageHandlers/DeleteRequestMessageHandler.hpp"
 
 namespace ptree
 {

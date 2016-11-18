@@ -20,6 +20,8 @@ std::unique_ptr<MessageHandler>
             return std::make_unique<SigninRequestMessageHandler>(cs, ep, pt, csmon);
         case (Enum) protocol::MessageType::CreateRequest:
             return std::make_unique<CreateRequestMessageHandler>(cs, ep, pt, csmon);
+        case (Enum) protocol::MessageType::DeleteRequest:
+            return std::make_unique<DeleteRequestMessageHandler>(cs, ep, pt, csmon);
 
     }
     // if (type == protocol::MessageType::SignInRequest)
