@@ -127,6 +127,20 @@ struct MetaUpdateNotification
 };
 
 
+struct DeleteRequest
+{
+    String path;
+    MESSAGE_FIELDS(path);
+};
+
+struct DeleteResponse
+{
+    enum class Response : uint8_t {OK, OBJECT_NOT_FOUND, NOT_PERMITTED, NOT_EMPTY};
+    Simple<Response> response;
+    MESSAGE_FIELDS(response);
+};
+
+
 typedef std::shared_ptr<MessageHeader> MessageHeaderPtr;
 
 } // namespace protocol

@@ -20,6 +20,7 @@ std::unique_ptr<MessageHandler>
             return std::make_unique<SigninRequestMessageHandler>(cs, ep, pt, csmon);
         case (Enum) protocol::MessageType::CreateRequest:
             return std::make_unique<CreateRequestMessageHandler>(cs, ep, pt, csmon);
+
     }
     // if (type == protocol::MessageType::SignInRequest)
     // {
@@ -66,6 +67,7 @@ std::unique_ptr<MessageHandler>
     // {
     //     log << logger::ERROR << "processMessage: header invalid type!! ";
     // }
+    log << logger::ERROR << "Unregconize message type.";
     return std::make_unique<MessageHandler>(cs, ep, pt, csmon);
 }
 

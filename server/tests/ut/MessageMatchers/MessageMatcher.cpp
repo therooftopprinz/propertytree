@@ -30,12 +30,12 @@ bool MessageMatcher::match(const void *buffer, uint32_t size)
 
     if (!std::memcmp(buffer, msg.data(), size))
     {
-        utils::printRaw(msg.data(), msg.size());
+        // utils::printRaw(msg.data(), msg.size());
         log << logger::WARNING << "Send: sent and expected. ";
         return true;
     }
 
-    log << logger::WARNING << "Message didn't match. ";
+    // log << logger::WARNING << "Message didn't match. ";
     return false;
 }
 
