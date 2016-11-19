@@ -58,16 +58,7 @@ inline void DeleteRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
         monitor.notifyDeletion(uuid);    
     }
     log << logger::DEBUG << "is deleted: " << deleted;  
-
-    Buffer rspheader = createHeader(protocol::MessageType::DeleteResponse, response.size(), header->transactionId);
-    endpoint.send(rspheader.data(), rspheader.size());
-    
-    Buffer responseMessageBuffer(response.size());
-    protocol::BufferView responseMessageBufferView(responseMessageBuffer);
-    protocol::Encoder en(responseMessageBufferView);
-    response >> en;
-    endpoint.send(responseMessageBuffer.data(), responseMessageBuffer.size());
-    log << logger::DEBUG << "response size: " << response.size()+sizeof(protocol::MessageHeader);
+    messageSender(header->transactionId, protocol::MessageType::DeleteResponse, response);
 }
 
 } // namespace server

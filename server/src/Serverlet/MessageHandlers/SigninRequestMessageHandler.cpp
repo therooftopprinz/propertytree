@@ -34,14 +34,7 @@ inline void SigninRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
     protocol::SigninResponse response;
     response.version = supported ? *request.version : 0;
 
-    Buffer rspheader = createHeader(protocol::MessageType::SigninResponse, response.size(), header->transactionId);
-    endpoint.send(rspheader.data(), rspheader.size());
-    
-    Buffer responseMessageBuffer(response.size());
-    protocol::BufferView responseMessageBufferView(responseMessageBuffer);
-    protocol::Encoder en(responseMessageBufferView);
-    response >> en;
-    endpoint.send(responseMessageBuffer.data(), responseMessageBuffer.size());
+    messageSender(header->transactionId, protocol::MessageType::SigninResponse, response);
     log << logger::DEBUG << "response size: " << response.size()+sizeof(protocol::MessageHeader);
 }
 

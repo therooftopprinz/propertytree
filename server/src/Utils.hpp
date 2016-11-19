@@ -48,7 +48,6 @@ server::Buffer buildBufferedValue(T value)
     return data;
 }
 
-
 } // namespace utils
 } // namespace ptree 
 

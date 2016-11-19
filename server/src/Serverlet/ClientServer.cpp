@@ -259,26 +259,19 @@ void ClientServer::notifyCreation(uint32_t uuid, protocol::PropertyType type,
 
 void ClientServer::notifyDeletion(uint32_t uuid)
 {
-    // log << logger::DEBUG << "notifyDeletion for:" << uuid;
-    // std::lock_guard<std::mutex> guard(metaUpdateNotificationMutex);
-    // auto it = metaUpdateNotification.find(uuid);
-    // if (metaUpdateNotification.find(uuid) == metaUpdateNotification.end())
-    // {
-    //     log << logger::DEBUG << "notifaction queued!";
-    //     ActionTypeAndPath a;
-    //     a.utype = protocol::MetaUpdateNotification::UpdateType::DELETE_OBJECT;
-    //     metaUpdateNotification[uuid] = a;
-    // }
-    // else if (metaUpdateNotification[uuid].utype ==
-    //     protocol::MetaUpdateNotification::UpdateType::CREATE_OBJECT)
-    // {
-    //     log << logger::DEBUG << "Create was already queued! Canceling.";
-    //     metaUpdateNotification.erase(it);
-    // }
-    // else
-    // {
-    //     log << logger::ERROR << "Error queued again!";
-    // }
+    log << logger::DEBUG << "notifyDeletion for:" << uuid;
+    std::lock_guard<std::mutex> guard(metaUpdateNotificationMutex);
+    if (metaUpdateNotification.find(uuid) == metaUpdateNotification.end())
+    {
+        log << logger::DEBUG << "notifaction queued!";
+        ActionTypeAndPath a;
+        a.utype = ActionTypeAndPath::UpdateType::DELETE_OBJECT;
+        metaUpdateNotification[uuid] = a;
+    }
+    else
+    {
+        log << logger::ERROR << "Error queued again!";
+    }
 }
 
 void ClientServer::setUpdateInterval(uint32_t interval)

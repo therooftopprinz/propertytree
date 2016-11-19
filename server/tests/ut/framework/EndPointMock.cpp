@@ -119,7 +119,7 @@ ssize_t EndPointMock::send(const void *buffer, uint32_t size)
         }
         else
         {
-            log << logger::DEBUG << "Matching failed for index: " << (unsigned int) index;
+            // log << logger::DEBUG << "Matching failed for index: " << (unsigned int) index;
         }
 
         index++;
@@ -235,9 +235,6 @@ void EndPointMock::waitForAllSending(double milliseconds)
             index++;
             continue;
         }
-
-        log << logger::ERROR << "index:" << (unsigned int)index << " ioc(" << i.id << ", " <<
-            i.occurence << ", " << i.cardinality << ")";
 
         allMatched = false;
         index++;

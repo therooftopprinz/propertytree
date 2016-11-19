@@ -21,7 +21,7 @@ MessageMatcher::MessageMatcher(const Buffer msg) :
 bool MessageMatcher::match(const void *buffer, uint32_t size)
 {
     // log << logger::WARNING << "Trying full match with:";
-    // utils::printRaw(msg.data(), msg.size());
+    utils::printRaw(msg.data(), msg.size());
     if(msg.size()!=size)
     {            
         // log << logger::WARNING << "Inequal sizes!";

@@ -55,44 +55,53 @@ struct ClientServerTests : public ::testing::Test
         server(std::make_shared<ClientServer>(endpoint, ptree, monitor)),
         log("TEST")
     {
-            auto signinRequestMsg = createSigninRequestMessage(signinRqstTid, 1, 100);
-            endpoint->queueToReceive(signinRequestMsg);
+        auto signinRequestMsg = createSigninRequestMessage(signinRqstTid, 1, 100);
+        endpoint->queueToReceive(signinRequestMsg);
 
-            auto signinResponseMsg = createSigninResponseMessage(signinRqstTid, 1);
-            signinRspMsgMatcher = std::make_shared<MessageMatcher>(signinResponseMsg);
+        signinRspMsgMatcher = std::make_shared<MessageMatcher>(createSigninResponseMessage(signinRqstTid, 1));
+        testCreationMatcher = std::make_shared<CreateObjectMetaUpdateNotificationMatcher>("/Test");
+        valueCreationMatcher = std::make_shared<CreateObjectMetaUpdateNotificationMatcher>("/Test/Value");
+        valueDeletionMatcher = std::make_shared<DeleteObjectMetaUpdateNotificationMatcher>();
 
-            testCreationMatcher = std::make_shared<CreateObjectMetaUpdateNotificationMatcher>("/Test");
-            valueCreationMatcher = std::make_shared<CreateObjectMetaUpdateNotificationMatcher>("/Test/Value");
-            createTestResponseFullMatcher = 
-                std::make_shared<MessageMatcher>(
-                    createCreateResponseMessage(createTestRequestTid, protocol::CreateResponse::Response::OK));
-            createValueResponseFullMatcher =
-                std::make_shared<MessageMatcher>(
-                    createCreateResponseMessage(createValueRequestTid, protocol::CreateResponse::Response::OK));
-            createValueResponseAlreadyExistFullMatcher =
-                std::make_shared<MessageMatcher>(
-                    createCreateResponseMessage(createValueRequest2Tid, protocol::CreateResponse::Response::ALREADY_EXIST)); // nolint
-            createValueResponseInvalidPathFullMatcher =
-                std::make_shared<MessageMatcher>(
-                    createCreateResponseMessage(createValueRequestTid, protocol::CreateResponse::Response::MALFORMED_PATH)); // nolint
-            createValueResponseInvalidParentFullMatcher =
-                std::make_shared<MessageMatcher>(
-                    createCreateResponseMessage(createValueRequestTid, protocol::CreateResponse::Response::PARENT_NOT_FOUND)); // nolint
-            createValueResponseInvalidParentFullMatcher =
-                std::make_shared<MessageMatcher>(
-                    createCreateResponseMessage(createValueRequestTid, protocol::CreateResponse::Response::PARENT_NOT_FOUND)); // nolint
+        createTestResponseFullMatcher = 
+            std::make_shared<MessageMatcher>(
+                createCreateResponseMessage(createTestRequestTid, protocol::CreateResponse::Response::OK));
+        createValueResponseFullMatcher =
+            std::make_shared<MessageMatcher>(
+                createCreateResponseMessage(createValueRequestTid, protocol::CreateResponse::Response::OK));
+        createValueResponseAlreadyExistFullMatcher =
+            std::make_shared<MessageMatcher>(
+                createCreateResponseMessage(createValueRequest2Tid, protocol::CreateResponse::Response::ALREADY_EXIST));
+        createValueResponseInvalidPathFullMatcher =
+            std::make_shared<MessageMatcher>(
+                createCreateResponseMessage(createValueRequestTid, protocol::CreateResponse::Response::MALFORMED_PATH));
+        createValueResponseInvalidParentFullMatcher =
+            std::make_shared<MessageMatcher>(
+                createCreateResponseMessage(createValueRequestTid, protocol::CreateResponse::Response::PARENT_NOT_FOUND)); // nolint
+        createValueResponseInvalidParentFullMatcher =
+            std::make_shared<MessageMatcher>(
+                createCreateResponseMessage(createValueRequestTid, protocol::CreateResponse::Response::PARENT_NOT_FOUND)); // nolint
+        deleteValueResponseOkMatcher =
+            std::make_shared<MessageMatcher>(
+                createDeleteResponseMessage(deleteValueRequestTid, protocol::DeleteResponse::Response::OK));
+        deleteValueResponseNotFoundMatcher =
+            std::make_shared<MessageMatcher>(
+                createDeleteResponseMessage(deleteValueRequestTid, protocol::DeleteResponse::Response::OBJECT_NOT_FOUND)); // nolint
+        deleteTestResponseNotEmptyMatcher =
+            std::make_shared<MessageMatcher>(
+                createDeleteResponseMessage(deleteTestRequestTid, protocol::DeleteResponse::Response::NOT_EMPTY));
 
-            auto testVal = valueToBuffer<uint32_t>(42);
-            createTestRequestMessage = createCreateRequestMessage(
-                createTestRequestTid, Buffer(), protocol::PropertyType::Node, "/Test");
-            createValueRequestMessage = createCreateRequestMessage(
-                createValueRequestTid, testVal, protocol::PropertyType::Value, "/Test/Value");
-            createValueRequestMessageForAlreadyExist = createCreateRequestMessage(
-                createValueRequest2Tid, testVal, protocol::PropertyType::Value, "/Test/Value");
-            createValueRequestMessageForAlreadyInvalidPath = createCreateRequestMessage(
-                createValueRequestTid, testVal, protocol::PropertyType::Value, "/Test//Value");
-            createDeleteRequestMessageForValue = createDeleteRequestMessage(deleteValueRequestTid, "/Test/Value");
-
+        auto testVal = valueToBuffer<uint32_t>(42);
+        createTestRequestMessage = createCreateRequestMessage(
+            createTestRequestTid, Buffer(), protocol::PropertyType::Node, "/Test");
+        createValueRequestMessage = createCreateRequestMessage(
+            createValueRequestTid, testVal, protocol::PropertyType::Value, "/Test/Value");
+        createValueRequestMessageForAlreadyExist = createCreateRequestMessage(
+            createValueRequest2Tid, testVal, protocol::PropertyType::Value, "/Test/Value");
+        createValueRequestMessageForAlreadyInvalidPath = createCreateRequestMessage(
+            createValueRequestTid, testVal, protocol::PropertyType::Value, "/Test//Value");
+        deleteRequestMessageForValueMessage = createDeleteRequestMessage(deleteValueRequestTid, "/Test/Value");
+        deleteRequestMessageForTestMessage = createDeleteRequestMessage(deleteTestRequestTid, "/Test");
     }
 
     void TearDown()
@@ -210,7 +219,7 @@ struct ClientServerTests : public ::testing::Test
 
         uint32_t sz = deleteRsp.size() + sizeof(protocol::MessageHeader);
 
-        Buffer message = createHeader(protocol::MessageType::CreateResponse, sz, transactionId);
+        Buffer message = createHeader(protocol::MessageType::DeleteResponse, sz, transactionId);
         Buffer enbuff(deleteRsp.size());
         protocol::BufferView enbuffv(enbuff);
         protocol::Encoder en(enbuffv);
@@ -256,7 +265,7 @@ struct ClientServerTests : public ::testing::Test
         using namespace std::chrono_literals;
         std::this_thread::sleep_for(10ms);
         this->log << logger::DEBUG << "Requesting deletion of /Test/Value";
-        endpoint->queueToReceive(createDeleteRequestMessageForValue);
+        endpoint->queueToReceive(deleteRequestMessageForValueMessage);
     }
 
     // void propValueCreationActionSubscribe()
@@ -321,11 +330,13 @@ Test common timeline
     Buffer createValueRequestMessage;
     Buffer createValueRequestMessageForAlreadyExist;
     Buffer createValueRequestMessageForAlreadyInvalidPath;
-    Buffer createDeleteRequestMessageForValue;
+    Buffer deleteRequestMessageForValueMessage;
+    Buffer deleteRequestMessageForTestMessage;
 
     std::shared_ptr<MessageMatcher> signinRspMsgMatcher;
     std::shared_ptr<CreateObjectMetaUpdateNotificationMatcher> testCreationMatcher;
     std::shared_ptr<CreateObjectMetaUpdateNotificationMatcher> valueCreationMatcher;
+    std::shared_ptr<DeleteObjectMetaUpdateNotificationMatcher> valueDeletionMatcher;
     // DeleteObjectMetaUpdateNotificationMatcher valueDeletionMatcher;
     // MessageCreateResponseCreator createTestResponseMatcher;
     // MessageCreateResponseCreator createValueResponseMatcher;
@@ -334,6 +345,9 @@ Test common timeline
     std::shared_ptr<MessageMatcher> createValueResponseAlreadyExistFullMatcher;
     std::shared_ptr<MessageMatcher> createValueResponseInvalidPathFullMatcher;
     std::shared_ptr<MessageMatcher> createValueResponseInvalidParentFullMatcher;
+    std::shared_ptr<MessageMatcher> deleteValueResponseOkMatcher;
+    std::shared_ptr<MessageMatcher> deleteValueResponseNotFoundMatcher;
+    std::shared_ptr<MessageMatcher> deleteTestResponseNotEmptyMatcher;
     std::function<void()> testCreationAction;
     std::function<void()> valueCreationDeleteImmediatelyAction;
     // std::function<void()> valueCreationSubscribeAction;
@@ -505,122 +519,116 @@ TEST_F(ClientServerTests, shouldDeleteOnPTree)
     logger::loggerServer.waitEmpty();
 }
 
-// TEST_F(ClientServerTests, shouldGenerateDeleteResponse)
-// {
-//     MessageDeleteResponseCreator deleteRsp(deleteValueRequestTid);
-//     deleteRsp.setResponse(protocol::DeleteResponse::Response::OK);
-//     MessageMatcher deleteRspFullMatcher(deleteRsp.create());
+TEST_F(ClientServerTests, shouldGenerateDeleteResponse)
+{
+    endpoint->queueToReceive(createTestRequestMessage);
 
-//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher.get(), testCreationAction);
-//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher.get(), valueCreationDeleteImmediatelyAction);
-//     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(6, 0, false, 1, deleteRspFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationDeleteImmediatelyAction);
+    endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(6, 0, false, 1, deleteValueResponseOkMatcher->get(), DefaultAction::get());
 
-//     server->setup();
-//     using namespace std::chrono_literals;
-//     std::this_thread::sleep_for(1s);
-//     endpoint->waitForAllSending(10000.0);
-//     server->teardown();
+    server->setup();
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1s);
+    endpoint->waitForAllSending(10000.0);
+    server->teardown();
 
-//     logger::loggerServer.waitEmpty();
-// }
+    logger::loggerServer.waitEmpty();
+}
 
 
-// TEST_F(ClientServerTests, shouldDeleteResponseNotFound)
-// {
-//     MessageDeleteResponseCreator deleteRsp(deleteValueRequestTid);
-//     deleteRsp.setResponse(protocol::DeleteResponse::Response::OBJECT_NOT_FOUND);
-//     MessageMatcher deleteRspFullMatcher(deleteRsp.create());
+TEST_F(ClientServerTests, shouldDeleteResponseNotFound)
+{
+    endpoint->queueToReceive(createTestRequestMessage);
 
-//     std::function<void()> testCreationAction = [this]()
-//     {
-//         this->log << logger::DEBUG << "/Test is created with uuid: " << this->testCreationMatcher.getUuidOfLastMatched();
-//         endpoint->queueToReceive(this->deleteValueRqst.create());
-//     };
+    std::function<void()> testCreationAction = [this]()
+    {
+        this->log << logger::DEBUG << "/Test is created with uuid: " << this->testCreationMatcher->getUuidOfLastMatched();
+        endpoint->queueToReceive(deleteRequestMessageForValueMessage);
+    };
 
-//     std::function<void()> valueDeletionAction = [this]()
-//     {
-//         this->log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher.getUuidOfLastMatched();
-//         ASSERT_THROW(this->ptree->getPropertyByPath<core::Value>("/Test/Value"), core::ObjectNotFound);
-//     };
+    std::function<void()> valueDeletionAction = [this]()
+    {
+        this->log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher->getUuidOfLastMatched();
+        ASSERT_THROW(this->ptree->getPropertyByPath<core::Value>("/Test/Value"), core::ObjectNotFound);
+    };
 
-//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher.get(), testCreationAction);
+    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+    endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(6, 0, false, 1, deleteValueResponseNotFoundMatcher->get(), valueDeletionAction);
 
-//     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(6, 0, false, 1, deleteRspFullMatcher.get(), valueDeletionAction);
+    server->setup();
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1s);
+    endpoint->waitForAllSending(10000.0);
+    server->teardown();
 
-//     server->setup();
-//     using namespace std::chrono_literals;
-//     std::this_thread::sleep_for(1s);
-//     endpoint->waitForAllSending(10000.0);
-//     server->teardown();
-
-//     logger::loggerServer.waitEmpty();
-// }
+    logger::loggerServer.waitEmpty();
+}
 
 
-// TEST_F(ClientServerTests, shouldDeleteResponseNotEmpty)
-// {
-//     MessageDeleteResponseCreator deleteRsp(deleteTestRequestTid);
-//     deleteRsp.setResponse(protocol::DeleteResponse::Response::NOT_EMPTY);
-//     MessageMatcher deleteRspFullMatcher(deleteRsp.create());
+TEST_F(ClientServerTests, shouldDeleteResponseNotEmpty)
+{
+    endpoint->queueToReceive(createTestRequestMessage);
 
-//     std::function<void()> valueCreationAction = [this]()
-//     {
-//         this->log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher.getUuidOfLastMatched();
-//         using namespace std::chrono_literals;
-//         std::this_thread::sleep_for(10ms);
-//         this->log << logger::DEBUG << "Requesting deletion of /Test";
-//         endpoint->queueToReceive(this->deleteTestRqst.create());
-//     };
+    std::function<void()> valueCreationAction = [this]()
+    {
+        this->log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher->getUuidOfLastMatched(); // nolint
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(10ms);
+        this->log << logger::DEBUG << "Requesting deletion of /Test";
+        endpoint->queueToReceive(deleteRequestMessageForTestMessage);
+    };
 
-//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher.get(), testCreationAction);
-//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher.get(), valueCreationAction);
-//     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(6, 0, false, 1, deleteRspFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
+    endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(6, 0, false, 1, deleteTestResponseNotEmptyMatcher->get(), DefaultAction::get());
 
-//     server->setup();
-//     using namespace std::chrono_literals;
-//     std::this_thread::sleep_for(1s);
-//     endpoint->waitForAllSending(10000.0);
-//     server->teardown();
+    server->setup();
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1s);
+    endpoint->waitForAllSending(10000.0);
+    server->teardown();
 
-//     logger::loggerServer.waitEmpty();
-// }
+    logger::loggerServer.waitEmpty();
+}
 
+TEST_F(ClientServerTests, shouldDeleteWithMetaUpdateNotification)
+{
+    endpoint->queueToReceive(createTestRequestMessage);
 
-// TEST_F(ClientServerTests, shouldDeleteWithMetaUpdateNotification)
-// {
-//     std::function<void()> valueCreationAction = [this]()
-//     {
-//         this->log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher.getUuidOfLastMatched();
-//         this->valueDeletionMatcher.setUuid(valueCreationMatcher.getUuidOfLastMatched());
-//         using namespace std::chrono_literals;
-//         std::this_thread::sleep_for(10ms);
-//         this->log << logger::DEBUG << "Requesting deletion of /testing/Value";
-//         endpoint->queueToReceive(this->deleteValueRqst.create());
-//     };
+    std::function<void()> valueCreationAction = [this]()
+    {
+        this->log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher->getUuidOfLastMatched(); // nolint
+        this->valueDeletionMatcher->setUuid(valueCreationMatcher->getUuidOfLastMatched());
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(10ms);
+        this->log << logger::DEBUG << "Requesting deletion of /testing/Value";
+        endpoint->queueToReceive(deleteRequestMessageForValueMessage);
+    };
 
-//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher.get(), testCreationAction);
-//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher.get(), valueCreationAction);
-//     endpoint->expectSend(3, 2, true, 1, valueDeletionMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(0, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(0, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
+    endpoint->expectSend(3, 2, true, 1, valueDeletionMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(0, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(0, 0, false, 1, createValueResponseFullMatcher->get(), DefaultAction::get());
 
-//     server->setup();
-//     using namespace std::chrono_literals;
-//     std::this_thread::sleep_for(1s);
-//     endpoint->waitForAllSending(10000.0);
-//     server->teardown();
+    server->setup();
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1s);
+    endpoint->waitForAllSending(10000.0);
+    server->teardown();
 
-//     logger::loggerServer.waitEmpty();
-// }
+    logger::loggerServer.waitEmpty();
+}
 
 // TEST_F(ClientServerTests, shouldSetSetValueWhenSetValueIndIsValid)
 // {
