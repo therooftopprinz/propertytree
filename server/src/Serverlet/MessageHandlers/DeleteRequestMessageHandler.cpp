@@ -23,7 +23,7 @@ inline void DeleteRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
     log << logger::DEBUG << "path: " << *request.path;
     bool deleted = true;
 
-    protocol::Uuid uuid;
+    protocol::Uuid uuid = static_cast<uint32_t>(-1);
     protocol::DeleteResponse response;
     response.response = protocol::DeleteResponse::Response::OK;
 

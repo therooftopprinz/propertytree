@@ -13,7 +13,7 @@ class MessageMatcher : public Matcher
 public:
     MessageMatcher();
     MessageMatcher(Buffer msg);
-
+    void set(Buffer msg);
 private:
     bool match(const void *buffer, uint32_t size);
 

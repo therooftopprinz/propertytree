@@ -19,64 +19,58 @@ PropertyUpdateNotificationMatcher::PropertyUpdateNotificationMatcher(std::string
 
 bool PropertyUpdateNotificationMatcher::match(const void *buffer, uint32_t size)
 {
-    // uint8_t *cursor = (uint8_t*)buffer + sizeof(protocol::MessageHeader);
-    // uint8_t *end = (uint8_t*)buffer + size;
+    uint8_t *cursor = (uint8_t*)buffer + sizeof(protocol::MessageHeader);
+    uint8_t *end = (uint8_t*)buffer + size;
 
-    // protocol::MessageHeader *head = (protocol::MessageHeader*)buffer;
-    // if (head->type != protocol::MessageType::PropertyUpdateNotification)
-    // {
-    //     // log << logger::WARNING << "Message is not a PropertyUpdateNotification.";
-    //     return false;
-    // }
+    protocol::MessageHeader *head = (protocol::MessageHeader*)buffer;
+    if (head->type != protocol::MessageType::PropertyUpdateNotification)
+    {
+        // log << logger::WARNING << "Not a PropertyUpdateNotification...";
+        return false;
+    }
 
-    // auto val = ptree->getPropertyByPath<core::Value>(path);
+    protocol::PropertyUpdateNotification  propUpdateNotif;
+    protocol::Decoder de(cursor, end);
+    propUpdateNotif << de;
 
-    // if (!val)
-    // {
-    //     return false;
-    // }
+    auto val = ptree->getPropertyByPath<core::Value>(path);
 
-    // protocol::Uuid uuid = val->getUuid();
+    if (!val)
+    {
+        return false;
+    }
 
-    // while (cursor < end)
-    // {
-    //     const protocol::Uuid& id = *((protocol::Uuid*)cursor);
-    //     // log << logger::DEBUG << "Item at: " << id << " with id: " << id;
+    protocol::Uuid uuid = val->getUuid();
 
-    //     auto val = ptree->getPropertyByUuid<core::Value>(id);
-    //     uint32_t ptreeValueSize = 0;
+    for(auto& i : *propUpdateNotif.propertyUpdateNotifications)
+    {
+        // log << logger::WARNING << "created object: " << *i.path << " with uuid:" << *i.uuid;
+        auto val = ptree->getPropertyByUuid<core::Value>(*i.uuid);
+        uint32_t ptreeValueSize = 0;
 
-    //     if (val)
-    //     {
-    //         ptreeValueSize = val->getValue().size();
-    //         // log << logger::DEBUG << "and size: " << ptreeValueSize;
-    //     }
-    //     else
-    //     {
-    //         // log << logger::ERROR << "The object: " << path << "is not on the model nor Value!";
-    //         return false;
-    //     }
+        if (val)
+        {
+            ptreeValueSize = val->getValue().size();
+            // log << logger::DEBUG << "and size: " << ptreeValueSize;
+        }
+        else
+        {
+            // log << logger::ERROR << "The object: " << path << "is not on the model nor Value!";
+            return false;
+        }
 
-    //     if (id == uuid)
-    //     {
-    //         if (valueContainer->size() != ptreeValueSize)
-    //         {
-    //             // log << logger::ERROR << "Sizes are not equal.";
-    //             return false;
-    //         }
+        if (*i.uuid == uuid)
+        {
+            if (valueContainer->size() != ptreeValueSize)
+            {
+                // log << logger::ERROR << "Sizes are not equal.";
+                return false;
+            }
 
-    //         return !std::memcmp(valueContainer->data(),
-    //             cursor+sizeof(protocol::Uuid), valueContainer->size());
-    //     }
-    //     // else
-    //     // {
-    //     //     log << logger::DEBUG << "This is not the correct Uuid.";
-    //     // }
+            return !std::memcmp(valueContainer->data(), i.data->data(), valueContainer->size());
+        }
+    }
 
-    //     cursor += sizeof(protocol::Uuid) + ptreeValueSize;
-    // }
-
-    // // log << logger::DEBUG << "Not matched!";
     return false;
 }
 

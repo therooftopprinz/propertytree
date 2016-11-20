@@ -192,6 +192,11 @@ public:
         return value;
     }
 
+    Buffer* operator->()
+    {
+        return &value;
+    }
+
     void generate(BufferView& data)
     {
         if (data.start+value.size()+sizeof(uint32_t)>data.limit)

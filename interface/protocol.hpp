@@ -140,6 +140,44 @@ struct DeleteResponse
     MESSAGE_FIELDS(response);
 };
 
+struct SetValueIndication
+{
+    Simple<Uuid> uuid;
+    BufferBlock data;
+    MESSAGE_FIELDS(uuid, data);
+};
+
+
+struct SubscribePropertyUpdateRequest
+{
+    Simple<Uuid> uuid;
+    MESSAGE_FIELDS(uuid);
+};
+
+struct SubscribePropertyUpdateResponse
+{
+    enum class Response : uint8_t {OK, UUID_NOT_FOUND, NOT_A_VALUE};
+    Simple<Response> response;
+    MESSAGE_FIELDS(response);
+};
+
+struct PropertyUpdateNotificationEntry
+{
+    PropertyUpdateNotificationEntry(){}
+    PropertyUpdateNotificationEntry(Uuid uuid, Buffer& buffer):
+        uuid(uuid), data(buffer) {}
+    Simple<Uuid> uuid;
+    BufferBlock data;
+    MESSAGE_FIELDS(uuid, data);
+};
+
+
+struct PropertyUpdateNotification
+{
+    BlockArray<PropertyUpdateNotificationEntry> propertyUpdateNotifications;
+    MESSAGE_FIELDS(propertyUpdateNotifications);
+};
+
 
 typedef std::shared_ptr<MessageHeader> MessageHeaderPtr;
 

@@ -7,6 +7,8 @@
 #include "MessageHandlers/SigninRequestMessageHandler.hpp"
 #include "MessageHandlers/CreateRequestMessageHandler.hpp"
 #include "MessageHandlers/DeleteRequestMessageHandler.hpp"
+#include "MessageHandlers/SetValueIndicationMessageHandler.hpp"
+#include "MessageHandlers/SubscribePropertyUpdateRequestMessageHandler.hpp"
 
 namespace ptree
 {
@@ -16,7 +18,7 @@ namespace server
 struct MessageHandlerFactory
 {
     static std::unique_ptr<MessageHandler>
-        get(protocol::MessageType type, ClientServer& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon);
+        get(protocol::MessageType type, ClientServerPtr cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon);
 };
 
 } // namespace server

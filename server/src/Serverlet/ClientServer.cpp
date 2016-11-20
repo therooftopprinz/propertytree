@@ -111,7 +111,7 @@ void ClientServer::processMessage(protocol::MessageHeaderPtr header, BufferPtr m
     log << logger::DEBUG << "ClientServer::processMessage()";
     auto type = header->type;
     std::lock_guard<std::mutex> guard(sendLock);
-    messageHandlerFactory.get(type, *this, *endpoint, *ptree, *monitor)->handle(header, message);
+    messageHandlerFactory.get(type, shared_from_this(), *endpoint, *ptree, *monitor)->handle(header, message);
     processMessageRunning--;
 }
 
@@ -334,8 +334,25 @@ void ClientServer::handleOutgoing()
             std::lock_guard<std::mutex> updatenotifGuard(valueUpdateNotificationMutex);
             std::lock_guard<std::mutex> sendGuard(sendLock);
 
-            // MessagePropertyUpdateNotificationSender updateNotif(valueUpdateNotification, endpoint);
-            // updateNotif.send();
+            protocol::PropertyUpdateNotification propertyUpdateNotifs;
+            for(const auto& i : valueUpdateNotification)
+            {
+                propertyUpdateNotifs.propertyUpdateNotifications->push_back(
+                    protocol::PropertyUpdateNotificationEntry(i->getUuid(), i->getValue()));
+                /** TODO: Optimize by only using the reference of value since value's lifetime is dependent to 
+                    valueUpdateNotificatio which assures an instance of value.**/
+            }
+
+            Buffer notifheader =
+                MessageHandler::createHeader(protocol::MessageType::PropertyUpdateNotification, propertyUpdateNotifs.size(),
+                    static_cast<uint32_t>(-1));
+            endpoint->send(notifheader.data(), notifheader.size());
+
+            Buffer enbuff(propertyUpdateNotifs.size());
+            protocol::BufferView enbuffv(enbuff);
+            protocol::Encoder en(enbuffv);
+            propertyUpdateNotifs >> en;
+            endpoint->send(enbuff.data(), enbuff.size());
 
             log << logger::DEBUG << "PropertyUpdateNotification sent!";
             valueUpdateNotification.clear();
