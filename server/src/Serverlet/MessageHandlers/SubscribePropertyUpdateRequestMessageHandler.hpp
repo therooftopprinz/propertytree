@@ -19,9 +19,11 @@ private:
 
 struct SubscribePropertyUpdateRequestMessageHandler : public MessageHandler
 {
+    /** TODO: investigate why making ClientServerPtr not a ref causes a definitely lost. **/
     SubscribePropertyUpdateRequestMessageHandler(ClientServerPtr& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor& csmon);
     void handle(protocol::MessageHeaderPtr header, BufferPtr message);
 private:
+    /** TODO: investigate why making ClientServerPtr not a ref causes a definitely lost. **/
     ClientServerPtr& cs;
 };
 

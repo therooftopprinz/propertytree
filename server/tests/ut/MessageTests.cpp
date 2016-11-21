@@ -91,6 +91,40 @@ struct PersonName
     MESSAGE_FIELDS(first,middle,last);
 };
 
+struct ContactMethod
+{
+    String email;
+    Simple<uint32_t> number;
+    Simple<uint8_t> letter;
+
+    enum class Type : uint8_t {Email=42, Number, Letter};
+
+    TVUNIONBEGIN
+    UNION(42, email)
+    UNION(43, number)
+    UNION(44, letter)
+    TVUNIONEND
+
+    // TVENCODERBEGIN
+    // ENCODE_STEP(42, email)
+    // ENCODE_STEP(43, number)
+    // ENCODE_STEP(44, letter)
+    // TVENCODEREND
+
+    // TVDECODERBEGIN
+    // DECODE_STEP(42, email)
+    // DECODE_STEP(43, number)
+    // DECODE_STEP(44, letter)
+    // TVDECODEREND
+};
+
+struct Contact
+{
+    String name;
+    BlockArray<ContactMethod> methods;
+
+    MESSAGE_FIELDS(name, methods);
+};
 
 
 struct MessagingTests : public ::testing::Test
@@ -255,6 +289,42 @@ TEST_F(MessagingTests, emptyString)
     log << logger::DEBUG << "f "<< (std::string)deva.first;
     log << logger::DEBUG << "m "<< (std::string)deva.middle;
     log << logger::DEBUG << "l "<< (std::string)deva.last;
+
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1ms);
+}
+
+TEST_F(MessagingTests, encodeTVUnion)
+{
+    Contact con;
+    ContactMethod cm;
+    cm.email =std::string("look@it.go");
+    cm.setType((uint8_t)ContactMethod::Type::Email);
+    con.methods->push_back(cm);
+    cm.number = 42;
+    cm.setType((uint8_t)ContactMethod::Type::Number);
+    con.methods->push_back(cm);
+    con.name = std::string("Miller");
+    
+
+    Buffer comval{'M','i','l','l','e','r',0,2,0,0,0,42,'l','o','o','k','@','i','t','.','g','o',0,43,42,0,0,0};
+
+    Buffer enbuff(con.size());
+    BufferView enbuffv(enbuff);
+    Encoder en(enbuffv);
+    con >> en;
+
+    utils::printRaw(enbuff.data(),enbuff.size());
+    utils::printRawAscii(enbuff.data(),enbuff.size());
+    EXPECT_EQ(enbuff, comval);
+
+    Contact deva;;
+    Decoder de(enbuff.data(),enbuff.data()+enbuff.size());
+    deva << de;
+
+    log << logger::DEBUG << "name "<< (std::string)deva.name;
+    log << logger::DEBUG << "email "<< (std::string)deva.methods[0].email;
+    log << logger::DEBUG << "number "<< *deva.methods[1].number;
 
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(1ms);

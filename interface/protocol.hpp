@@ -192,6 +192,18 @@ struct UnsubscribePropertyUpdateResponse
     MESSAGE_FIELDS(response);
 };
 
+struct GetValueRequest
+{
+    Simple<Uuid> uuid;
+    MESSAGE_FIELDS(uuid);
+};
+
+struct GetValueResponse
+{
+    BufferBlock data;
+    MESSAGE_FIELDS(data);
+};
+
 
 typedef std::shared_ptr<MessageHeader> MessageHeaderPtr;
 

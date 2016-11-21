@@ -14,6 +14,7 @@ using Buffer = std::vector<uint8_t>;
 
 struct BufferView
 {
+    BufferView(){}
     BufferView(Buffer& buffer):
         start(buffer.data()),
         limit((uint8_t*)buffer.data()+buffer.size())
@@ -342,7 +343,7 @@ public:
         translate(head);
         translate(tail...);
     }
-private:
+
     BufferView& encodeCursor;
 };
 
@@ -370,7 +371,7 @@ public:
     {
         return start;
     }
-private:
+
     uint8_t* start;
     uint8_t* limit;
 };
@@ -407,6 +408,61 @@ uint32_t size()\
     sr.translate(__VA_ARGS__);\
     return sr.size();\
 }
+
+#define TVUNIONBEGIN \
+inline uint8_t* multiDoFuntion(ptree::protocol::BufferView& data, uint8_t* start, uint8_t* limit, uint32_t isTo) {
+
+#define UNION(id, variable) \
+if (type == id){ \
+    if (isTo == 0) /** encode **/ { \
+        variable.generate(data); \
+    } else if (isTo == 1) /** decode **/ { \
+        return variable.parse(start,limit); \
+    } else /** size */{ \
+        return reinterpret_cast<uint8_t*>(variable.size()); \
+    }}
+
+#define TVUNIONEND \
+    return nullptr; \
+} void setType(uint8_t t) { \
+    type = t; \
+} void generate(ptree::protocol::BufferView& data) { \
+    if (data.start+sizeof(uint8_t)>data.limit) \
+        return; \
+    *((uint8_t*)(data.start)) = type; \
+    data.start += sizeof(uint8_t); \
+    multiDoFuntion(data, nullptr, nullptr, 0); \
+} inline uint8_t* parse(uint8_t* start, uint8_t* limit) { \
+    ptree::protocol::BufferView nuller; \
+    type = *start; \
+    start += sizeof(uint8_t); \
+    return multiDoFuntion(nuller, start, limit, 1); \
+} uint8_t type; uint32_t size() { \
+    ptree::protocol::BufferView nuller; \
+    return (uintptr_t)multiDoFuntion(nuller, nullptr, nullptr, 2) + sizeof(uint8_t); \
+}
+
+#define TVENCODERBEGIN \
+inline void operator >> (Encoder& en) { \
+    if (en.encodeCursor.start + sizeof(uint8_t) > en.encodeCursor.limit) return; \
+    *(en.encodeCursor.start) = type; \
+    en.encodeCursor.start += sizeof(uint8_t);
+
+#define TVENCODEREND }
+
+#define TVDECODERBEGIN \
+inline void operator << (Decoder& de) { \
+    if (de.start + sizeof(uint8_t) > de.limit) return; \
+    type = *de.start; \
+    de.start += sizeof(uint8_t);
+
+#define TVDECODEREND }
+
+#define ENCODE_STEP(ntype, variable) \
+if (type == ntype) en.translate(variable);
+
+#define DECODE_STEP(ntype, variable) \
+if (type == ntype) de.translate(variable);
 // END THUG
 
 } // namespace protocol

@@ -112,6 +112,7 @@ void ClientServer::processMessage(protocol::MessageHeaderPtr header, BufferPtr m
     auto type = header->type;
     std::lock_guard<std::mutex> guard(sendLock);
     auto lval_this = shared_from_this();
+    /** TODO: Remove after investigation is done **/
     // if (type==protocol::MessageType::SubscribePropertyUpdateRequest)
     //     std::make_unique<SubscribePropertyUpdateRequestMessageHandler>(lval_this, *endpoint.get(), *ptree.get(), *monitor.get())->handle(header, message);
     // else
