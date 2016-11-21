@@ -9,6 +9,7 @@
 #include "MessageHandlers/DeleteRequestMessageHandler.hpp"
 #include "MessageHandlers/SetValueIndicationMessageHandler.hpp"
 #include "MessageHandlers/SubscribePropertyUpdateRequestMessageHandler.hpp"
+#include "MessageHandlers/UnsubscribePropertyUpdateRequestMessageHandler.hpp"
 
 namespace ptree
 {
@@ -18,7 +19,7 @@ namespace server
 struct MessageHandlerFactory
 {
     static std::unique_ptr<MessageHandler>
-        get(protocol::MessageType type, ClientServerPtr cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon);
+        get(protocol::MessageType type, ClientServerPtr& cs, IEndPointPtr& ep, core::PTreePtr& pt, IClientServerMonitorPtr& csmon);
 };
 
 } // namespace server

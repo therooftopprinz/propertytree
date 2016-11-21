@@ -8,7 +8,6 @@ namespace ptree
 namespace server
 {
 
-
 class  UpdateNotificationHandler : public std::enable_shared_from_this<UpdateNotificationHandler>
 {
 public:
@@ -20,10 +19,10 @@ private:
 
 struct SubscribePropertyUpdateRequestMessageHandler : public MessageHandler
 {
-    SubscribePropertyUpdateRequestMessageHandler(ClientServerPtr cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon);
+    SubscribePropertyUpdateRequestMessageHandler(ClientServerPtr& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor& csmon);
     void handle(protocol::MessageHeaderPtr header, BufferPtr message);
 private:
-    ClientServerPtr cs;
+    ClientServerPtr& cs;
 };
 
 }

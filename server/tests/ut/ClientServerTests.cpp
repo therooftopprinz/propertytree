@@ -66,41 +66,46 @@ struct ClientServerTests : public ::testing::Test
         using protocol::CreateResponse;
         using protocol::DeleteResponse;
         using protocol::SubscribePropertyUpdateResponse;
+        using protocol::UnsubscribePropertyUpdateResponse;
         using protocol::MessageType;
 
-        createTestResponseFullMatcher = 
-            std::make_shared<MessageMatcher>(createCommonResponse<CreateResponse, MessageType::CreateResponse>
-                (createTestRequestTid, CreateResponse::Response::OK));
-        createValueResponseFullMatcher =
-            std::make_shared<MessageMatcher>(createCommonResponse<CreateResponse, MessageType::CreateResponse>
-                (createValueRequestTid, CreateResponse::Response::OK));
-        createValueResponseAlreadyExistFullMatcher =
-            std::make_shared<MessageMatcher>(createCommonResponse<CreateResponse, MessageType::CreateResponse>
-                (createValueRequest2Tid, CreateResponse::Response::ALREADY_EXIST));
-        createValueResponseInvalidPathFullMatcher =
-            std::make_shared<MessageMatcher>(createCommonResponse<CreateResponse, MessageType::CreateResponse>
-                (createValueRequestTid, CreateResponse::Response::MALFORMED_PATH));
-        createValueResponseInvalidParentFullMatcher =
-            std::make_shared<MessageMatcher>(createCommonResponse<CreateResponse, MessageType::CreateResponse>
-                (createValueRequestTid, CreateResponse::Response::PARENT_NOT_FOUND));
-        deleteValueResponseOkMatcher =
-            std::make_shared<MessageMatcher>(createCommonResponse<DeleteResponse, MessageType::DeleteResponse>
-                (deleteValueRequestTid, DeleteResponse::Response::OK));
-        deleteValueResponseNotFoundMatcher =
-            std::make_shared<MessageMatcher>(createCommonResponse<DeleteResponse, MessageType::DeleteResponse>
-                (deleteValueRequestTid, DeleteResponse::Response::OBJECT_NOT_FOUND));
-        deleteTestResponseNotEmptyMatcher =
-            std::make_shared<MessageMatcher>(createCommonResponse<DeleteResponse, MessageType::DeleteResponse>
-                (deleteTestRequestTid, DeleteResponse::Response::NOT_EMPTY));
-        subscribeValueResponseOkMatcher = 
-            std::make_shared<MessageMatcher>(createCommonResponse<SubscribePropertyUpdateResponse, MessageType::SubscribePropertyUpdateResponse>
-                (subscribeValueRqstTid, SubscribePropertyUpdateResponse::Response::OK));
-        subscribeValueResponseUuidNotFoundMatcher = 
-            std::make_shared<MessageMatcher>(createCommonResponse<SubscribePropertyUpdateResponse, MessageType::SubscribePropertyUpdateResponse>
-                (subscribeValueRqstTid, SubscribePropertyUpdateResponse::Response::UUID_NOT_FOUND));
-        subscribeTestResponseNotAValueMatcher = 
-            std::make_shared<MessageMatcher>(createCommonResponse<SubscribePropertyUpdateResponse, MessageType::SubscribePropertyUpdateResponse>
-                (subscribeTestRqstTid, SubscribePropertyUpdateResponse::Response::NOT_A_VALUE));
+        createTestResponseFullMatcher = createCommonResponse<CreateResponse, MessageType::CreateResponse>
+                (createTestRequestTid, CreateResponse::Response::OK);
+        createValueResponseFullMatcher = createCommonResponse<CreateResponse, MessageType::CreateResponse>
+                (createValueRequestTid, CreateResponse::Response::OK);
+        createValueResponseAlreadyExistFullMatcher = createCommonResponse<CreateResponse, MessageType::CreateResponse>
+                (createValueRequest2Tid, CreateResponse::Response::ALREADY_EXIST);
+        createValueResponseInvalidPathFullMatcher = createCommonResponse<CreateResponse, MessageType::CreateResponse>
+                (createValueRequestTid, CreateResponse::Response::MALFORMED_PATH);
+        createValueResponseInvalidParentFullMatcher = createCommonResponse<CreateResponse, MessageType::CreateResponse>
+                (createValueRequestTid, CreateResponse::Response::PARENT_NOT_FOUND);
+        deleteValueResponseOkMatcher = createCommonResponse<DeleteResponse, MessageType::DeleteResponse>
+                (deleteValueRequestTid, DeleteResponse::Response::OK);
+        deleteValueResponseNotFoundMatcher = createCommonResponse<DeleteResponse, MessageType::DeleteResponse>
+                (deleteValueRequestTid, DeleteResponse::Response::OBJECT_NOT_FOUND);
+        deleteTestResponseNotEmptyMatcher = createCommonResponse<DeleteResponse, MessageType::DeleteResponse>
+                (deleteTestRequestTid, DeleteResponse::Response::NOT_EMPTY);
+        subscribeValueResponseOkMatcher =  createCommonResponse<SubscribePropertyUpdateResponse, MessageType::SubscribePropertyUpdateResponse>
+                (subscribeValueRqstTid, SubscribePropertyUpdateResponse::Response::OK);
+        subscribeValueResponseUuidNotFoundMatcher = createCommonResponse<SubscribePropertyUpdateResponse, MessageType::SubscribePropertyUpdateResponse>
+                (subscribeValueRqstTid, SubscribePropertyUpdateResponse::Response::UUID_NOT_FOUND);
+        subscribeTestResponseNotAValueMatcher = createCommonResponse<SubscribePropertyUpdateResponse, MessageType::SubscribePropertyUpdateResponse>
+                (subscribeTestRqstTid, SubscribePropertyUpdateResponse::Response::NOT_A_VALUE);
+        subscribeTestResponseNotAValueMatcher = createCommonResponse<SubscribePropertyUpdateResponse, MessageType::SubscribePropertyUpdateResponse>
+                (subscribeTestRqstTid, SubscribePropertyUpdateResponse::Response::NOT_A_VALUE);
+        unsubscribeValueResponseOkMatcher = createCommonResponse<UnsubscribePropertyUpdateResponse, MessageType::UnsubscribePropertyUpdateResponse>
+                (unsubscribeValueRqstTid, UnsubscribePropertyUpdateResponse::Response::OK);
+
+
+    // MessageSubscribeUpdateNotificationResponseCreator subscribeValueRsp(subscribeValueRqstTid);
+    // subscribeValueRsp.setResponse(protocol::SubscribePropertyUpdateResponse::Response::OK);
+    // MessageMatcher subscribeValueRspFullMatcher(subscribeValueRsp.create());
+
+    // MessageUnsubscribeUpdateNotificationResponseCreator unsubscribeValueRsp(unsubscribeValueRqstTid);
+    // unsubscribeValueRsp.setResponse(protocol::UnsubscribePropertyUpdateResponse::Response::OK);
+    // MessageMatcher unsubscribeValueRspFullMatcher(unsubscribeValueRsp.create());
+
+
         auto testVal = valueToBuffer<uint32_t>(42);
         createTestRequestMessage = createCreateRequestMessage(
             createTestRequestTid, Buffer(), protocol::PropertyType::Node, "/Test");
@@ -241,6 +246,23 @@ struct ClientServerTests : public ::testing::Test
         return message;
     }
 
+    Buffer createUnsubscribePropertyUpdateRequestMessage(uint32_t transactionId, protocol::Uuid uuid)
+    {
+        protocol::UnsubscribePropertyUpdateRequest request;
+        request.uuid = uuid;
+        uint32_t sz = request.size() + sizeof(protocol::MessageHeader);
+
+        Buffer message = createHeader(protocol::MessageType::UnsubscribePropertyUpdateRequest, sz, transactionId);
+        Buffer enbuff(request.size());
+        protocol::BufferView enbuffv(enbuff);
+        protocol::Encoder en(enbuffv);
+        request >> en;
+        message.insert(message.end(), enbuff.begin(), enbuff.end());
+
+        return message;
+    }
+
+
     template<typename TT, protocol::MessageType TR, typename T>
     Buffer createCommonResponse(uint32_t transactionId, T response)
     {
@@ -350,17 +372,18 @@ Test common timeline
     // DeleteObjectMetaUpdateNotificationMatcher valueDeletionMatcher;
     // MessageCreateResponseCreator createTestResponseMatcher;
     // MessageCreateResponseCreator createValueResponseMatcher;
-    std::shared_ptr<MessageMatcher> createTestResponseFullMatcher;
-    std::shared_ptr<MessageMatcher> createValueResponseFullMatcher;
-    std::shared_ptr<MessageMatcher> createValueResponseAlreadyExistFullMatcher;
-    std::shared_ptr<MessageMatcher> createValueResponseInvalidPathFullMatcher;
-    std::shared_ptr<MessageMatcher> createValueResponseInvalidParentFullMatcher;
-    std::shared_ptr<MessageMatcher> deleteValueResponseOkMatcher;
-    std::shared_ptr<MessageMatcher> deleteValueResponseNotFoundMatcher;
-    std::shared_ptr<MessageMatcher> deleteTestResponseNotEmptyMatcher;
-    std::shared_ptr<MessageMatcher> subscribeValueResponseOkMatcher;
-    std::shared_ptr<MessageMatcher> subscribeValueResponseUuidNotFoundMatcher;
-    std::shared_ptr<MessageMatcher> subscribeTestResponseNotAValueMatcher;
+    MessageMatcher createTestResponseFullMatcher;
+    MessageMatcher createValueResponseFullMatcher;
+    MessageMatcher createValueResponseAlreadyExistFullMatcher;
+    MessageMatcher createValueResponseInvalidPathFullMatcher;
+    MessageMatcher createValueResponseInvalidParentFullMatcher;
+    MessageMatcher deleteValueResponseOkMatcher;
+    MessageMatcher deleteValueResponseNotFoundMatcher;
+    MessageMatcher deleteTestResponseNotEmptyMatcher;
+    MessageMatcher subscribeValueResponseOkMatcher;
+    MessageMatcher subscribeValueResponseUuidNotFoundMatcher;
+    MessageMatcher subscribeTestResponseNotAValueMatcher;
+    MessageMatcher unsubscribeValueResponseOkMatcher;
 
     std::function<void()> testCreationAction;
     std::function<void()> valueCreationDeleteImmediatelyAction;
@@ -437,8 +460,8 @@ TEST_F(ClientServerTests, shouldGenerateMessageCreateResponse)
     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(0, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(0, 0, false, 1, createValueResponseFullMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(0, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(0, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
 
     server->setup();
     endpoint->waitForAllSending(2500.0);
@@ -461,9 +484,9 @@ TEST_F(ClientServerTests, shouldNotCreateWhenAlreadyExisting)
     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(6, 0, false, 1, createValueResponseAlreadyExistFullMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(6, 0, false, 1, createValueResponseAlreadyExistFullMatcher.get(), DefaultAction::get());
 
     server->setup();
     endpoint->waitForAllSending(2500.0);
@@ -484,8 +507,8 @@ TEST_F(ClientServerTests, shouldNotCreateWhenPathIsMalformed)
 
     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
     endpoint->expectSend(2, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(3, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(4, 0, false, 1, createValueResponseInvalidPathFullMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(3, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(4, 0, false, 1, createValueResponseInvalidPathFullMatcher.get(), DefaultAction::get());
 
     server->setup();
     endpoint->waitForAllSending(10000.0);
@@ -499,7 +522,7 @@ TEST_F(ClientServerTests, shouldNotCreateWhenParentObjectIsInvalid)
     endpoint->queueToReceive(createValueRequestMessage);
 
     endpoint->expectSend(2, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(4, 0, false, 1, createValueResponseInvalidParentFullMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(4, 0, false, 1, createValueResponseInvalidParentFullMatcher.get(), DefaultAction::get());
 
     server->setup();
     endpoint->waitForAllSending(10000.0);
@@ -521,8 +544,8 @@ TEST_F(ClientServerTests, shouldDeleteOnPTree)
     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationDeleteImmediatelyAction);
     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
 
     server->setup();
     using namespace std::chrono_literals;
@@ -540,9 +563,9 @@ TEST_F(ClientServerTests, shouldGenerateDeleteResponse)
     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationDeleteImmediatelyAction);
     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(6, 0, false, 1, deleteValueResponseOkMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(6, 0, false, 1, deleteValueResponseOkMatcher.get(), DefaultAction::get());
 
     server->setup();
     using namespace std::chrono_literals;
@@ -572,8 +595,8 @@ TEST_F(ClientServerTests, shouldDeleteResponseNotFound)
 
     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(6, 0, false, 1, deleteValueResponseNotFoundMatcher->get(), valueDeletionAction);
+    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(6, 0, false, 1, deleteValueResponseNotFoundMatcher.get(), valueDeletionAction);
 
     server->setup();
     using namespace std::chrono_literals;
@@ -601,9 +624,9 @@ TEST_F(ClientServerTests, shouldDeleteResponseNotEmpty)
     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(6, 0, false, 1, deleteTestResponseNotEmptyMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(6, 0, false, 1, deleteTestResponseNotEmptyMatcher.get(), DefaultAction::get());
 
     server->setup();
     using namespace std::chrono_literals;
@@ -632,8 +655,8 @@ TEST_F(ClientServerTests, shouldDeleteWithMetaUpdateNotification)
     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
     endpoint->expectSend(3, 2, true, 1, valueDeletionMatcher->get(), DefaultAction::get());
     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(0, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(0, 0, false, 1, createValueResponseFullMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(0, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(0, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
 
     server->setup();
     using namespace std::chrono_literals;
@@ -660,8 +683,8 @@ TEST_F(ClientServerTests, shouldSetSetValueWhenSetValueIndIsValid)
     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(0, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(0, 0, false, 1, createValueResponseFullMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(0, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(0, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
 
     server->setup();
 
@@ -693,7 +716,7 @@ TEST_F(ClientServerTests, shouldGenerateMessageSubscribePropertyUpdateResponseOk
     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(0, 0, false, 1, subscribeValueResponseOkMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(0, 0, false, 1, subscribeValueResponseOkMatcher.get(), DefaultAction::get());
 
     server->setup();
     endpoint->waitForAllSending(10000.0);
@@ -715,7 +738,7 @@ TEST_F(ClientServerTests, shouldGenerateMessageSubscribePropertyUpdateResponseUu
     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(0, 0, false, 1, subscribeValueResponseUuidNotFoundMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(0, 0, false, 1, subscribeValueResponseUuidNotFoundMatcher.get(), DefaultAction::get());
 
     server->setup();
     endpoint->waitForAllSending(10000.0);
@@ -738,7 +761,7 @@ TEST_F(ClientServerTests, shouldGenerateMessageSubscribePropertyUpdateResponseUu
 
     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(0, 0, false, 1, subscribeTestResponseNotAValueMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(0, 0, false, 1, subscribeTestResponseNotAValueMatcher.get(), DefaultAction::get());
 
 
     server->setup();
@@ -764,9 +787,9 @@ TEST_F(ClientServerTests, shouldSendPropertyUpdateNotificationWhenChanged)
     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationSubscribeAction);
     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(6, 0, false, 1, subscribeValueResponseOkMatcher->get(), subscribeValueRspAction);
+    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(6, 0, false, 1, subscribeValueResponseOkMatcher.get(), subscribeValueRspAction);
     endpoint->expectSend(6, 0, false, 1, valueUpdateMatcher.get(), DefaultAction::get());
 
     server->setup();
@@ -778,68 +801,55 @@ TEST_F(ClientServerTests, shouldSendPropertyUpdateNotificationWhenChanged)
     logger::loggerServer.waitEmpty();
 }
 
-// TEST_F(ClientServerTests, shouldNotSendPropertyUpdateNotificationWhenUnsubscribed)
-// {
-//     auto expectedValue = utils::buildSharedBufferedValue(6969);
-//     PropertyUpdateNotificationMatcher valueUpdateMatcher("/Test/Value", expectedValue, ptree);
+TEST_F(ClientServerTests, shouldNotSendPropertyUpdateNotificationWhenUnsubscribed)
+{
+    endpoint->queueToReceive(createTestRequestMessage);
 
-//     MessageSubscribeUpdateNotificationResponseCreator subscribeValueRsp(subscribeValueRqstTid);
-//     subscribeValueRsp.setResponse(protocol::SubscribePropertyUpdateResponse::Response::OK);
-//     MessageMatcher subscribeValueRspFullMatcher(subscribeValueRsp.create());
+    auto expectedValue = utils::buildSharedBufferedValue(6969);
+    PropertyUpdateNotificationMatcher valueUpdateMatcher("/Test/Value", expectedValue, ptree);
 
-//     MessageUnsubscribeUpdateNotificationResponseCreator unsubscribeValueRsp(unsubscribeValueRqstTid);
-//     unsubscribeValueRsp.setResponse(protocol::UnsubscribePropertyUpdateResponse::Response::OK);
-//     MessageMatcher unsubscribeValueRspFullMatcher(unsubscribeValueRsp.create());
+    std::function<void()> testCreationAction = [this]()
+    {
+        this->log << logger::DEBUG << "/Test is created with uuid: " << this->testCreationMatcher->getUuidOfLastMatched();
+        this->endpoint->queueToReceive(createValueRequestMessage);
+    };
 
-//     std::function<void()> testCreationAction = [this]()
-//     {
-//         this->log << logger::DEBUG << "/Test is created with uuid: " << this->testCreationMatcher.getUuidOfLastMatched();
-//         this->endpoint->queueToReceive(this->createValueRequest.create());
-//     };
+    std::function<void()> subscribeValueRspAction = [this, &expectedValue]()
+    {
+        uint32_t uuid = this->valueCreationMatcher->getUuidOfLastMatched();
+        log << logger::DEBUG << "/Test/Value is created with uuid: " << uuid;
+        this->endpoint->queueToReceive(createSetValueIndicationMessage(setValueInd1stTid, this->uuidOfValue, *expectedValue));
+    };
 
-//     std::function<void()> subscribeValueRspAction = [this, &expectedValue]()
-//     {
-//         setValueInd.setUuid(this->uuidOfValue);
-//         setValueInd.setValue(*expectedValue);
-//         const auto& msg = this->setValueInd.create();
-//         log << logger::DEBUG << "Subscribed to uuid: " << this->uuidOfValue;
-//         this->unsubscribeValueRqst.setUuid(this->uuidOfValue);
-//         this->endpoint->queueToReceive(msg);
-//     };
+    std::function<void()> valueUpdateAction = [this, &expectedValue]()
+    {
+        log << logger::DEBUG << "Unsubscribing /Test/Value";
+        this->endpoint->queueToReceive(createUnsubscribePropertyUpdateRequestMessage(unsubscribeValueRqstTid, this->uuidOfValue));
+    };
 
-//     std::function<void()> valueUpdateAction = [this, &expectedValue]()
-//     {
-//         log << logger::DEBUG << "Unsubscribing /Test/Value";
-//         this->endpoint->queueToReceive(this->unsubscribeValueRqst.create());
-//     };
+    std::function<void()> unsubscribeValueAction = [this, &expectedValue]()
+    {
+        log << logger::DEBUG << "Setting value again";
+        this->endpoint->queueToReceive(createSetValueIndicationMessage(setValueInd2ndTid, this->uuidOfValue, *expectedValue));
+    };
 
+    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationSubscribeAction);
+    endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(6, 0, false, 1, subscribeValueResponseOkMatcher.get(), subscribeValueRspAction);
+    endpoint->expectSend(7, 0, false, 1, valueUpdateMatcher.get(), valueUpdateAction);
+    endpoint->expectSend(8, 0, false, 1, unsubscribeValueResponseOkMatcher.get(), unsubscribeValueAction);
 
-//     std::function<void()> unsubscribeValueAction = [this, &expectedValue]()
-//     {
-//         setValueInd2nd.setUuid(this->uuidOfValue);
-//         setValueInd2nd.setValue(*expectedValue);
-//         const auto& msg = this->setValueInd2nd.create();
-//         log << logger::DEBUG << "Setting value again";
-//         this->endpoint->queueToReceive(msg);
-//     };
+    server->setup();
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(500ms);
+    endpoint->waitForAllSending(500.0);
+    server->teardown();
 
-//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher.get(), testCreationAction);
-//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher.get(), valueCreationSubscribeAction);
-//     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(6, 0, false, 1, subscribeValueRspFullMatcher.get(), subscribeValueRspAction);
-//     endpoint->expectSend(7, 0, false, 1, valueUpdateMatcher.get(), valueUpdateAction);
-//     endpoint->expectSend(8, 0, false, 1, unsubscribeValueRspFullMatcher.get(), unsubscribeValueAction);
-
-//     server->setup();
-//     using namespace std::chrono_literals;
-//     std::this_thread::sleep_for(500ms);
-//     endpoint->waitForAllSending(500.0);
-//     server->teardown();
-
-//     logger::loggerServer.waitEmpty();
-// }
+    logger::loggerServer.waitEmpty();
+}
 
 
 // TEST_F(ClientServerTests, shouldGetValue)

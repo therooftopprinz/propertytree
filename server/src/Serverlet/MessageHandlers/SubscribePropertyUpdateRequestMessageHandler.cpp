@@ -27,8 +27,9 @@ bool UpdateNotificationHandler::handle(core::ValuePtr value)
 }
 
 SubscribePropertyUpdateRequestMessageHandler::SubscribePropertyUpdateRequestMessageHandler
-    (ClientServerPtr cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon):
-        MessageHandler(*cs.get(),ep,pt,csmon), cs(cs)
+    (ClientServerPtr& cs,IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon):
+        MessageHandler(*cs.get(),ep,pt,csmon)
+        , cs(cs)
 {
 
 }

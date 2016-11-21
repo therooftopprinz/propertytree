@@ -10,23 +10,24 @@ class MessageHandler;
 
 std::unique_ptr<MessageHandler>
     MessageHandlerFactory::
-        get(protocol::MessageType type, ClientServerPtr cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon)
+        get(protocol::MessageType type, ClientServerPtr& cs, IEndPointPtr& ep, core::PTreePtr& pt, IClientServerMonitorPtr&  csmon)
 {
     logger::Logger log("MessageHandlerFactory");
     using Enum = uint8_t;
     switch (uint8_t(type))
     {
         case (Enum) protocol::MessageType::SigninRequest:
-            return std::make_unique<SigninRequestMessageHandler>(*cs.get(), ep, pt, csmon);
+            return std::make_unique<SigninRequestMessageHandler>(*cs.get(), *ep.get(), *pt.get(), *csmon.get());
         case (Enum) protocol::MessageType::CreateRequest:
-            return std::make_unique<CreateRequestMessageHandler>(*cs.get(), ep, pt, csmon);
+            return std::make_unique<CreateRequestMessageHandler>(*cs.get(), *ep.get(), *pt.get(), *csmon.get());
         case (Enum) protocol::MessageType::DeleteRequest:
-            return std::make_unique<DeleteRequestMessageHandler>(*cs.get(), ep, pt, csmon);
+            return std::make_unique<DeleteRequestMessageHandler>(*cs.get(), *ep.get(), *pt.get(), *csmon.get());
         case (Enum) protocol::MessageType::SetValueIndication:
-            return std::make_unique<SetValueIndicationMessageHandler>(*cs.get(), ep, pt, csmon);
+            return std::make_unique<SetValueIndicationMessageHandler>(*cs.get(), *ep.get(), *pt.get(), *csmon.get());
         case (Enum) protocol::MessageType::SubscribePropertyUpdateRequest:
-            return std::make_unique<SubscribePropertyUpdateRequestMessageHandler>(cs, ep, pt, csmon);
-
+            return std::make_unique<SubscribePropertyUpdateRequestMessageHandler>(cs, *ep.get(), *pt.get(), *csmon.get());
+        case (Enum) protocol::MessageType::UnsubscribePropertyUpdateRequest:
+            return std::make_unique<UnsubscribePropertyUpdateRequestMessageHandler>(*cs.get(), *ep.get(), *pt.get(), *csmon.get());
     }
     // if (type == protocol::MessageType::SignInRequest)
     // {
@@ -74,7 +75,7 @@ std::unique_ptr<MessageHandler>
     //     log << logger::ERROR << "processMessage: header invalid type!! ";
     // }
     log << logger::ERROR << "Unregconize message type.";
-    return std::make_unique<MessageHandler>(*cs.get(), ep, pt, csmon);
+    return std::make_unique<MessageHandler>(*cs.get(), *ep.get(), *pt.get(), *csmon.get());
 }
 
 } // namespace server
