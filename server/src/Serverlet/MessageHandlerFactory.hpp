@@ -10,6 +10,7 @@
 #include "MessageHandlers/SetValueIndicationMessageHandler.hpp"
 #include "MessageHandlers/SubscribePropertyUpdateRequestMessageHandler.hpp"
 #include "MessageHandlers/UnsubscribePropertyUpdateRequestMessageHandler.hpp"
+#include "MessageHandlers/GetValueRequestMessageHandler.hpp"
 
 namespace ptree
 {
