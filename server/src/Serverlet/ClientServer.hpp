@@ -35,7 +35,11 @@ public:
     void removeClientServer(ClientServerPtr clientServer);
     void notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path);
     void notifyDeletion(uint32_t uuid);
+    void notifyRpcRequest(uint64_t clientServerId, uint32_t transactionId, server::ClientServerWkPtr cswkptr);
+    void notifyRpcResponse(uint64_t clientServerId, uint32_t transactionId, Buffer&& returnValue);
 private:
+    /** NOTE: This will be kept as shared_ptr because weak doesnt have == operator for searching through the list.
+        This won't cause circular references if ClientServer is removed from the monitor.**/
     std::list<ClientServerPtr> clientServers;
     std::mutex clientServersMutex;
     logger::Logger log;
@@ -79,6 +83,9 @@ public:
     void notifyDeletion(uint32_t uuid);
     void notifyValueUpdate(core::ValuePtr);
 
+    void notifyRpcRequest(uint64_t clientServerId, uint32_t transactionId, server::ClientServerWkPtr cswkptr);
+    void notifyRpcResponse(uint32_t transactionId, Buffer&& returnValue);
+
     void setUpdateInterval(uint32_t interval);
     void clientSigned();
 
@@ -91,6 +98,7 @@ public:
     };
 
     typedef std::map<uint32_t, ActionTypeAndPath> UuidActionTypeAndPathMap;
+    typedef std::pair<uint32_t,Buffer> TransactionIdBufferPair;
 
 private:
     void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);
@@ -100,6 +108,9 @@ private:
 
     std::list<core::ValuePtr> valueUpdateNotification;
     std::mutex valueUpdateNotificationMutex;
+
+    std::list<TransactionIdBufferPair> rpcResponse;
+    std::mutex rpcResponseMutex;
 
     IEndPointPtr endpoint;
     std::mutex sendLock;

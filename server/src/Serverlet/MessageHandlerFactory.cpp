@@ -19,7 +19,7 @@ std::unique_ptr<MessageHandler>
         case (Enum) protocol::MessageType::SigninRequest:
             return std::make_unique<SigninRequestMessageHandler>(*cs.get(), *ep.get(), *pt.get(), *csmon.get());
         case (Enum) protocol::MessageType::CreateRequest:
-            return std::make_unique<CreateRequestMessageHandler>(*cs.get(), *ep.get(), *pt.get(), *csmon.get());
+            return std::make_unique<CreateRequestMessageHandler>(cs, *ep.get(), *pt.get(), *csmon.get());
         case (Enum) protocol::MessageType::DeleteRequest:
             return std::make_unique<DeleteRequestMessageHandler>(*cs.get(), *ep.get(), *pt.get(), *csmon.get());
         case (Enum) protocol::MessageType::SetValueIndication:

@@ -8,10 +8,22 @@ namespace ptree
 namespace server
 {
 
-struct CreateRequestMessageHandler : public MessageHandler
+class RcpHandler : public std::enable_shared_from_this<RcpHandler>
 {
-    CreateRequestMessageHandler(ClientServer& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon);
+public:
+    RcpHandler(ClientServerWkPtr clientServer);
+    void handle(uint64_t csid, uint32_t tid, server::ClientServerWkPtr cswkptr);
+private:
+    ClientServerWkPtr clientServer;
+};
+
+class CreateRequestMessageHandler : public MessageHandler
+{
+public:
+    CreateRequestMessageHandler(ClientServerPtr& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon);
     void handle(protocol::MessageHeaderPtr header, BufferPtr message);
+private:
+    ClientServerPtr& cs;
 };
 
 

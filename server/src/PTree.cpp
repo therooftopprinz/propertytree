@@ -156,6 +156,20 @@ PropertyMapPtr Node::getProperties()
     return properties;
 }
 
+Rpc::~Rpc()
+{
+}
+
+void Rpc::setWatcher(RpcWatcher handler)
+{
+    this->watcher = watcher;
+}
+
+void Rpc::operator()(uint64_t csid, uint32_t tid, server::ClientServerWkPtr cswkptr)
+{
+    watcher(csid, tid, cswkptr);
+}
+
 PTree::PTree(IIdGeneratorPtr idgen) :
     root(std::make_shared<Node>()),
     idgen(idgen),

@@ -100,6 +100,25 @@ private:
     std::mutex watchersMutex;
 };
 
+class Rpc : public IProperty, public std::enable_shared_from_this<Rpc>
+{
+public:
+    /** TODO: write on cpp*/
+    Rpc() {}
+    Rpc(RpcWatcher watcher):
+        watcher(watcher)
+    {
+    }
+
+    ~Rpc();
+
+    void setWatcher(RpcWatcher handler);
+    void operator()(uint64_t csid, uint32_t tid, server::ClientServerWkPtr cswkptr);
+
+private:
+    RpcWatcher watcher;
+};
+
 class Node : public IProperty, public std::enable_shared_from_this<Node>
 {
 public:

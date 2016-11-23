@@ -32,7 +32,7 @@ void ClientServerMonitor::removeClientServer(ClientServerPtr clientServer)
     log << logger::DEBUG << "removing client server to monitor " << (void*)clientServer.get();
     auto it = std::find(clientServers.begin(), clientServers.end(), clientServer);
     if (it != clientServers.end())
-    {  
+    {
         clientServers.erase(it);
         log << logger::DEBUG << "erased!" << (void*)clientServer.get();
     }
@@ -59,6 +59,10 @@ void ClientServerMonitor::notifyDeletion(uint32_t uuid)
     {
         clientServer->notifyDeletion(uuid);
     }
+}
+
+void ClientServerMonitor::notifyRpcResponse(uint64_t clientServerId, uint32_t transactionId, Buffer&& returnValue)
+{
 }
 
 void ClientServer::setup()
@@ -280,6 +284,25 @@ void ClientServer::notifyDeletion(uint32_t uuid)
     }
 }
 
+void ClientServer::notifyRpcResponse( uint32_t transactionId, Buffer&& returnValue)
+{
+    log << logger::DEBUG << "notifyRpcResponse for transactionId: " << transactionId << " and cs: " << (void*)this;
+    std::lock_guard<std::mutex> guard(rpcResponseMutex);
+    rpcResponse.emplace_back(transactionId, std::move(returnValue));
+}
+
+void ClientServer::notifyRpcRequest(uint64_t clientServerId, uint32_t transactionId, server::ClientServerWkPtr cswkptr)
+{
+    /**
+    TODO: Aquire send lock and send the HandleRpcRequest message immediately from here.
+
+    **/
+    // log << logger::DEBUG << "notifyRpcResponse for transactionId: " << transactionId << " and cs: " << (void*)this;
+    // std::lock_guard<std::mutex> guard(rpcResponseMutex);
+    // rpcResponse.emplace_back(transactionId, std::move(returnValue));
+}
+
+
 void ClientServer::setUpdateInterval(uint32_t interval)
 {
     updateInterval = interval;
@@ -346,7 +369,7 @@ void ClientServer::handleOutgoing()
                 propertyUpdateNotifs.propertyUpdateNotifications->push_back(
                     protocol::PropertyUpdateNotificationEntry(i->getUuid(), i->getValue()));
                 /** TODO: Optimize by only using the reference of value since value's lifetime is dependent to 
-                    valueUpdateNotificatio which assures an instance of value.**/
+                    valueUpdateNotification which assures an instance of value.**/
             }
 
             Buffer notifheader =

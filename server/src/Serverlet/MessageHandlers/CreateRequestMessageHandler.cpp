@@ -7,12 +7,25 @@ namespace ptree
 namespace server
 {
 
-CreateRequestMessageHandler::
-    CreateRequestMessageHandler(ClientServer& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon):
-        MessageHandler(cs,ep,pt,csmon)
+RcpHandler::RcpHandler(ClientServerWkPtr clientServer) :
+    clientServer(clientServer)
 {}
 
-inline void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
+void RcpHandler::handle(uint64_t csid, uint32_t tid, server::ClientServerWkPtr cswkptr)
+{
+    auto csshared = clientServer.lock();
+    if(csshared)
+    {
+        csshared->notifyRpcRequest(csid, tid, cswkptr);
+    }
+}
+
+CreateRequestMessageHandler::
+    CreateRequestMessageHandler(ClientServerPtr& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon):
+        MessageHandler(*cs.get(),ep,pt,csmon), cs(cs)
+{}
+
+void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
 {
     logger::Logger log("CreateRequestMessageHandler");
 
@@ -46,6 +59,17 @@ inline void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
             val.second->setValue(*request.data);
             val.second->setOwner(&clientServer);
             id = val.first;
+        }
+        else if (*request.type == protocol::PropertyType::Rpc)
+        {
+            log << logger::DEBUG << "Rpc to be created.";
+            std::shared_ptr<RcpHandler> rcphandler = std::make_shared<RcpHandler>(cs);
+            auto val = ptree.createProperty<core::Rpc>(*request.path);
+            using std::placeholders::_1;
+            using std::placeholders::_2;
+            using std::placeholders::_3;
+            core::RpcWatcher watcher = std::bind(&RcpHandler::handle, rcphandler, _1, _2, _3);
+            val.second->setWatcher(watcher);
         }
         else
         {
