@@ -939,7 +939,7 @@ TEST_F(ClientServerTests, shouldForwardRcpRequestToExecutor)
         log << logger::DEBUG << "Requesting Rpc to uuid: " << uuid;
         this->endpoint->queueToReceive(createRpcRequestMessage(createRpcRequestTid, uuid, *expectedParam));
         handleRpcRequestMatcher.set(
-            createHandleRpcRequestMessage(static_cast<uint32_t>(-1), (uintptr_t)server.get(), createRpcRequestTid,
+            createHandleRpcRequestMessage(static_cast<uint32_t>(-2), (uintptr_t)server.get(), createRpcRequestTid,
                 uuid, *expectedParam));
     };
 
