@@ -35,7 +35,6 @@ public:
     void removeClientServer(ClientServerPtr clientServer);
     void notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path);
     void notifyDeletion(uint32_t uuid);
-    void notifyRpcRequest(uint64_t clientServerId, uint32_t transactionId, server::ClientServerWkPtr cswkptr);
     void notifyRpcResponse(uint64_t clientServerId, uint32_t transactionId, Buffer&& returnValue);
 private:
     /** NOTE: This will be kept as shared_ptr because weak doesnt have == operator for searching through the list.
@@ -83,7 +82,7 @@ public:
     void notifyDeletion(uint32_t uuid);
     void notifyValueUpdate(core::ValuePtr);
 
-    void notifyRpcRequest(uint64_t clientServerId, uint32_t transactionId, server::ClientServerWkPtr cswkptr);
+    void notifyRpcRequest(protocol::Uuid uuid, uint64_t clientServerId, uint32_t transactionId, server::ClientServerWkPtr cswkptr, Buffer&& parameter);
     void notifyRpcResponse(uint32_t transactionId, Buffer&& returnValue);
 
     void setUpdateInterval(uint32_t interval);

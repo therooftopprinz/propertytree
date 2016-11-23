@@ -11,10 +11,14 @@ namespace server
 class RcpHandler : public std::enable_shared_from_this<RcpHandler>
 {
 public:
-    RcpHandler(ClientServerWkPtr clientServer);
-    void handle(uint64_t csid, uint32_t tid, server::ClientServerWkPtr cswkptr);
+    RcpHandler();
+    RcpHandler(RcpHandler&);
+    RcpHandler(ClientServerWkPtr clientServer, protocol::Uuid uuid);
+    void handle(uint64_t csid, uint32_t tid, server::ClientServerWkPtr cswkptr, Buffer&& parameter);
+    ~RcpHandler();
 private:
     ClientServerWkPtr clientServer;
+    protocol::Uuid uuid;
 };
 
 class CreateRequestMessageHandler : public MessageHandler

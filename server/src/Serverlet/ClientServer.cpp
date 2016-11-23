@@ -291,15 +291,27 @@ void ClientServer::notifyRpcResponse( uint32_t transactionId, Buffer&& returnVal
     rpcResponse.emplace_back(transactionId, std::move(returnValue));
 }
 
-void ClientServer::notifyRpcRequest(uint64_t clientServerId, uint32_t transactionId, server::ClientServerWkPtr cswkptr)
+void ClientServer::notifyRpcRequest(protocol::Uuid uuid, uint64_t clientServerId, uint32_t transactionId, server::ClientServerWkPtr cswkptr, Buffer&& parameter)
 {
-    /**
-    TODO: Aquire send lock and send the HandleRpcRequest message immediately from here.
+    protocol::HandlerRpcRequest request;
+    request.callerId = clientServerId;
+    request.callerTransactionId = transactionId;
+    request.uuid = uuid;
+    request.parameter = std::move(parameter);
 
-    **/
-    // log << logger::DEBUG << "notifyRpcResponse for transactionId: " << transactionId << " and cs: " << (void*)this;
-    // std::lock_guard<std::mutex> guard(rpcResponseMutex);
-    // rpcResponse.emplace_back(transactionId, std::move(returnValue));
+    Buffer enbuff(request.size());
+    protocol::BufferView enbuffv(enbuff);
+    protocol::Encoder en(enbuffv);
+    request >> en;
+
+    Buffer header(sizeof(protocol::MessageHeader));
+    protocol::MessageHeader& headerRaw = *((protocol::MessageHeader*)header.data());
+    headerRaw.type = protocol::MessageType::HandleRpcRequest;
+    headerRaw.size = enbuff.size()+sizeof(protocol::MessageHeader);
+    headerRaw.transactionId = static_cast<uint32_t>(-1);
+    /** NOTE: sendLock not needing since calling function is from the MessageHandler which already locks sendLock.**/
+    endpoint->send(header.data(), header.size());
+    endpoint->send(enbuff.data(), enbuff.size());
 }
 
 
@@ -361,7 +373,6 @@ void ClientServer::handleOutgoing()
         {
             log << logger::DEBUG << "Property Update Notifaction available!";
             std::lock_guard<std::mutex> updatenotifGuard(valueUpdateNotificationMutex);
-            std::lock_guard<std::mutex> sendGuard(sendLock);
 
             protocol::PropertyUpdateNotification propertyUpdateNotifs;
             for(const auto& i : valueUpdateNotification)
@@ -381,6 +392,8 @@ void ClientServer::handleOutgoing()
             protocol::BufferView enbuffv(enbuff);
             protocol::Encoder en(enbuffv);
             propertyUpdateNotifs >> en;
+
+            std::lock_guard<std::mutex> sendGuard(sendLock);
             endpoint->send(enbuff.data(), enbuff.size());
 
             log << logger::DEBUG << "PropertyUpdateNotification sent!";

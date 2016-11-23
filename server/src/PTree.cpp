@@ -156,18 +156,22 @@ PropertyMapPtr Node::getProperties()
     return properties;
 }
 
+Rpc::Rpc()
+{
+}
+
 Rpc::~Rpc()
 {
 }
 
-void Rpc::setWatcher(RpcWatcher handler)
+void Rpc::setWatcher(RpcWatcher& watcher)
 {
     this->watcher = watcher;
 }
 
-void Rpc::operator()(uint64_t csid, uint32_t tid, server::ClientServerWkPtr cswkptr)
+void Rpc::operator()(uint64_t csid, uint32_t tid, server::ClientServerWkPtr cswkptr, ValueContainer&& parameter)
 {
-    watcher(csid, tid, cswkptr);
+    watcher(csid, tid, cswkptr, std::move(parameter));
 }
 
 PTree::PTree(IIdGeneratorPtr idgen) :
@@ -259,6 +263,7 @@ uint32_t PTree::deleteProperty(std::string path)
 
     parentNode->deleteProperty(names.second);
 
+    log << logger::WARNING << "deleteProperty AQUIRING LOCK uuidpropMutex";
     std::lock_guard<std::mutex> guard(uuidpropMutex);
     auto deleteItProp = props.find(property);
     auto deleteItUuid = uuids.find(uuid);
@@ -266,6 +271,7 @@ uint32_t PTree::deleteProperty(std::string path)
     props.erase(deleteItProp);
     uuids.erase(deleteItUuid);
 
+    log << logger::WARNING << "deleteProperty RELEASING LOCK uuidpropMutex";
     return uuid;
 }
 

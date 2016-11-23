@@ -46,6 +46,7 @@ struct ClientServerTests : public ::testing::Test
         testCreationMatcher = std::make_shared<CreateObjectMetaUpdateNotificationMatcher>("/Test");
         valueCreationMatcher = std::make_shared<CreateObjectMetaUpdateNotificationMatcher>("/Test/Value");
         valueDeletionMatcher = std::make_shared<DeleteObjectMetaUpdateNotificationMatcher>();
+        rpcCreationMatcher = std::make_shared<CreateObjectMetaUpdateNotificationMatcher>("/RpcTest");
 
         using protocol::CreateResponse;
         using protocol::DeleteResponse;
@@ -91,8 +92,9 @@ struct ClientServerTests : public ::testing::Test
             createValueRequestTid, testVal, protocol::PropertyType::Value, "/Test//Value");
         deleteRequestMessageForValueMessage = createDeleteRequestMessage(deleteValueRequestTid, "/Test/Value");
         deleteRequestMessageForTestMessage = createDeleteRequestMessage(deleteTestRequestTid, "/Test");
+        createRpcTestMessage = createCreateRequestMessage(
+            createRpcRequestTid, Buffer(), protocol::PropertyType::Rpc, "/RpcTest");
     }
-
     void TearDown()
     {
         using namespace std::chrono_literals;
@@ -288,6 +290,25 @@ struct ClientServerTests : public ::testing::Test
         return message;
     }
 
+    Buffer createRpcRequestMessage(uint32_t transactionId, protocol::Uuid uuid, Buffer parameter)
+    {
+        protocol::RpcRequest request;
+        request.uuid = uuid;
+        request.parameter = parameter;
+
+        uint32_t sz = request.size() + sizeof(protocol::MessageHeader);
+
+        Buffer message = createHeader(protocol::MessageType::RpcRequest, sz, transactionId);
+        Buffer enbuff(request.size());
+        protocol::BufferView enbuffv(enbuff);
+        protocol::Encoder en(enbuffv);
+        request >> en;
+        message.insert(message.end(), enbuff.begin(), enbuff.end());
+
+        return message;
+    }
+
+
     void propTestCreationAction()
     {
         this->log << logger::DEBUG << "/Test is created with uuid: " <<
@@ -329,6 +350,7 @@ struct ClientServerTests : public ::testing::Test
     const uint32_t unsubscribeValueRqstTid = 10;
     const uint32_t setValueInd3rdTid = 11;
     const uint32_t getValueReqTid = 12;
+    const uint32_t createRpcRequestTid = 13;
 
 /*****
 
@@ -357,11 +379,13 @@ Test common timeline
     Buffer createValueRequestMessageForAlreadyInvalidPath;
     Buffer deleteRequestMessageForValueMessage;
     Buffer deleteRequestMessageForTestMessage;
+    Buffer createRpcTestMessage;
 
     std::shared_ptr<MessageMatcher> signinRspMsgMatcher;
     std::shared_ptr<CreateObjectMetaUpdateNotificationMatcher> testCreationMatcher;
     std::shared_ptr<CreateObjectMetaUpdateNotificationMatcher> valueCreationMatcher;
     std::shared_ptr<DeleteObjectMetaUpdateNotificationMatcher> valueDeletionMatcher;
+    std::shared_ptr<CreateObjectMetaUpdateNotificationMatcher> rpcCreationMatcher;
 
     MessageMatcher createTestResponseFullMatcher;
     MessageMatcher createValueResponseFullMatcher;
@@ -876,6 +900,30 @@ TEST_F(ClientServerTests, shouldGetValue)
     server->setup();
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(1s);
+    endpoint->waitForAllSending(500.0);
+    server->teardown();
+
+    logger::loggerServer.waitEmpty();
+}
+
+TEST_F(ClientServerTests, shouldForwardRcpRequestToExecutor)
+{
+    endpoint->queueToReceive(createRpcTestMessage);
+
+    auto expectedParam = utils::buildSharedBufferedValue(6969);
+
+    std::function<void()> rpcCreationAction = [this, &expectedParam]()
+    {
+        auto uuid = this->rpcCreationMatcher->getUuidOfLastMatched(); 
+        log << logger::DEBUG << "Requesting Rpc to uuid: " << uuid;
+        this->endpoint->queueToReceive(createRpcRequestMessage(createRpcRequestTid, uuid, *expectedParam));
+    };
+
+    endpoint->expectSend(1, 0, true, 1, rpcCreationMatcher->get(), rpcCreationAction);
+
+    server->setup();
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1500ms);
     endpoint->waitForAllSending(500.0);
     server->teardown();
 

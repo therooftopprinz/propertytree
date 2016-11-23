@@ -103,17 +103,11 @@ private:
 class Rpc : public IProperty, public std::enable_shared_from_this<Rpc>
 {
 public:
-    /** TODO: write on cpp*/
-    Rpc() {}
-    Rpc(RpcWatcher watcher):
-        watcher(watcher)
-    {
-    }
-
+    Rpc();
     ~Rpc();
 
-    void setWatcher(RpcWatcher handler);
-    void operator()(uint64_t csid, uint32_t tid, server::ClientServerWkPtr cswkptr);
+    void setWatcher(RpcWatcher& handler);
+    void operator()(uint64_t csid, uint32_t tid, server::ClientServerWkPtr cswkptr, ValueContainer&& parameter);
 
 private:
     RpcWatcher watcher;

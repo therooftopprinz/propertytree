@@ -1,4 +1,4 @@
-#include "RcpRequestMessageHandler.hpp"
+#include "RpcRequestMessageHandler.hpp"
 
 #include <server/src/Serverlet/ClientServer.hpp>
 #include <server/src/Logger.hpp>
@@ -9,7 +9,7 @@ namespace ptree
 namespace server
 {
 
-RcpRequestMessageHandler::RcpRequestMessageHandler
+RpcRequestMessageHandler::RpcRequestMessageHandler
     (ClientServerPtr& cs,IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon):
         MessageHandler(*cs.get(),ep,pt,csmon)
         , cs(cs)
@@ -17,7 +17,7 @@ RcpRequestMessageHandler::RcpRequestMessageHandler
 
 }
 
-void RcpRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
+void RpcRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
 {
     logger::Logger log("RcpRequestMessageHandler");
 
@@ -46,15 +46,12 @@ void RcpRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferP
         2. make rpcWatcher and add it to the clientServerRpcList
         
         ***/
+
         auto rpc = ptree.getPropertyByUuid<core::Rpc>(*request.uuid);
         if (rpc)
         {
-            /** TODO: Forward the parameter to the callee baka!**/
-            (*rpc)((uintptr_t) cs.get(), header->transactionId, cs);
-            // auto sbr = std::make_shared<UpdateNotificationHandler>(cs);
-            // using std::placeholders::_1;
-            // core::ValueWatcher fn = std::bind(&UpdateNotificationHandler::handle, sbr, _1);
-            // value->addWatcher(&clientServer, fn);
+            log << logger::DEBUG << "Calling RPC object ";
+            (*rpc)((uintptr_t) cs.get(), header->transactionId, cs, std::move(*request.parameter));
         }
         else
         {
@@ -63,8 +60,7 @@ void RcpRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferP
     }
     catch (core::ObjectNotFound)
     {
-        // log << logger::ERROR << "Uuid not found!";
-        // response.response = protocol::SubscribePropertyUpdateResponse::Response::UUID_NOT_FOUND;
+        log << logger::ERROR << "Uuid not found!";
     }
 }
 

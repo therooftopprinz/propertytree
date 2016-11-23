@@ -43,11 +43,11 @@ namespace core
     class IProperty;
 
     typedef std::shared_ptr<IProperty> IPropertyPtr;
-    typedef std::vector<uint8_t> ValueContainer;
+    typedef server::Buffer ValueContainer;
     typedef std::shared_ptr<ValueContainer> ValueContainerPtr;
     typedef std::function<bool(ValuePtr)> ValueWatcher;
-    typedef std::function<void(uint64_t, uint32_t, server::ClientServerWkPtr)> RpcWatcher;
-    
+    typedef std::function<void(uint64_t, uint32_t, server::ClientServerWkPtr, ValueContainer&& parameter)> RpcWatcher;
+
     class PTree;
     class IdGenerator;
     typedef std::pair<void*, ValueWatcher> IdWatcherPair;

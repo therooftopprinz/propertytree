@@ -41,12 +41,12 @@ enum class MessageType : uint8_t
     PropertyUpdateNotification, // 34
     UnsubscribePropertyUpdateRequest, // 35
     UnsubscribePropertyUpdateResponse, // 36
-    GetValueRequest, // <-----------------
-    GetValueResponse, // 
-    RpcRequest,
-    RpcResponse,
-    HandleRpcRequest,
-    HandleRpcResponse,
+    GetValueRequest, // 37
+    GetValueResponse, // 38
+    RpcRequest, // 39
+    RpcResponse, // 3a
+    HandleRpcRequest, // 3b
+    HandleRpcResponse, // 3c
 
     AquireOwnershipRequest,
     AquireOwnershipResponse,

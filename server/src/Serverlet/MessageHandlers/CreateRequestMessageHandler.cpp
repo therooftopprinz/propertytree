@@ -7,23 +7,33 @@ namespace ptree
 namespace server
 {
 
-RcpHandler::RcpHandler(ClientServerWkPtr clientServer) :
-    clientServer(clientServer)
-{}
+RcpHandler::RcpHandler()
+{
+}
 
-void RcpHandler::handle(uint64_t csid, uint32_t tid, server::ClientServerWkPtr cswkptr)
+RcpHandler::RcpHandler(ClientServerWkPtr clientServer, protocol::Uuid uuid) :
+    clientServer(clientServer), uuid(uuid)
+{
+}
+
+RcpHandler::~RcpHandler()
+{
+}
+
+void RcpHandler::handle(uint64_t csid, uint32_t tid, server::ClientServerWkPtr cswkptr, Buffer&& parameter)
 {
     auto csshared = clientServer.lock();
     if(csshared)
     {
-        csshared->notifyRpcRequest(csid, tid, cswkptr);
+        csshared->notifyRpcRequest(uuid, csid, tid, cswkptr, std::move(parameter));
     }
 }
 
 CreateRequestMessageHandler::
     CreateRequestMessageHandler(ClientServerPtr& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon):
         MessageHandler(*cs.get(),ep,pt,csmon), cs(cs)
-{}
+{
+}
 
 void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
 {
@@ -37,7 +47,7 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Buff
     log << logger::DEBUG << "path: " << *request.path;
     core::NodePtr parentNode;
     bool created = true;
-    uint32_t id;
+    protocol::Uuid id = 0;
 
     protocol::CreateResponse response;
     response.response = protocol::CreateResponse::Response::OK;
@@ -63,12 +73,14 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Buff
         else if (*request.type == protocol::PropertyType::Rpc)
         {
             log << logger::DEBUG << "Rpc to be created.";
-            std::shared_ptr<RcpHandler> rcphandler = std::make_shared<RcpHandler>(cs);
             auto val = ptree.createProperty<core::Rpc>(*request.path);
+            id = val.first;
+            std::shared_ptr<RcpHandler> rcphandler = std::make_shared<RcpHandler>(cs, id);
             using std::placeholders::_1;
             using std::placeholders::_2;
             using std::placeholders::_3;
-            core::RpcWatcher watcher = std::bind(&RcpHandler::handle, rcphandler, _1, _2, _3);
+            using std::placeholders::_4;
+            core::RpcWatcher watcher = std::bind(&RcpHandler::handle, rcphandler, _1, _2, _3, _4);
             val.second->setWatcher(watcher);
         }
         else
