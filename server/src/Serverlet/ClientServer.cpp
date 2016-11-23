@@ -293,7 +293,7 @@ void ClientServer::notifyRpcResponse( uint32_t transactionId, Buffer&& returnVal
 
 void ClientServer::notifyRpcRequest(protocol::Uuid uuid, uint64_t clientServerId, uint32_t transactionId, server::ClientServerWkPtr cswkptr, Buffer&& parameter)
 {
-    protocol::HandlerRpcRequest request;
+    protocol::HandleRpcRequest request;
     request.callerId = clientServerId;
     request.callerTransactionId = transactionId;
     request.uuid = uuid;

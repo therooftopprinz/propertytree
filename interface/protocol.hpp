@@ -218,7 +218,7 @@ struct RpcResponse
     MESSAGE_FIELDS(returnValue);
 };
 
-struct HandlerRpcRequest
+struct HandleRpcRequest
 {
     Simple<uint64_t> callerId;
     Simple<uint32_t> callerTransactionId;
@@ -227,7 +227,7 @@ struct HandlerRpcRequest
     MESSAGE_FIELDS(callerId, callerTransactionId, uuid, parameter);
 };
 
-struct HandlerRpcResponse
+struct HandleRpcResponse
 {
     Simple<uint64_t> callerId;
     Simple<uint32_t> callerTransactionId;

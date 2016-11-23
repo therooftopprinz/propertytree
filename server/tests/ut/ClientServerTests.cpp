@@ -309,6 +309,26 @@ struct ClientServerTests : public ::testing::Test
     }
 
 
+    Buffer createHandleRpcRequestMessage(uint32_t transactionId, uint64_t callerId, uint32_t callerTransactionId, protocol::Uuid uuid, Buffer parameter)
+    {
+        protocol::HandleRpcRequest request;
+        request.callerId = callerId;
+        request.callerTransactionId = callerTransactionId;
+        request.uuid = uuid;
+        request.parameter = parameter;
+
+        uint32_t sz = request.size() + sizeof(protocol::MessageHeader);
+
+        Buffer message = createHeader(protocol::MessageType::HandleRpcRequest, sz, transactionId);
+        Buffer enbuff(request.size());
+        protocol::BufferView enbuffv(enbuff);
+        protocol::Encoder en(enbuffv);
+        request >> en;
+        message.insert(message.end(), enbuff.begin(), enbuff.end());
+
+        return message;
+    }
+
     void propTestCreationAction()
     {
         this->log << logger::DEBUG << "/Test is created with uuid: " <<
@@ -399,6 +419,7 @@ Test common timeline
     MessageMatcher subscribeValueResponseUuidNotFoundMatcher;
     MessageMatcher subscribeTestResponseNotAValueMatcher;
     MessageMatcher unsubscribeValueResponseOkMatcher;
+    MessageMatcher handleRpcRequestMatcher;
 
     std::function<void()> testCreationAction;
     std::function<void()> valueCreationDeleteImmediatelyAction;
@@ -917,13 +938,15 @@ TEST_F(ClientServerTests, shouldForwardRcpRequestToExecutor)
         auto uuid = this->rpcCreationMatcher->getUuidOfLastMatched(); 
         log << logger::DEBUG << "Requesting Rpc to uuid: " << uuid;
         this->endpoint->queueToReceive(createRpcRequestMessage(createRpcRequestTid, uuid, *expectedParam));
+        handleRpcRequestMatcher.set(
+            createHandleRpcRequestMessage(static_cast<uint32_t>(-1), (uintptr_t)server.get(), createRpcRequestTid,
+                uuid, *expectedParam));
     };
 
     endpoint->expectSend(1, 0, true, 1, rpcCreationMatcher->get(), rpcCreationAction);
+    endpoint->expectSend(2, 0, true, 1, handleRpcRequestMatcher.get(), DefaultAction::get());
 
     server->setup();
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(1500ms);
     endpoint->waitForAllSending(500.0);
     server->teardown();
 
