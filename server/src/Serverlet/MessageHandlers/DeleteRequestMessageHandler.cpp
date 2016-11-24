@@ -50,7 +50,7 @@ inline void DeleteRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
     catch (core::NotEmpty)
     {
         response.response = protocol::DeleteResponse::Response::NOT_EMPTY;
-        log << logger::ERROR << "Node not empty found: " << *request.path;
+        log << logger::ERROR << "Node not empty: " << *request.path;
     }
 
     if (deleted)

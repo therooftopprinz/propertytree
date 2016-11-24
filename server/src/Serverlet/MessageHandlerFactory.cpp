@@ -32,6 +32,8 @@ std::unique_ptr<MessageHandler>
             return std::make_unique<GetValueRequestMessageHandler>(*cs.get(), *ep.get(), *pt.get(), *csmon.get());
         case (Enum) protocol::MessageType::RpcRequest:
             return std::make_unique<RpcRequestMessageHandler>(cs, *ep.get(), *pt.get(), *csmon.get());
+        case (Enum) protocol::MessageType::HandleRpcResponse:
+            return std::make_unique<HandleRpcResponseMessageHandler>(*cs.get(), *ep.get(), *pt.get(), *csmon.get());
     }
 
     log << logger::ERROR << "Unregconize message type.";

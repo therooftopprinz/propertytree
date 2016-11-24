@@ -231,9 +231,8 @@ struct HandleRpcResponse
 {
     Simple<uint64_t> callerId;
     Simple<uint32_t> callerTransactionId;
-    Simple<Uuid> uuid;
     BufferBlock returnValue;
-    MESSAGE_FIELDS(callerId, callerTransactionId, uuid, returnValue);
+    MESSAGE_FIELDS(callerId, callerTransactionId, returnValue);
 };
 
 typedef std::shared_ptr<MessageHeader> MessageHeaderPtr;

@@ -308,7 +308,6 @@ struct ClientServerTests : public ::testing::Test
         return message;
     }
 
-
     Buffer createHandleRpcRequestMessage(uint32_t transactionId, uint64_t callerId, uint32_t callerTransactionId, protocol::Uuid uuid, Buffer parameter)
     {
         protocol::HandleRpcRequest request;
@@ -324,6 +323,42 @@ struct ClientServerTests : public ::testing::Test
         protocol::BufferView enbuffv(enbuff);
         protocol::Encoder en(enbuffv);
         request >> en;
+        message.insert(message.end(), enbuff.begin(), enbuff.end());
+
+        return message;
+    }
+
+    Buffer createHandleRpcResponseMessage(uint32_t transactionId, uint64_t callerId, uint32_t callerTransactionId, Buffer returnValue)
+    {
+        protocol::HandleRpcResponse response;
+        response.returnValue = returnValue;
+        response.callerId = callerId;
+        response.callerTransactionId = callerTransactionId;
+
+        uint32_t sz = response.size() + sizeof(protocol::MessageHeader);
+
+        Buffer message = createHeader(protocol::MessageType::HandleRpcResponse, sz, transactionId);
+        Buffer enbuff(response.size());
+        protocol::BufferView enbuffv(enbuff);
+        protocol::Encoder en(enbuffv);
+        response >> en;
+        message.insert(message.end(), enbuff.begin(), enbuff.end());
+
+        return message;
+    }
+
+    Buffer createRpcResponseMessage(uint32_t transactionId, Buffer returnValue)
+    {
+        protocol::RpcResponse response;
+        response.returnValue = returnValue;
+
+        uint32_t sz = response.size() + sizeof(protocol::MessageHeader);
+
+        Buffer message = createHeader(protocol::MessageType::RpcResponse, sz, transactionId);
+        Buffer enbuff(response.size());
+        protocol::BufferView enbuffv(enbuff);
+        protocol::Encoder en(enbuffv);
+        response >> en;
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;
@@ -420,6 +455,7 @@ Test common timeline
     MessageMatcher subscribeTestResponseNotAValueMatcher;
     MessageMatcher unsubscribeValueResponseOkMatcher;
     MessageMatcher handleRpcRequestMatcher;
+    MessageMatcher rpcResponseMatcher;
 
     std::function<void()> testCreationAction;
     std::function<void()> valueCreationDeleteImmediatelyAction;
@@ -953,6 +989,41 @@ TEST_F(ClientServerTests, shouldForwardRcpRequestToExecutor)
     logger::loggerServer.waitEmpty();
 }
 
+TEST_F(ClientServerTests, shouldForwardRcpResponseToCaller)
+{
+    endpoint->queueToReceive(createRpcTestMessage);
+
+    auto expectedParam = utils::buildSharedBufferedValue(6969);
+    rpcResponseMatcher.set(createRpcResponseMessage(createRpcRequestTid, *expectedParam));
+    protocol::Uuid uuid = 0;
+
+    std::function<void()> rpcCreationAction = [this, &expectedParam, &uuid]()
+    {
+        uuid = this->rpcCreationMatcher->getUuidOfLastMatched(); 
+        log << logger::DEBUG << "Requesting Rpc to uuid: " << uuid;
+        this->endpoint->queueToReceive(createRpcRequestMessage(createRpcRequestTid, uuid, *expectedParam));
+        handleRpcRequestMatcher.set(
+            createHandleRpcRequestMessage(static_cast<uint32_t>(-1), (uintptr_t)server.get(), createRpcRequestTid,
+                uuid, *expectedParam));
+    };
+
+    std::function<void()> handleRpcRequestAction = [this, &expectedParam]()
+    {
+        log << logger::DEBUG << "Sending HandleRpcResponse ";
+        this->endpoint->queueToReceive(
+            createHandleRpcResponseMessage(static_cast<uint32_t>(-1), (uintptr_t)server.get(), createRpcRequestTid, *expectedParam));
+    };
+
+    endpoint->expectSend(1, 0, true, 1, rpcCreationMatcher->get(), rpcCreationAction);
+    endpoint->expectSend(2, 0, true, 1, handleRpcRequestMatcher.get(), handleRpcRequestAction);
+    endpoint->expectSend(3, 0, true, 1, rpcResponseMatcher.get(), DefaultAction::get());
+
+    server->setup();
+    endpoint->waitForAllSending(500.0);
+    server->teardown();
+
+    logger::loggerServer.waitEmpty();
+}
 
 } // namespace server
 } // namespace ptree

@@ -61,8 +61,18 @@ void ClientServerMonitor::notifyDeletion(uint32_t uuid)
     }
 }
 
-void ClientServerMonitor::notifyRpcResponse(uint64_t clientServerId, uint32_t transactionId, Buffer&& returnValue)
+ClientServerPtr ClientServerMonitor::getClientServerPtrById(uint64_t csId)
 {
+    std::lock_guard<std::mutex> guard(clientServersMutex);
+    for (auto& clientServer : clientServers)
+    {
+        if(csId == (uintptr_t)clientServer.get())
+        {
+            return clientServer;
+        }
+    }
+
+    return ClientServerPtr();
 }
 
 void ClientServer::setup()
@@ -284,11 +294,31 @@ void ClientServer::notifyDeletion(uint32_t uuid)
     }
 }
 
+// struct RpcResponse
+// {
+//     BufferBlock returnValue;
+//     MESSAGE_FIELDS(returnValue);
+// };
+
 void ClientServer::notifyRpcResponse( uint32_t transactionId, Buffer&& returnValue)
 {
     log << logger::DEBUG << "notifyRpcResponse for transactionId: " << transactionId << " and cs: " << (void*)this;
-    std::lock_guard<std::mutex> guard(rpcResponseMutex);
-    rpcResponse.emplace_back(transactionId, std::move(returnValue));
+    protocol::RpcResponse response;
+    response.returnValue = std::move(returnValue);
+
+    Buffer enbuff(response.size());
+    protocol::BufferView enbuffv(enbuff);
+    protocol::Encoder en(enbuffv);
+    response >> en;
+
+    Buffer header(sizeof(protocol::MessageHeader));
+    protocol::MessageHeader& headerRaw = *((protocol::MessageHeader*)header.data());
+    headerRaw.type = protocol::MessageType::RpcResponse;
+    headerRaw.size = enbuff.size()+sizeof(protocol::MessageHeader);
+    headerRaw.transactionId = transactionId;
+    /** NOTE: sendLock not needing since calling function is from the MessageHandler which already locks sendLock.**/
+    endpoint->send(header.data(), header.size());
+    endpoint->send(enbuff.data(), enbuff.size());
 }
 
 void ClientServer::notifyRpcRequest(protocol::Uuid uuid, uint64_t clientServerId, uint32_t transactionId, server::ClientServerWkPtr cswkptr, Buffer&& parameter)
@@ -335,69 +365,73 @@ void ClientServer::handleOutgoing()
         {
             continue;
         }
-        if (metaUpdateNotification.size())
+
         {
-            log << logger::DEBUG << "Meta Notifaction available!";
             std::lock_guard<std::mutex> updatenotifGuard(metaUpdateNotificationMutex);
-            std::lock_guard<std::mutex> sendGuard(sendLock);
-
-            protocol::MetaUpdateNotification metaUpdateNotif;
-            for(const auto& i : metaUpdateNotification)
+            if (metaUpdateNotification.size())
             {
-                if (i.second.utype == ActionTypeAndPath::UpdateType::CREATE_OBJECT)
+                log << logger::DEBUG << "Meta Notifaction available!";
+                std::lock_guard<std::mutex> sendGuard(sendLock);
+
+                protocol::MetaUpdateNotification metaUpdateNotif;
+                for(const auto& i : metaUpdateNotification)
                 {
-                    metaUpdateNotif.creations->push_back(protocol::MetaCreate(i.first, i.second.ptype, i.second.path));
+                    if (i.second.utype == ActionTypeAndPath::UpdateType::CREATE_OBJECT)
+                    {
+                        metaUpdateNotif.creations->push_back(protocol::MetaCreate(i.first, i.second.ptype, i.second.path));
+                    }
+                    else
+                    {
+                        metaUpdateNotif.deletions->push_back(protocol::MetaDelete(i.first));
+                    }
                 }
-                else
-                {
-                    metaUpdateNotif.deletions->push_back(protocol::MetaDelete(i.first));
-                }
+
+                Buffer notifheader =
+                    MessageHandler::createHeader(protocol::MessageType::MetaUpdateNotification, metaUpdateNotif.size(),
+                        static_cast<uint32_t>(-1));
+                endpoint->send(notifheader.data(), notifheader.size());
+
+                Buffer enbuff(metaUpdateNotif.size());
+                protocol::BufferView enbuffv(enbuff);
+                protocol::Encoder en(enbuffv);
+                metaUpdateNotif >> en;
+                endpoint->send(enbuff.data(), enbuff.size());
+
+                log << logger::DEBUG << "MetaUpdateNotification sent!";
+                metaUpdateNotification.clear();
             }
-
-            Buffer notifheader =
-                MessageHandler::createHeader(protocol::MessageType::MetaUpdateNotification, metaUpdateNotif.size(),
-                    static_cast<uint32_t>(-1));
-            endpoint->send(notifheader.data(), notifheader.size());
-
-            Buffer enbuff(metaUpdateNotif.size());
-            protocol::BufferView enbuffv(enbuff);
-            protocol::Encoder en(enbuffv);
-            metaUpdateNotif >> en;
-            endpoint->send(enbuff.data(), enbuff.size());
-
-            log << logger::DEBUG << "MetaUpdateNotification sent!";
-            metaUpdateNotification.clear();
         }
-
-        if (valueUpdateNotification.size())
         {
-            log << logger::DEBUG << "Property Update Notifaction available!";
             std::lock_guard<std::mutex> updatenotifGuard(valueUpdateNotificationMutex);
-
-            protocol::PropertyUpdateNotification propertyUpdateNotifs;
-            for(const auto& i : valueUpdateNotification)
+            if (valueUpdateNotification.size())
             {
-                propertyUpdateNotifs.propertyUpdateNotifications->push_back(
-                    protocol::PropertyUpdateNotificationEntry(i->getUuid(), i->getValue()));
-                /** TODO: Optimize by only using the reference of value since value's lifetime is dependent to 
-                    valueUpdateNotification which assures an instance of value.**/
+                log << logger::DEBUG << "Property Update Notifaction available!";
+
+                protocol::PropertyUpdateNotification propertyUpdateNotifs;
+                for(const auto& i : valueUpdateNotification)
+                {
+                    propertyUpdateNotifs.propertyUpdateNotifications->push_back(
+                        protocol::PropertyUpdateNotificationEntry(i->getUuid(), i->getValue()));
+                    /** TODO: Optimize by only using the reference of value since value's lifetime is dependent to 
+                        valueUpdateNotification which assures an instance of value.**/
+                }
+
+                Buffer notifheader =
+                    MessageHandler::createHeader(protocol::MessageType::PropertyUpdateNotification, propertyUpdateNotifs.size(),
+                        static_cast<uint32_t>(-1));
+                endpoint->send(notifheader.data(), notifheader.size());
+
+                Buffer enbuff(propertyUpdateNotifs.size());
+                protocol::BufferView enbuffv(enbuff);
+                protocol::Encoder en(enbuffv);
+                propertyUpdateNotifs >> en;
+
+                std::lock_guard<std::mutex> sendGuard(sendLock);
+                endpoint->send(enbuff.data(), enbuff.size());
+
+                log << logger::DEBUG << "PropertyUpdateNotification sent!";
+                valueUpdateNotification.clear();
             }
-
-            Buffer notifheader =
-                MessageHandler::createHeader(protocol::MessageType::PropertyUpdateNotification, propertyUpdateNotifs.size(),
-                    static_cast<uint32_t>(-1));
-            endpoint->send(notifheader.data(), notifheader.size());
-
-            Buffer enbuff(propertyUpdateNotifs.size());
-            protocol::BufferView enbuffv(enbuff);
-            protocol::Encoder en(enbuffv);
-            propertyUpdateNotifs >> en;
-
-            std::lock_guard<std::mutex> sendGuard(sendLock);
-            endpoint->send(enbuff.data(), enbuff.size());
-
-            log << logger::DEBUG << "PropertyUpdateNotification sent!";
-            valueUpdateNotification.clear();
         }
 
         using namespace std::chrono_literals;

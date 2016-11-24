@@ -33,6 +33,7 @@ namespace color {
 
 void LoggerServer::log(LogEntry logEntry)
 {
+    std::lock_guard<std::mutex> guard(logQueueMutex);
     toBeLogged.push_back(logEntry);
 }
 
@@ -40,7 +41,6 @@ void LoggerServer::logProcessor()
 {
     logProcessorRunning = true;
     std::cout << "LogProcessor Running!!" << std::endl;
-    logProcessorRunning = true;
     color::Modifier red(color::FG_RED);
     color::Modifier yellow(color::FG_YELLOW);
     color::Modifier green(color::FG_GREEN);
@@ -50,6 +50,8 @@ void LoggerServer::logProcessor()
     {
         using namespace std::chrono_literals;
         std::this_thread::sleep_for(100us);
+
+        std::lock_guard<std::mutex> guard(logQueueMutex);
 
         while(toBeLogged.begin()!=toBeLogged.end())
         {
@@ -64,7 +66,7 @@ void LoggerServer::logProcessor()
             std::cout << "t" << std::dec << ((l.threadId&0xF)+30);
             std::cout << def;
             std::cout << " ";
-            
+
             if (l.level == DEBUG)
             {
                 std::cout << "DBG ";

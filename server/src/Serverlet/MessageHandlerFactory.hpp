@@ -12,6 +12,7 @@
 #include "MessageHandlers/UnsubscribePropertyUpdateRequestMessageHandler.hpp"
 #include "MessageHandlers/GetValueRequestMessageHandler.hpp"
 #include "MessageHandlers/RpcRequestMessageHandler.hpp"
+#include "MessageHandlers/HandleRpcResponseMessageHandler.hpp"
 
 namespace ptree
 {

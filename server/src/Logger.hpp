@@ -7,6 +7,8 @@
 #include <list>
 #include <chrono>
 #include <ctime>
+#include <mutex>
+#include <atomic>
 
 namespace ptree
 {
@@ -65,9 +67,10 @@ public:
 
 private:
     void logProcessor();
-    bool logProcessorRunning;
-    bool killLogProcessor;
+    std::atomic<bool> logProcessorRunning;
+    std::atomic<bool> killLogProcessor;
     std::list<LogEntry> toBeLogged;
+    std::mutex logQueueMutex;
     uint64_t timeBase;
 };
 

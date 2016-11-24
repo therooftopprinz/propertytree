@@ -14,7 +14,6 @@ struct IEndPoint
 {
     virtual ssize_t send(const void *buffer, uint32_t size) = 0;
     virtual ssize_t receive(void *buffer, uint32_t size) = 0;
-    // virtual void setReceiveTimeout(uint32_t timeout);
 };
 
 } // namespace server

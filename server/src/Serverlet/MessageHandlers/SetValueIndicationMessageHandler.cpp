@@ -12,7 +12,6 @@ SetValueIndicationMessageHandler::SetValueIndicationMessageHandler
     (ClientServer& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon):
         MessageHandler(cs,ep,pt,csmon)
 {
-
 }
 
 void SetValueIndicationMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)

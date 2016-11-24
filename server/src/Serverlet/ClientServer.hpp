@@ -24,8 +24,10 @@ public:
     virtual void removeClientServer(ClientServerPtr clientServer) = 0;
     virtual void notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path) = 0;
     virtual void notifyDeletion(uint32_t uuid) = 0;
+    virtual ClientServerPtr getClientServerPtrById(uint64_t csId) = 0;
 };
 
+/** TODO: UT for monitor **/
 class ClientServerMonitor : public IClientServerMonitor
 {
 public:
@@ -36,6 +38,8 @@ public:
     void notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path);
     void notifyDeletion(uint32_t uuid);
     void notifyRpcResponse(uint64_t clientServerId, uint32_t transactionId, Buffer&& returnValue);
+    ClientServerPtr getClientServerPtrById(uint64_t csId);
+
 private:
     /** NOTE: This will be kept as shared_ptr because weak doesnt have == operator for searching through the list.
         This won't cause circular references if ClientServer is removed from the monitor.**/
@@ -107,9 +111,6 @@ private:
 
     std::list<core::ValuePtr> valueUpdateNotification;
     std::mutex valueUpdateNotificationMutex;
-
-    std::list<TransactionIdBufferPair> rpcResponse;
-    std::mutex rpcResponseMutex;
 
     IEndPointPtr endpoint;
     std::mutex sendLock;
