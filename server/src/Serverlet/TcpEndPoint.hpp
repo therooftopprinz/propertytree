@@ -21,17 +21,19 @@ public:
 
     ~TcpEndPoint()
     {
-        close(sockfd);
+        // ::close(sockfd);
     }
 
     inline ssize_t send(const void *buffer, uint32_t size)
     {
-        return send(sockfd, buffer, size, flags);
+        // return ::send(sockfd, buffer, size, flags);
+        return 0;
     }
 
     inline ssize_t receive(void *buffer, uint32_t size)
     {
-        return receive(sockfd, buffer, size, flags);
+        // return ::receive(sockfd, buffer, size, flags);
+        return 0;
     }
 
     inline void setBlockingTimeout(int secs, int microsecs)
