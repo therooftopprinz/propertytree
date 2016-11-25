@@ -16,6 +16,7 @@ SERVER_UTDIR          := server/tests/ut
 SERVER_INCDIR         := .
 SERVER_TESTINCDIR  	  := $(SERVER_INCDIR) $(TLD)/gtest
 SERVER_UT_LD          := pthread m
+SERVER_LD          := pthread m
 
 TESTFLAG			  :=
 
@@ -31,8 +32,9 @@ BUILDDIR_GCOV         := $(TLD)/build/gcov
 SERVER_INCDIR_GCC     := $(addprefix -I, $(SERVER_INCDIR))
 SERVER_TESTINCDIR_GCC := $(addprefix -I, $(SERVER_TESTINCDIR))
 SERVER_UT_LD_GCC 	  := $(addprefix -l, $(SERVER_UT_LD))
+SERVER_LD_GCC 	  := $(addprefix -l, $(SERVER_UT_LD))
 
-SERVER_SOURCES        := $(shell find $(SERVER_SRCDIR) -type f -name *.cpp)
+SERVER_SOURCES        := $(shell find $(SERVER_SRCDIR) -type f -name *.cpp -not -name main.cpp)
 SERVER_TEST_SOURCES   := $(shell find $(SERVER_UTDIR) -type f -name *.cpp)
 SERVER_OBJECTS        := $(addprefix $(BUILDDIR)/, $(SERVER_SOURCES:.cpp=.cpp.o))
 SERVER_OBJECTS_GCOV   := $(addprefix $(BUILDDIR_GCOV)/, $(SERVER_SOURCES:.cpp=.cpp.o))
@@ -43,6 +45,12 @@ SERVER_TESTS_OBJECTS_GCOV  := $(addprefix $(BUILDDIR_GCOV)/, $(SERVER_TEST_SOURC
 $(GTEST):
 	@echo "Building gtest..."
 	$(MAKE) -C $(TLD)/gtest all
+
+server: $(SERVER_OBJECTS)
+	@mkdir -p $(SERVER_TARGET)
+	@echo Linking $(SERVER_TARGET)/server
+	@$(CC) $(CFLAGS) $(SERVER_INCDIR_GCC) -g -c $(SERVER_SRCDIR)/main.cpp -o $(BUILDDIR)/$(SERVER_SRCDIR)/main.cpp.o
+	@$(CC) -g $(SERVER_OBJECTS) $(SERVER_LD_GCC) $(BUILDDIR)/$(SERVER_SRCDIR)/main.cpp.o $(GCOV_LD) -o $(SERVER_TARGET)/server
 
 server_ut: $(GTEST) $(SERVER_OBJECTS) $(SERVER_TESTS_OBJECTS)
 	@mkdir -p $(SERVER_TARGET)
