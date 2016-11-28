@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <bits/time.h>
 #include <server/src/Types.hpp>
-#include "IEndPoint.hpp"
+#include <common/src/IEndPoint.hpp>
 
 namespace ptree
 {

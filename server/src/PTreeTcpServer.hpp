@@ -3,12 +3,12 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <server/src/Serverlet/IEndPoint.hpp>
-#include <server/src/Serverlet/TcpEndPoint.hpp>
+#include <common/src/IEndPoint.hpp>
+#include <common/src/TcpEndPoint.hpp>
 #include <server/src/Serverlet/ClientServer.hpp>
 #include <server/src/PTree.hpp>
 #include "Types.hpp"
-#include "Logger.hpp"
+#include <common/src/Logger.hpp>
 
 namespace ptree
 {

@@ -13,7 +13,7 @@
 
 rm -rf covrep/*
 
-lcov --rc lcov_branch_coverage=1 -c -b server -d ../build/gcov/server/ > ut_coverage.info
+lcov --rc lcov_branch_coverage=1 -c -b . -d ../build/gcov/ > ut_coverage.info
 lcov -r ut_coverage.info '/usr/include*' '*/gtest/g*' > clean_ut_coverage.info
 genhtml --rc genhtml_branch_coverage=1 clean_ut_coverage.info -o covrep/ --branch-coverage -f
 # ../lcov2xml/lcov_cobertura.py ut_coverage.info -o ut_coverage.xml

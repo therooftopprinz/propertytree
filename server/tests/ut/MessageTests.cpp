@@ -5,7 +5,7 @@
 #include <interface/protocol.hpp>
 #include <interface/MessageEssential.hpp>
 #include <server/src/Utils.hpp>
-#include <server/src/Logger.hpp>
+#include <common/src/Logger.hpp>
 
 using namespace testing;
 

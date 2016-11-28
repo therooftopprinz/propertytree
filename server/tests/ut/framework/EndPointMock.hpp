@@ -8,7 +8,7 @@
 #include <cstring>
 #include <functional>
 #include <server/src/PTreeTcpServer.hpp>
-#include <server/src/Logger.hpp>
+#include <common/src/Logger.hpp>
 #include <server/src/Types.hpp>
 #include <interface/protocol.hpp>
 

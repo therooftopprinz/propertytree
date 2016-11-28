@@ -3,7 +3,7 @@
 #include <cassert>
 #include <sstream>
 #include <thread>
-#include <server/src/Logger.hpp>
+#include <common/src/Logger.hpp>
 #include <server/src/Utils.hpp>
 #include "EndPointMock.hpp"
 

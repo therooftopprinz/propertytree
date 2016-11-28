@@ -1,5 +1,5 @@
 #include "MessageHandlerFactory.hpp"
-#include <server/src/Logger.hpp>
+#include <common/src/Logger.hpp>
 
 namespace ptree
 {

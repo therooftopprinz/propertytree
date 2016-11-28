@@ -8,7 +8,7 @@
 #include <vector>
 #include <list>
 #include <interface/protocol.hpp>
-#include "Logger.hpp"
+#include <common/src/Logger.hpp>
 #include "Utils.hpp"
 #include "Types.hpp"
 

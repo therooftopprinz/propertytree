@@ -1,10 +1,10 @@
 #ifndef SERVER_SERVERLET_MESSAGEHANDLERS_MESSAGEHANDLER_HPP_
 #define SERVER_SERVERLET_MESSAGEHANDLERS_MESSAGEHANDLER_HPP_
 
-#include <server/src/Serverlet/IEndPoint.hpp>
+#include <common/src/IEndPoint.hpp>
 #include <server/src/PTree.hpp>
 #include <server/src/Types.hpp>
-#include <server/src/Logger.hpp>
+#include <common/src/Logger.hpp>
 
 namespace ptree
 {
