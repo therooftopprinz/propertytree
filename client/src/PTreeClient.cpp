@@ -5,6 +5,11 @@ namespace ptree
 namespace client
 {
 
+void PTreeClient::processMessage(protocol::MessageHeaderPtr header, BufferPtr message)
+{
+
+}
+
 void PTreeClient::handleIncoming()
 {
     handleIncomingIsRunning = true;
@@ -58,7 +63,7 @@ void PTreeClient::handleIncoming()
                 }
             }
         }
-        
+
         if (incomingState == EIncomingState::WAIT_FOR_MESSAGE_EMPTY)
         {
             uint8_t cursor = 0;

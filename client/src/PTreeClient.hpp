@@ -18,7 +18,7 @@ namespace client
 
 
 typedef std::vector<uint8_t> Buffer;
-
+typedef std::shared_ptr<Buffer> BufferPtr;
 class PTreeClient
 {
 public:
@@ -33,7 +33,7 @@ private:
     bool killHandleIncoming;
     bool killHandleOutgoing;
 
-    IEndPointPtr endpoint;
+    server::IEndPointPtr endpoint;
 
     std::map<protocol::Uuid, std::string> uuidPathMap;
     std::map<std::string, protocol::Uuid> pathUuidMap;
@@ -41,6 +41,7 @@ private:
     std::mutex uuidPathMapMutex;
     std::mutex pathValueMapMutex;
 
+    logger::Logger log;
     enum class EIncomingState
     {
         WAIT_FOR_HEADER_EMPTY,
@@ -50,6 +51,7 @@ private:
         ERROR_HEADER_TIMEOUT,
         ERROR_MESSAGE_TIMEOUT
     };
+    EIncomingState incomingState;
 };
 
 }

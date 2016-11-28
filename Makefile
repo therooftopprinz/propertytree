@@ -118,7 +118,7 @@ $(SERVER_TESTS_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
 client_ut: $(GTEST) $(CLIENT_OBJECTS) $(CLIENT_TESTS_OBJECTS) $(COMMON_TARGET)/common.a
 	@mkdir -p $(CLIENT_TARGET)
 	@echo Linking $(CLIENT_TARGET)/client_ut
-	@$(CC) -g $(GTEST) $(CLIENT_UT_LD_GCC) $(CLIENT_OBJECTS) $(CLIENT_TESTS_OBJECTS) -o $(CLIENT_TARGET)/client_ut
+	@$(CC) -g $(GTEST) $(CLIENT_UT_LD_GCC) $(CLIENT_OBJECTS) $(CLIENT_TESTS_OBJECTS) $(COMMON_TARGET)/common.a -o $(CLIENT_TARGET)/client_ut
 
 client_ut_run: client_ut
 	$(CLIENT_TARGET)/client_ut $(TESTFLAG)

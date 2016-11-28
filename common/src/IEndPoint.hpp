@@ -10,6 +10,8 @@ namespace ptree
 namespace server
 {
 
+typedef std::shared_ptr<IEndPoint> IEndPointPtr;
+
 struct IEndPoint
 {
     virtual ssize_t send(const void *buffer, uint32_t size) = 0;
