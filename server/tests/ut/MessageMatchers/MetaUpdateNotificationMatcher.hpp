@@ -2,14 +2,14 @@
 #define SERVER_MESSAGE_MATCHERS_METAUPDATENOTIFICATION_HPP_
 
 #include <common/src/Utils.hpp>
-#include "Matcher.hpp"
+#include <common/TestingFramework/Matcher.hpp>
 
 namespace ptree
 {
 namespace server
 {
 
-class MetaUpdateNotificationMatcher : public Matcher
+class MetaUpdateNotificationMatcher : public common::Matcher
 {
 public:
     MetaUpdateNotificationMatcher();

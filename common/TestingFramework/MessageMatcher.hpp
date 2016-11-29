@@ -5,10 +5,10 @@
 
 namespace ptree
 {
-namespace server
+namespace common
 {
 
-class MessageMatcher : public Matcher
+class MessageMatcher : public common::Matcher
 {
 public:
     MessageMatcher();

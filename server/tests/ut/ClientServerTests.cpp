@@ -13,9 +13,9 @@
 #include <common/src/Utils.hpp>
 #include "MessageMatchers/CreateObjectMetaUpdateNotificationMatcher.hpp"
 #include "MessageMatchers/DeleteObjectMetaUpdateNotificationMatcher.hpp"
-#include "MessageMatchers/MessageMatcher.hpp"
 #include "MessageMatchers/MetaUpdateNotificationMatcher.hpp"
 #include "MessageMatchers/PropertyUpdateNotificationMatcher.hpp"
+#include <common/TestingFramework/MessageMatcher.hpp>
 
 using namespace testing;
 
@@ -23,6 +23,11 @@ namespace ptree
 {
 namespace server
 {
+
+typedef common::MatcherFunctor MatcherFunctor;
+typedef common::ActionFunctor ActionFunctor;
+typedef common::DefaultAction DefaultAction;
+typedef common::MessageMatcher MessageMatcher;
 
 struct ClientServerTests : public ::testing::Test
 {

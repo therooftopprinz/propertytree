@@ -6,14 +6,14 @@
 #include <server/src/PTree.hpp>
 #include <server/src/Types.hpp>
 
-#include "Matcher.hpp"
+#include <common/TestingFramework/Matcher.hpp>
 
 namespace ptree
 {
 namespace server
 {
 
-class PropertyUpdateNotificationMatcher : public Matcher
+class PropertyUpdateNotificationMatcher : public common::Matcher
 {
 public:
     PropertyUpdateNotificationMatcher(std::string path,

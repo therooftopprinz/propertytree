@@ -5,9 +5,44 @@ namespace ptree
 namespace client
 {
 
-void PTreeClient::processMessage(protocol::MessageHeaderPtr header, BufferPtr message)
+PTreeClient::PTreeClient(common::IEndPointPtr endpoint):
+    endpoint(endpoint)
+{
+    std::function<void()> incoming = std::bind(&ClientServer::handleIncoming, this);
+    killHandleIncoming = false;
+    log << logger::DEBUG << "Creating incomingThread.";
+    std::thread incomingThread(incoming);
+    incomingThread.detach();
+    log << logger::DEBUG << "Created threads detached.";
+}
+
+PTreeClient::~PTreeClient()
 {
 
+    log << logger::DEBUG << "PTreeClient teardown begin...";
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(100ms); // wait setup to finish
+
+    killHandleIncoming = true;
+
+    log << logger::DEBUG << "teardown: waiting thread to stop...";
+    log << logger::DEBUG << "teardown: handleIncoming " << handleIncomingIsRunning;
+    log << logger::DEBUG << "teardown: prossesing " << processMessageRunning;
+    while (handleIncomingIsRunning || processMessageRunning);
+    log << logger::DEBUG << "PTreeClient Teardown complete.";
+}
+
+void PTreeClient::processMessage(protocol::MessageHeaderPtr header, BufferPtr message)
+{
+    processMessageRunning++;
+    log << logger::DEBUG << "processMessage()";
+    auto type = header->type;
+    std::lock_guard<std::mutex> guard(sendLock);
+    auto lval_this = shared_from_this();
+
+    messageHandlerFactory.get(type, lval_this, endpoint, ptree, monitor)->handle(header, message);
+
+    processMessageRunning--;
 }
 
 void PTreeClient::handleIncoming()

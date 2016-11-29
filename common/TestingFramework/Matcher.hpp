@@ -5,12 +5,8 @@
 
 namespace ptree
 {
-namespace server
+namespace common
 {
-
-typedef common::MatcherFunctor MatcherFunctor;
-typedef common::ActionFunctor ActionFunctor;
-typedef common::DefaultAction DefaultAction;
 
 class Matcher
 {

@@ -21,18 +21,20 @@ typedef std::shared_ptr<Buffer> BufferPtr;
 class PTreeClient
 {
 public:
-    PTreeClient(std::string host, int port);
+    PTreeClient(common::IEndPointPtr endpoint);
+    ~PTreeClient();
+
 private:
     void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);
     void handleIncoming();
-    void handleOutgoing();
 
     bool handleIncomingIsRunning;
     bool handleOutgoingIsRunning;
     bool killHandleIncoming;
-    bool killHandleOutgoing;
+    bool processMessageRunning;
 
     server::IEndPointPtr endpoint;
+    std::mutex sendLock;
 
     std::map<protocol::Uuid, std::string> uuidPathMap;
     std::map<std::string, protocol::Uuid> pathUuidMap;
