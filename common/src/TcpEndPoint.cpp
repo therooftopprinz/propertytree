@@ -2,7 +2,7 @@
 
 namespace ptree
 {
-namespace server
+namespace common
 {
 
 

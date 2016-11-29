@@ -7,16 +7,17 @@
 
 namespace ptree
 {
-namespace server
+namespace common
 {
 
-typedef std::shared_ptr<IEndPoint> IEndPointPtr;
 
 struct IEndPoint
 {
     virtual ssize_t send(const void *buffer, uint32_t size) = 0;
     virtual ssize_t receive(void *buffer, uint32_t size) = 0;
 };
+
+typedef std::shared_ptr<IEndPoint> IEndPointPtr;
 
 } // namespace server
 

@@ -10,7 +10,7 @@
 
 namespace ptree
 {
-namespace server
+namespace common
 {
 
 class TcpEndPoint : public IEndPoint

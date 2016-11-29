@@ -7,6 +7,15 @@
 
 namespace ptree
 {
+
+namespace common
+{
+
+    class IEndPoint;
+    class EndPoint;
+    class TcpEndPoint;
+}
+
 namespace server
 {
     class IClientServerMonitor;
@@ -21,11 +30,11 @@ namespace server
     typedef std::vector<uint8_t> Buffer;
     typedef std::shared_ptr<Buffer> BufferPtr;
 
-    class IEndPoint;
-    class EndPoint;
 
+
+    typedef common::IEndPoint IEndPoint;
+    typedef common::TcpEndPoint TcpEndPoint;
     typedef std::shared_ptr<IEndPoint> IEndPointPtr;
-    typedef std::shared_ptr<EndPoint> EndPointPtr;
 
 } // namespace server
 
