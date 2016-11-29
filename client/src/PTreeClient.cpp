@@ -6,9 +6,11 @@ namespace client
 {
 
 PTreeClient::PTreeClient(common::IEndPointPtr endpoint):
-    endpoint(endpoint)
+    processMessageRunning(0),
+    endpoint(endpoint),
+    log("PTreeClient")
 {
-    std::function<void()> incoming = std::bind(&ClientServer::handleIncoming, this);
+    std::function<void()> incoming = std::bind(&PTreeClient::handleIncoming, this);
     killHandleIncoming = false;
     log << logger::DEBUG << "Creating incomingThread.";
     std::thread incomingThread(incoming);
@@ -18,7 +20,6 @@ PTreeClient::PTreeClient(common::IEndPointPtr endpoint):
 
 PTreeClient::~PTreeClient()
 {
-
     log << logger::DEBUG << "PTreeClient teardown begin...";
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(100ms); // wait setup to finish
@@ -36,11 +37,10 @@ void PTreeClient::processMessage(protocol::MessageHeaderPtr header, BufferPtr me
 {
     processMessageRunning++;
     log << logger::DEBUG << "processMessage()";
-    auto type = header->type;
+    // auto type = header->type;
     std::lock_guard<std::mutex> guard(sendLock);
-    auto lval_this = shared_from_this();
 
-    messageHandlerFactory.get(type, lval_this, endpoint, ptree, monitor)->handle(header, message);
+    // messageHandlerFactory.get(type, this, endpoint, ptree, monitor)->handle(header, message);
 
     processMessageRunning--;
 }

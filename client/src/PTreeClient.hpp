@@ -31,7 +31,7 @@ private:
     bool handleIncomingIsRunning;
     bool handleOutgoingIsRunning;
     bool killHandleIncoming;
-    bool processMessageRunning;
+    uint32_t processMessageRunning;
 
     server::IEndPointPtr endpoint;
     std::mutex sendLock;
