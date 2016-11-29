@@ -7,19 +7,19 @@
 #include <vector>
 #include <cstring>
 #include <functional>
-#include <server/src/PTreeTcpServer.hpp>
 #include <common/src/Logger.hpp>
-#include <server/src/Types.hpp>
+#include <common/src/IEndPoint.hpp>
 #include <interface/protocol.hpp>
 
 namespace ptree
 {
-namespace server
+namespace common
 {
 
+typedef std::vector<uint8_t> Buffer;
+typedef std::shared_ptr<Buffer> BufferPtr;
 typedef std::function<bool(const void*,uint32_t)> MatcherFunctor;
 typedef std::function<void()> ActionFunctor;
-
 
 class DefaultAction
 {

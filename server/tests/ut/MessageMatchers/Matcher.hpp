@@ -1,12 +1,16 @@
 #ifndef SERVER_MESSAGE_MATCHERS_MATCHER_HPP_
 #define SERVER_MESSAGE_MATCHERS_MATCHER_HPP_
 
-#include <server/tests/ut/framework/EndPointMock.hpp>
+#include <common/TestingFramework/EndPointMock.hpp>
 
 namespace ptree
 {
 namespace server
 {
+
+typedef common::MatcherFunctor MatcherFunctor;
+typedef common::ActionFunctor ActionFunctor;
+typedef common::DefaultAction DefaultAction;
 
 class Matcher
 {

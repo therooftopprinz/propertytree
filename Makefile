@@ -30,10 +30,12 @@ CLIENT_LD          := pthread m
 
 COMMON_SRCDIR         := common/src
 COMMON_INCDIR         := .
-COMMON_TESTINCDIR  	  := $(COMMON_INCDIR) $(TLD)/gtest
-COMMON_UT_LD          := pthread m
 COMMON_LD          := pthread m
-
+COMMON_TESTING_SRCDIR         := common/TestingFramework
+COMMON_TESTING_INCDIR         := $(COMMON_INCDIR) $(TLD)/gtest
+COMMON_TESTING_TESTINCDIR     := $(COMMON_TESTING_INCDIR) $(TLD)/gtest
+COMMON_TESTING_UT_LD          := pthread m
+COMMON_TESTING_LD          := pthread m
 
 TESTFLAG			  :=
 
@@ -73,10 +75,19 @@ COMMON_SOURCES        := $(shell find $(COMMON_SRCDIR) -type f -name *.cpp)
 COMMON_OBJECTS        := $(addprefix $(BUILDDIR)/, $(COMMON_SOURCES:.cpp=.cpp.o))
 COMMON_OBJECTS_GCOV   := $(addprefix $(BUILDDIR_GCOV)/, $(COMMON_SOURCES:.cpp=.cpp.o))
 COMMON_LD_GCC 	  := $(addprefix -l, $(COMMON_LD))
+COMMON_TESTING_INCDIR_GCC     := $(addprefix -I, $(COMMON_TESTING_INCDIR))
+COMMON_TESTING_SOURCES        := $(shell find $(COMMON_TESTING_SRCDIR) -type f -name *.cpp)
+COMMON_TESTING_OBJECTS        := $(addprefix $(BUILDDIR)/, $(COMMON_TESTING_SOURCES:.cpp=.cpp.o))
+COMMON_TESTING_OBJECTS_GCOV   := $(addprefix $(BUILDDIR_GCOV)/, $(COMMON_TESTING_SOURCES:.cpp=.cpp.o))
+COMMON_TESTING_LD_GCC     := $(addprefix -l, $(COMMON_TESTING_LD))
+
+## TARGET GTEST #########################################################################
 
 $(GTEST):
 	@echo "Building gtest..."
 	$(MAKE) -C $(TLD)/gtest all
+
+## TARGET COMMON #########################################################################
 
 $(COMMON_TARGET)/common.a: $(COMMON_OBJECTS)
 	@mkdir -p $(COMMON_TARGET)
@@ -88,16 +99,37 @@ $(COMMON_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
 	@echo "Building COMMON SOURCE" $@
 	@$(CC) $(CFLAGS) $(COMMON_INCDIR_GCC) -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
 
+## TARGET COMMON TESTING #########################################################################
+
+$(COMMON_TESTING_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
+	@mkdir -p $(@D)
+	@echo "Building COMMON TESTING" $@
+	@$(CC) $(CFLAGS) $(COMMON_TESTING_INCDIR_GCC) -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
+
+$(COMMON_TARGET)/common_testing.a: $(COMMON_TESTING_OBJECTS)
+	@mkdir -p $(COMMON_TARGET)
+	@echo Archiving $(COMMON_TARGET)/common_testing.a
+	@$(AR) rcs $(COMMON_TARGET)/common_testing.a $(COMMON_TESTING_OBJECTS)
+
+## TARGET SERVER #########################################################################
+
 server: $(COMMON_TARGET)/common.a $(SERVER_OBJECTS)
 	@mkdir -p $(SERVER_TARGET)
 	@echo Linking $(SERVER_TARGET)/server
 	@$(CC) $(CFLAGS) $(SERVER_INCDIR_GCC) -g -c $(SERVER_SRCDIR)/main.cpp -o $(BUILDDIR)/$(SERVER_SRCDIR)/main.cpp.o
 	@$(CC) -g $(SERVER_OBJECTS) $(SERVER_LD_GCC) $(COMMON_TARGET)/common.a $(BUILDDIR)/$(SERVER_SRCDIR)/main.cpp.o -o $(SERVER_TARGET)/server
 
-server_ut: $(GTEST) $(COMMON_TARGET)/common.a $(SERVER_OBJECTS) $(SERVER_TESTS_OBJECTS)
+$(SERVER_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
+	@mkdir -p $(@D)
+	@echo "Building SOURCE" $@
+	@$(CC) $(CFLAGS) $(SERVER_INCDIR_GCC) -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
+
+## TARGET SERVER UT #########################################################################
+
+server_ut: $(GTEST) $(COMMON_TARGET)/common.a $(SERVER_OBJECTS) $(SERVER_TESTS_OBJECTS) $(COMMON_TARGET)/common_testing.a
 	@mkdir -p $(SERVER_TARGET)
 	@echo Linking $(SERVER_TARGET)/server_ut
-	@$(CC) -g $(GTEST) $(SERVER_UT_LD_GCC) $(SERVER_OBJECTS) $(SERVER_TESTS_OBJECTS) $(COMMON_TARGET)/common.a -o $(SERVER_TARGET)/server_ut
+	@$(CC) -g $(GTEST) $(SERVER_UT_LD_GCC) $(SERVER_OBJECTS) $(SERVER_TESTS_OBJECTS) $(COMMON_TARGET)/common.a $(COMMON_TARGET)/common_testing.a -o $(SERVER_TARGET)/server_ut
 
 server_ut_run: server_ut
 	$(SERVER_TARGET)/server_ut $(TESTFLAG)
@@ -105,20 +137,24 @@ server_ut_run: server_ut
 server_ut_valgrind_run: server_ut
 	valgrind --leak-check=full --show-leak-kinds=all -v $(SERVER_TARGET)/server_ut $(TESTFLAG)
 
-$(SERVER_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
-	@mkdir -p $(@D)
-	@echo "Building SOURCE" $@
-	@$(CC) $(CFLAGS) $(SERVER_INCDIR_GCC) -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
-
 $(SERVER_TESTS_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
 	@mkdir -p $(@D)
 	@echo "Building TEST" $@
 	@$(CC) $(CFLAGS) $(SERVER_TESTINCDIR_GCC) -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
 
-client_ut: $(GTEST) $(CLIENT_OBJECTS) $(CLIENT_TESTS_OBJECTS) $(COMMON_TARGET)/common.a
+## TARGET CLIENT #########################################################################
+
+$(CLIENT_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
+	@mkdir -p $(@D)
+	@echo "Building SOURCE" $@
+	@$(CC) $(CFLAGS) $(CLIENT_INCDIR_GCC) -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
+
+## TARGET CLIENT UT #########################################################################
+
+client_ut: $(GTEST) $(CLIENT_OBJECTS) $(CLIENT_TESTS_OBJECTS) $(COMMON_TARGET)/common.a $(COMMON_TARGET)/gcov/common_testing.a
 	@mkdir -p $(CLIENT_TARGET)
 	@echo Linking $(CLIENT_TARGET)/client_ut
-	@$(CC) -g $(GTEST) $(CLIENT_UT_LD_GCC) $(CLIENT_OBJECTS) $(CLIENT_TESTS_OBJECTS) $(COMMON_TARGET)/common.a -o $(CLIENT_TARGET)/client_ut
+	@$(CC) -g $(GTEST) $(CLIENT_UT_LD_GCC) $(CLIENT_OBJECTS) $(CLIENT_TESTS_OBJECTS) $(COMMON_TARGET)/common.a $(COMMON_TARGET)/common_testing.a -o $(CLIENT_TARGET)/client_ut
 
 client_ut_run: client_ut
 	$(CLIENT_TARGET)/client_ut $(TESTFLAG)
@@ -126,18 +162,22 @@ client_ut_run: client_ut
 client_ut_valgrind_run: client_ut
 	valgrind --leak-check=full --show-leak-kinds=all -v $(CLIENT_TARGET)/client_ut $(TESTFLAG)
 
-$(CLIENT_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
-	@mkdir -p $(@D)
-	@echo "Building SOURCE" $@
-	@$(CC) $(CFLAGS) $(CLIENT_INCDIR_GCC) -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
-
 $(CLIENT_TESTS_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
 	@mkdir -p $(@D)
 	@echo "Building TEST" $@
 	@$(CC) $(CFLAGS) $(CLIENT_TESTINCDIR_GCC) -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
 
-## TARGET GOV #########################################################################
+## TARGET GOV COMMON #########################################################################
 
+$(COMMON_TARGET)/gcov/common_testing.a: $(COMMON_TESTING_OBJECTS_GCOV)
+	@mkdir -p $(COMMON_TARGET)
+	@echo Archiving $(COMMON_TARGET)/common_testing.a
+	@$(AR) rcs $(COMMON_TARGET)/gcov/common_testing.a $(COMMON_TESTING_OBJECTS_GCOV)
+
+$(COMMON_TESTING_OBJECTS_GCOV): $(BUILDDIR_GCOV)/%.cpp.o : %.cpp
+	@mkdir -p $(@D)
+	@echo "Building_COMMON_TESTING_GCOV" $@
+	@$(CC) $(CFLAGS) $(COMMON_TESTING_INCDIR_GCC) -lgcov --coverage -g -c $(patsubst $(BUILDDIR_GCOV)/%.cpp.o,%.cpp,$@) -o $@
 
 $(COMMON_TARGET)/gcov/common.a: $(COMMON_OBJECTS_GCOV)
 	@mkdir -p $(COMMON_TARGET)/gcov/
@@ -146,26 +186,30 @@ $(COMMON_TARGET)/gcov/common.a: $(COMMON_OBJECTS_GCOV)
 
 $(COMMON_OBJECTS_GCOV): $(BUILDDIR_GCOV)/%.cpp.o : %.cpp
 	@mkdir -p $(@D)
-	@echo "Building COMMON SOURCE" $@
+	@echo "Building_COMMON_SOURCE_GCOV" $@
 	@$(CC) $(CFLAGS) $(COMMON_INCDIR_GCC) -lgcov --coverage -g -c $(patsubst $(BUILDDIR_GCOV)/%.cpp.o,%.cpp,$@) -o $@
 
-server_ut_gcov: $(GTEST) $(SERVER_OBJECTS_GCOV) $(SERVER_TESTS_OBJECTS_GCOV) $(COMMON_TARGET)/gcov/common.a
+## TARGET GOV SERVER #########################################################################
+
+server_ut_gcov: $(GTEST) $(SERVER_OBJECTS_GCOV) $(SERVER_TESTS_OBJECTS_GCOV) $(COMMON_TARGET)/gcov/common.a $(COMMON_TARGET)/gcov/common_testing.a
 	@mkdir -p $(SERVER_TARGET)
 	@echo Linking $(SERVER_TARGET)/server_ut
-	@$(CC) $(GTEST) $(SERVER_UT_LD_GCC) $(SERVER_OBJECTS_GCOV) $(SERVER_TESTS_OBJECTS_GCOV) $(COMMON_TARGET)/gcov/common.a -lgcov --coverage -o $(SERVER_TARGET)/server_ut_gcov
+	@$(CC) $(GTEST) $(SERVER_UT_LD_GCC) $(SERVER_OBJECTS_GCOV) $(SERVER_TESTS_OBJECTS_GCOV) $(COMMON_TARGET)/gcov/common.a $(COMMON_TARGET)/gcov/common_testing.a -lgcov --coverage -o $(SERVER_TARGET)/server_ut_gcov
 
 server_ut_gcov_run: server_ut_gcov
 	$(SERVER_TARGET)/server_ut_gcov $(TESTFLAG)
 
 $(SERVER_OBJECTS_GCOV): $(BUILDDIR_GCOV)/%.cpp.o : %.cpp
 	@mkdir -p $(@D)
-	@echo "Building SOURCE_GCOV" $@
+	@echo "Building_SOURCE_GCOV" $@
 	@$(CC) $(CFLAGS) -fprofile-arcs -ftest-coverage --coverage $(SERVER_INCDIR_GCC) -lgcov -c $(patsubst $(BUILDDIR_GCOV)/%.cpp.o,%.cpp,$@) -o $@
 
 $(SERVER_TESTS_OBJECTS_GCOV): $(BUILDDIR_GCOV)/%.cpp.o : %.cpp
 	@mkdir -p $(@D)
-	@echo "Building TEST" $@
+	@echo "Building_TEST_GCOV" $@
 	@$(CC) $(CFLAGS) $(SERVER_TESTINCDIR_GCC) -fprofile-arcs -ftest-coverage --coverage -lgcov -c $(patsubst $(BUILDDIR_GCOV)/%.cpp.o,%.cpp,$@) -o $@
+
+## TARGET GOV CLIENT #########################################################################
 
 # client_ut_gcov: $(GTEST) $(CLIENT_OBJECTS_GCOV) $(CLIENT_TESTS_OBJECTS_GCOV) $(COMMON_TARGET)/gcov/common.a
 # 	@mkdir -p $(CLIENT_TARGET)
@@ -192,6 +236,11 @@ clean_common:
 	find $(BUILDDIR)/$(COMMON_SRCDIR) -type f -name *.cpp.o -exec rm {} \;
 	rm $(COMMON_TARGET)/common.a
 
+clean_common_testing:
+	echo cleaning common
+	find $(BUILDDIR)/$(COMMON_TESTING_SRCDIR) -type f -name *.cpp.o -exec rm {} \;
+	rm $(COMMON_TARGET)/common_testing.a
+
 clean_server_ut:
 	echo cleaning ut
 	find $(BUILDDIR)/$(SERVER_UTDIR) -type f -name *.cpp.o -exec rm {} \;
@@ -206,5 +255,5 @@ clean_gcov:
 	find $(BUILDDIR_GCOV) -type f -name *.gcda -exec rm {} \;
 	find $(BUILDDIR_GCOV) -type f -name *.gcno -exec rm {} \;
 
-clean: clean_server_ut clean_server clean_gcov clean_common
+clean: clean_server_ut clean_server clean_gcov clean_common clean_common_testing
 	echo All cleaned

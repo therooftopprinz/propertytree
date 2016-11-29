@@ -3,7 +3,8 @@
 
 #include <cstring>
 #include <utility>
-#include "Types.hpp"
+#include <vector>
+#include <memory>
 
 namespace ptree
 {
@@ -15,10 +16,13 @@ void printRawAscii(const void *begin, uint32_t size);
 
 std::pair<std::string, std::string> getParentAndChildNames(std::string path);
 
+typedef std::vector<uint8_t> Buffer;
+typedef std::shared_ptr<Buffer> BufferPtr;
+
 template<class T>
-server::BufferPtr buildSharedBufferedValue(T value)
+BufferPtr buildSharedBufferedValue(T value)
 {
-    server::BufferPtr data = std::make_shared<server::Buffer>(sizeof(T));
+    BufferPtr data = std::make_shared<Buffer>(sizeof(T));
     if (sizeof(T) == 4 || sizeof(T) == 8)
     {
         *((T*)data->data()) = value;
@@ -32,9 +36,9 @@ server::BufferPtr buildSharedBufferedValue(T value)
 }
 
 template<class T>
-server::Buffer buildBufferedValue(T value)
+Buffer buildBufferedValue(T value)
 {
-    server::Buffer data(sizeof(T));
+    Buffer data(sizeof(T));
 
     if (sizeof(T) == 4 || sizeof(T) == 8)
     {

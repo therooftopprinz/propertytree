@@ -16,7 +16,6 @@ namespace ptree
 namespace client
 {
 
-
 typedef std::vector<uint8_t> Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
 class PTreeClient

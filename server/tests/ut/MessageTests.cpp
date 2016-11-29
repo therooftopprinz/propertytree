@@ -4,7 +4,7 @@
 #include <thread>
 #include <interface/protocol.hpp>
 #include <interface/MessageEssential.hpp>
-#include <server/src/Utils.hpp>
+#include <common/src/Utils.hpp>
 #include <common/src/Logger.hpp>
 
 using namespace testing;
@@ -13,8 +13,6 @@ namespace ptree
 {
 namespace protocol
 {
-
-using namespace ptree::server;
 
 struct SimpleBlock
 {

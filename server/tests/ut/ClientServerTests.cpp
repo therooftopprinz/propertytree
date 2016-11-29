@@ -8,10 +8,9 @@
 #include <common/src/Logger.hpp>
 #include <server/src/PTree.hpp>
 #include <common/src/Logger.hpp>
+#include <server/src/Serverlet/ClientServer.hpp>
 
-#include <server/src/Utils.hpp>
-#include "framework/EndPointMock.hpp"
-
+#include <common/src/Utils.hpp>
 #include "MessageMatchers/CreateObjectMetaUpdateNotificationMatcher.hpp"
 #include "MessageMatchers/DeleteObjectMetaUpdateNotificationMatcher.hpp"
 #include "MessageMatchers/MessageMatcher.hpp"
@@ -32,7 +31,7 @@ struct ClientServerTests : public ::testing::Test
         testCreationAction(std::bind(&ClientServerTests::propTestCreationAction, this)),
         valueCreationDeleteImmediatelyAction(std::bind(&ClientServerTests::propValueCreationActionValueDelete, this)),
         valueCreationSubscribeAction(std::bind(&ClientServerTests::propValueCreationActionSubscribe, this)),
-        endpoint(std::make_shared<EndPointMock>()),
+        endpoint(std::make_shared<common::EndPointMock>()),
         idgen(std::make_shared<core::IdGenerator>()),
         monitor(std::make_shared<ClientServerMonitor>()),
         ptree(std::make_shared<core::PTree>(idgen)),
@@ -461,7 +460,7 @@ Test common timeline
     std::function<void()> valueCreationDeleteImmediatelyAction;
     std::function<void()> valueCreationSubscribeAction;
 
-    std::shared_ptr<EndPointMock> endpoint;
+    std::shared_ptr<common::EndPointMock> endpoint;
     core::IIdGeneratorPtr idgen;
     IClientServerMonitorPtr monitor;
     core::PTreePtr ptree;

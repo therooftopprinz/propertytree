@@ -1,7 +1,7 @@
 #ifndef SERVER_MESSAGE_MATCHERS_METAUPDATENOTIFICATION_HPP_
 #define SERVER_MESSAGE_MATCHERS_METAUPDATENOTIFICATION_HPP_
 
-#include <server/src/Utils.hpp>
+#include <common/src/Utils.hpp>
 #include "Matcher.hpp"
 
 namespace ptree

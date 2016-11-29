@@ -2,7 +2,7 @@
 #define SERVER_MESSAGE_MATCHERS_PROPERTYUPDATENOTIFICATION_HPP_
 
 #include <cstring>
-#include <server/src/Utils.hpp>
+#include <common/src/Utils.hpp>
 #include <server/src/PTree.hpp>
 #include <server/src/Types.hpp>
 

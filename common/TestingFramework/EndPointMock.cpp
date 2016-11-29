@@ -4,12 +4,12 @@
 #include <sstream>
 #include <thread>
 #include <common/src/Logger.hpp>
-#include <server/src/Utils.hpp>
+#include <common/src/Utils.hpp>
 #include "EndPointMock.hpp"
 
 namespace ptree
 {
-namespace server
+namespace common
 {
 
 void EndPointMock::failed(std::string msg)

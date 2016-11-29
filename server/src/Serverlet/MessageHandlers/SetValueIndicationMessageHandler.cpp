@@ -1,7 +1,7 @@
 #include "SetValueIndicationMessageHandler.hpp"
 #include <server/src/Serverlet/ClientServer.hpp>
 #include <common/src/Logger.hpp>
-#include <server/src/Utils.hpp>
+#include <common/src/Utils.hpp>
 
 namespace ptree
 {
