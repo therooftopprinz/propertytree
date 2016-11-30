@@ -33,6 +33,10 @@ inline void SigninRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
 
     protocol::SigninResponse response;
     response.version = supported ? *request.version : 0;
+    if (supported)
+    {
+        /**insert all ptree uuid path property type on creations**/
+    }
 
     messageSender(header->transactionId, protocol::MessageType::SigninResponse, response);
     log << logger::DEBUG << "response size: " << response.size()+sizeof(protocol::MessageHeader);

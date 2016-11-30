@@ -216,7 +216,29 @@ TEST_F(PTreeTests, getNodeByPath)
 
     auto gnode = ptree.getNodeByPath("/FCS/AILERON");
     auto val2 = gnode->getProperty<Value>("VALUE");
+
+    ptree.getPTreeInfo();
     EXPECT_EQ(val, val2);
+}
+
+TEST_F(PTreeTests, getPTreeInfo)
+{
+    using std::placeholders::_1;
+    IIdGeneratorPtr idgen = std::make_shared<IdGenerator>();
+    PTree ptree(idgen);
+
+    auto root = ptree.getNodeByPath("/");
+    auto fcs = root->createProperty<Node>("FCS");
+    auto sens = root->createProperty<Node>("SENSOR");
+    auto aile = fcs->createProperty<Node>("AILERON");
+    auto acel = sens->createProperty<Node>("ACCELEROMETER");
+    auto ther = sens->createProperty<Node>("THERMOMETER");
+    aile->createProperty<Value>("VALUE");
+    aile->createProperty<Value>("OTHERVALUE");
+    acel->createProperty<Value>("VALUE");
+    ther->createProperty<Value>("VALUE");
+
+    ptree.getPTreeInfo();
 }
 
 TEST_F(PTreeTests, getPropertyByPath)

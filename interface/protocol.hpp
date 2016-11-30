@@ -69,10 +69,13 @@ struct SigninRequest
     MESSAGE_FIELDS(version, refreshRate);
 };
 
+
+struct MetaCreate;
 struct SigninResponse
 {
     Simple<uint32_t> version;
-    MESSAGE_FIELDS(version);
+    BlockArray<MetaCreate> creations;
+    MESSAGE_FIELDS(version, creations);
 };
 
 

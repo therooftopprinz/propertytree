@@ -18,11 +18,19 @@ namespace client
 
 typedef std::vector<uint8_t> Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
+
+class Value
+{
+
+};
+
 class PTreeClient
 {
 public:
     PTreeClient(common::IEndPointPtr endpoint);
     ~PTreeClient();
+
+    Value getValue(std::string path);
 
 private:
     void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);

@@ -7,6 +7,7 @@
 #include <map>
 #include <vector>
 #include <list>
+#include <tuple>
 #include <interface/protocol.hpp>
 #include <common/src/Logger.hpp>
 #include <common/src/Utils.hpp>
@@ -53,6 +54,7 @@ public:
     protocol::Uuid getUuid();
 protected:
     void* owner;
+    std::string path;
     protocol::Uuid uuid;
 };
 
@@ -149,7 +151,7 @@ public:
         throw ObjectExisting();
     }
 
-    PropertyMapPtr getProperties();
+    std::shared_ptr<const PropertyMap> getProperties();
     uint32_t numberOfChildren();
 private:
     PropertyMapPtr properties;
@@ -189,6 +191,7 @@ public:
 
         NodePtr p = getNodeByPath(parentChild.first);
 
+        std::lock_guard<std::mutex> treeguard(ptree);
         auto rv = p->createProperty<T>(parentChild.second);
 
         uint32_t id = idgen->getId();
@@ -210,12 +213,14 @@ public:
         return p->getProperty<T>(parentChild.second);
     }
 
+    void getPTreeInfo();
     uint32_t deleteProperty(std::string path);
 private:
     NodePtr root;
     UuidPropertyMap uuids;
     PropertyUuidMap props;
     std::mutex uuidpropMutex;
+    std::mutex ptree;
     IIdGeneratorPtr idgen;
     logger::Logger log;
 };
