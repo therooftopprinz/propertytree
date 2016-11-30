@@ -241,6 +241,41 @@ TEST_F(ClientServerTests, shouldSigninRequestAndRespondSameVersionForOk)
     server->teardown();
 }
 
+TEST_F(ClientServerTests, shouldSigninRequestAndRespondWithMeta)
+{
+    auto fcs =  ptree->createProperty<core::Node>("/FCS");
+    auto sens = ptree->createProperty<core::Node>("/SENSOR");
+    auto aile = ptree->createProperty<core::Node>("/FCS/AILERON");
+    auto acel = ptree->createProperty<core::Node>("/SENSOR/ACCELEROMETER");
+    auto ther = ptree->createProperty<core::Node>("/SENSOR/THERMOMETER");
+    auto val1 = ptree->createProperty<core::Value>("/SENSOR/THERMOMETER/VALUE");
+    auto val2 = ptree->createProperty<core::Value>("/SENSOR/ACCELEROMETER/VALUE");
+    auto val3 = ptree->createProperty<core::Value>("/FCS/AILERON/CURRENT_DEFLECTION");
+    auto val4 = ptree->createProperty<core::Value>("/FCS/AILERON/TRIM");
+
+    std::list<std::tuple<std::string, protocol::Uuid, protocol::PropertyType>> metalist;
+
+    metalist.emplace_back("/FCS", protocol::Uuid(100), protocol::PropertyType::Node);
+    metalist.emplace_back("/FCS/AILERON", protocol::Uuid(102), protocol::PropertyType::Node);
+    metalist.emplace_back("/FCS/AILERON/CURRENT_DEFLECTION", protocol::Uuid(107), protocol::PropertyType::Value);
+    metalist.emplace_back("/FCS/AILERON/TRIM", protocol::Uuid(108), protocol::PropertyType::Value);
+    metalist.emplace_back("/SENSOR", protocol::Uuid(101), protocol::PropertyType::Node);
+    metalist.emplace_back("/SENSOR/ACCELEROMETER", protocol::Uuid(103), protocol::PropertyType::Node);
+    metalist.emplace_back("/SENSOR/ACCELEROMETER/VALUE", protocol::Uuid(106), protocol::PropertyType::Value);
+    metalist.emplace_back("/SENSOR/THERMOMETER", protocol::Uuid(104), protocol::PropertyType::Node);
+    metalist.emplace_back("/SENSOR/THERMOMETER/VALUE", protocol::Uuid(105), protocol::PropertyType::Value);
+
+    signinRspMsgMatcher = std::make_shared<MessageMatcher>(createSigninResponseMessage(signinRqstTid, 1, metalist));
+
+    endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1ms);
+    server->setup();
+    endpoint->waitForAllSending(2500.0);
+    server->teardown();
+}
+
 TEST_F(ClientServerTests, shouldCreateOnPTreeWhenCreateRequested)
 {
     endpoint->queueToReceive(createTestRequestMessage);

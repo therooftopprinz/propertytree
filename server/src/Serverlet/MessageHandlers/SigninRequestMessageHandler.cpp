@@ -35,7 +35,11 @@ inline void SigninRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
     response.version = supported ? *request.version : 0;
     if (supported)
     {
-        /**insert all ptree uuid path property type on creations**/
+        auto meta = ptree.getPTreeInfo();
+        for (const auto& i : meta)
+        {
+            response.creations->emplace_back(std::get<1>(i), std::get<2>(i), std::get<0>(i));
+        }
     }
 
     messageSender(header->transactionId, protocol::MessageType::SigninResponse, response);

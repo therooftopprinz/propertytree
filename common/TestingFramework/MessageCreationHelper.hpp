@@ -36,10 +36,17 @@ struct MessageCreationHelper
         return message;
     }
 
-    inline Buffer createSigninResponseMessage(uint32_t transactionId, uint32_t version)
+    inline Buffer createSigninResponseMessage(uint32_t transactionId, uint32_t version,
+        std::list<std::tuple<std::string, protocol::Uuid, protocol::PropertyType>> metaList = std::list<std::tuple<std::string, protocol::Uuid, protocol::PropertyType>>())
     {
         protocol::SigninResponse signin;
         signin.version = version;
+
+        for (const auto& i : metaList)
+        {
+            signin.creations->emplace_back(std::get<1>(i), std::get<2>(i), std::get<0>(i));
+        }
+
         uint32_t sz = signin.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::SigninResponse, sz, transactionId);
@@ -47,6 +54,9 @@ struct MessageCreationHelper
         protocol::BufferView enbuffv(enbuff);
         protocol::Encoder en(enbuffv);
         signin >> en;
+
+
+
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;
