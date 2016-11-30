@@ -243,15 +243,15 @@ TEST_F(ClientServerTests, shouldSigninRequestAndRespondSameVersionForOk)
 
 TEST_F(ClientServerTests, shouldSigninRequestAndRespondWithMeta)
 {
-    auto fcs =  ptree->createProperty<core::Node>("/FCS");
-    auto sens = ptree->createProperty<core::Node>("/SENSOR");
-    auto aile = ptree->createProperty<core::Node>("/FCS/AILERON");
-    auto acel = ptree->createProperty<core::Node>("/SENSOR/ACCELEROMETER");
-    auto ther = ptree->createProperty<core::Node>("/SENSOR/THERMOMETER");
-    auto val1 = ptree->createProperty<core::Value>("/SENSOR/THERMOMETER/VALUE");
-    auto val2 = ptree->createProperty<core::Value>("/SENSOR/ACCELEROMETER/VALUE");
-    auto val3 = ptree->createProperty<core::Value>("/FCS/AILERON/CURRENT_DEFLECTION");
-    auto val4 = ptree->createProperty<core::Value>("/FCS/AILERON/TRIM");
+    auto fcs =  ptree->createProperty<core::Node>("/FCS"); // 100
+    auto sens = ptree->createProperty<core::Node>("/SENSOR"); // 101
+    auto aile = ptree->createProperty<core::Node>("/FCS/AILERON"); // 102
+    auto acel = ptree->createProperty<core::Node>("/SENSOR/ACCELEROMETER"); // 103
+    auto ther = ptree->createProperty<core::Node>("/SENSOR/THERMOMETER"); // 104
+    auto val1 = ptree->createProperty<core::Value>("/SENSOR/THERMOMETER/VALUE"); // 105
+    auto val2 = ptree->createProperty<core::Value>("/SENSOR/ACCELEROMETER/VALUE"); // 106
+    auto val3 = ptree->createProperty<core::Value>("/FCS/AILERON/CURRENT_DEFLECTION"); // 107
+    auto val4 = ptree->createProperty<core::Value>("/FCS/AILERON/TRIM"); //108
 
     std::list<std::tuple<std::string, protocol::Uuid, protocol::PropertyType>> metalist;
 

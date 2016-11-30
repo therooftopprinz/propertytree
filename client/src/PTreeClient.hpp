@@ -19,10 +19,6 @@ namespace client
 typedef std::vector<uint8_t> Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
 
-class Value
-{
-
-};
 
 class PTreeClient
 {
@@ -30,7 +26,23 @@ public:
     PTreeClient(common::IEndPointPtr endpoint);
     ~PTreeClient();
 
-    Value getValue(std::string path);
+    void signIn(bool enableMetaUpdate, uint32_t updateRate);
+    bool createValue(std::string path, BufferPtr value);
+    bool createNode(std::string path);
+    bool createRpc(std::string path);
+
+    bool delete(std::string path);
+
+    void subscribeUpdateNotification(std::string path);
+    void unSubscribeUpdateNotification(std::string path);
+
+    void setValue(std::string path, BufferPtr value);
+    BufferPtr getValue(std::string path);
+
+    BufferPtr rpcRequest(Buffer argument);
+    void handleRpcResponse(BufferPtr returnType, uint64_t calee, uint32_t transactionId);
+
+    void installUpdateHandler(uint64_t id, std::function<void()> handler);
 
 private:
     void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);

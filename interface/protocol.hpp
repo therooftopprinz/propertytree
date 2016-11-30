@@ -64,11 +64,32 @@ struct PACKED MessageHeader
 
 struct SigninRequest
 {
+    enum class FeatureFlag : uint8_t
+    {
+        ENABLE_METAUPDATE = 0
+    };
+
     Simple<uint32_t> version;
     Simple<uint32_t> refreshRate;
-    MESSAGE_FIELDS(version, refreshRate);
-};
+    Simple<uint64_t> featureFlag;
 
+    inline void setFeature(FeatureFlag flag)
+    {
+        featureFlag |= 1 << (uint8_t)flag;
+    }
+
+    inline void resetFeature(FeatureFlag flag)
+    {
+        featureFlag &= ~(uint64_t(1) << (uint8_t)flag);
+    }
+
+    inline bool isSetFeature(FeatureFlag flag)
+    {
+        return featureFlag & uint64_t(1) << (uint8_t)flag;
+    }
+
+    MESSAGE_FIELDS(version, refreshRate, featureFlag);
+};
 
 struct MetaCreate;
 struct SigninResponse
@@ -237,6 +258,8 @@ struct HandleRpcResponse
     BufferBlock returnValue;
     MESSAGE_FIELDS(callerId, callerTransactionId, returnValue);
 };
+
+//////////////////
 
 typedef std::shared_ptr<MessageHeader> MessageHeaderPtr;
 
