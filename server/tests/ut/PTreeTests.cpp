@@ -6,6 +6,7 @@
 #include <gmock/gmock.h>
 #include <server/src/PTree.hpp>
 #include <server/src/PTreeTcpServer.hpp>
+#include <common/src/Logger.hpp>
 
 using namespace testing;
 
@@ -16,6 +17,9 @@ namespace core
 
 struct PTreeTests : public ::testing::Test
 {
+    PTreeTests():
+        log("TEST")
+    {}
 
     void TearDown()
     {
@@ -36,6 +40,8 @@ struct PTreeTests : public ::testing::Test
     {
         return reinterpret_cast<T*>(value);
     }
+
+    logger::Logger log;
 
 };
 
@@ -227,18 +233,44 @@ TEST_F(PTreeTests, getPTreeInfo)
     IIdGeneratorPtr idgen = std::make_shared<IdGenerator>();
     PTree ptree(idgen);
 
-    auto root = ptree.getNodeByPath("/");
-    auto fcs = root->createProperty<Node>("FCS");
-    auto sens = root->createProperty<Node>("SENSOR");
-    auto aile = fcs->createProperty<Node>("AILERON");
-    auto acel = sens->createProperty<Node>("ACCELEROMETER");
-    auto ther = sens->createProperty<Node>("THERMOMETER");
-    aile->createProperty<Value>("VALUE");
-    aile->createProperty<Value>("OTHERVALUE");
-    acel->createProperty<Value>("VALUE");
-    ther->createProperty<Value>("VALUE");
+    auto fcs =  ptree.createProperty<Node>("/FCS");
+    auto sens = ptree.createProperty<Node>("/SENSOR");
+    auto aile = ptree.createProperty<Node>("/FCS/AILERON");
+    auto acel = ptree.createProperty<Node>("/SENSOR/ACCELEROMETER");
+    auto ther = ptree.createProperty<Node>("/SENSOR/THERMOMETER");
+    auto val1 = ptree.createProperty<Value>("/SENSOR/THERMOMETER/VALUE");
+    auto val2 = ptree.createProperty<Value>("/SENSOR/ACCELEROMETER/VALUE");
+    auto val3 = ptree.createProperty<Value>("/FCS/AILERON/CURRENT_DEFLECTION");
+    auto val4 = ptree.createProperty<Value>("/FCS/AILERON/TRIM");
 
-    ptree.getPTreeInfo();
+    struct IsInTheInfoList
+    {
+        IsInTheInfoList(std::string path, uint32_t uuid, uint8_t type):
+            path(path), uuid((protocol::Uuid)uuid), type((protocol::PropertyType)type)
+        {}
+        bool operator()(const std::tuple<std::string, protocol::Uuid, protocol::PropertyType>& in)
+        {
+            return std::get<0>(in)==path && std::get<1>(in)==uuid  && std::get<2>(in)==type;
+        }
+        std::string path;
+        protocol::Uuid uuid;
+        protocol::PropertyType type;
+    };
+
+    auto infolist = ptree.getPTreeInfo();
+    EXPECT_NE(std::find_if(infolist.begin(), infolist.end(),IsInTheInfoList("/FCS",100,1)), infolist.end());
+    EXPECT_NE(std::find_if(infolist.begin(), infolist.end(),IsInTheInfoList("/FCS/AILERON",102,1)), infolist.end());
+    EXPECT_NE(std::find_if(infolist.begin(), infolist.end(),IsInTheInfoList("/FCS/AILERON/CURRENT_DEFLECTION",107,0)), infolist.end());
+    EXPECT_NE(std::find_if(infolist.begin(), infolist.end(),IsInTheInfoList("/FCS/AILERON/TRIM",108,0)), infolist.end());
+    EXPECT_NE(std::find_if(infolist.begin(), infolist.end(),IsInTheInfoList("/SENSOR",101,1)), infolist.end());
+    EXPECT_NE(std::find_if(infolist.begin(), infolist.end(),IsInTheInfoList("/SENSOR/ACCELEROMETER",103,1)), infolist.end());
+    EXPECT_NE(std::find_if(infolist.begin(), infolist.end(),IsInTheInfoList("/SENSOR/ACCELEROMETER/VALUE",106,0)), infolist.end());
+    EXPECT_NE(std::find_if(infolist.begin(), infolist.end(),IsInTheInfoList("/SENSOR/THERMOMETER",104,1)), infolist.end());
+    EXPECT_NE(std::find_if(infolist.begin(), infolist.end(),IsInTheInfoList("/SENSOR/THERMOMETER/VALUE",105,0)), infolist.end());
+    for (const auto& i : infolist)
+    {
+        log << logger::DEBUG << "ENTRY path " << std::get<0>(i) << " uuid " <<  (uint32_t)std::get<1>(i) << " type " <<  (uint32_t)std::get<2>(i);
+    }
 }
 
 TEST_F(PTreeTests, getPropertyByPath)

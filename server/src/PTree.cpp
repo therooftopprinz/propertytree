@@ -251,7 +251,7 @@ NodePtr PTree::getNodeByPath(std::string path)
 }
 
 
-void PTree::getPTreeInfo()
+std::list<std::tuple<std::string, protocol::Uuid, protocol::PropertyType>> PTree::getPTreeInfo()
 {
     std::lock_guard<std::mutex> guard(ptree);
     std::list<std::tuple<std::string, protocol::Uuid, protocol::PropertyType>> infolist;
@@ -268,31 +268,36 @@ void PTree::getPTreeInfo()
             //         std::get<1>(current)->getProperties()->begin(), std::get<2>(current));
             if (auto next = std::dynamic_pointer_cast<Node>(std::get<2>(current)->second)) // a Node
             {
-                // add node to list;
-                backTrack.emplace_back(std::get<0>(current) +"/"+ std::get<2>(current)->first, next, next->getProperties()->begin());
-                log << logger::DEBUG << "FOUND NODE AT " << std::get<0>(current) +"/"+ std::get<2>(current)->first;
-
+                backTrack.emplace_back(
+                    std::get<0>(current) +"/"+ std::get<2>(current)->first,
+                    next, next->getProperties()->begin());
+                // log << logger::DEBUG << "FOUND NODE AT " << std::get<0>(current) +"/"+ std::get<2>(current)->first;
+                infolist.emplace_back(
+                    std::get<0>(current) +"/"+ std::get<2>(current)->first,
+                    next->getUuid(),
+                    protocol::PropertyType::Node);
                 std::get<2>(current)++;
-
-                // for (const auto& i : backTrack)
-                // {
-                //     log << logger::DEBUG << "BACKTRACT " << std::get<0>(i) << " index_pos " <<  std::distance(
-                //         std::get<1>(i)->getProperties()->begin(), std::get<2>(i));
-                // }
 
                 enterANode = true;
                 break;
             }
             else if (auto next = std::dynamic_pointer_cast<Value>(std::get<2>(current)->second)) // a Value
             {
-                // add value to list;
-                log << logger::DEBUG << "FOUND VALUE AT " << std::get<0>(current) +"/"+ std::get<2>(current)->first;
+                // log << logger::DEBUG << "FOUND VALUE AT " << std::get<0>(current) +"/"+ std::get<2>(current)->first;
+                infolist.emplace_back(
+                    std::get<0>(current) +"/"+ std::get<2>(current)->first,
+                    next->getUuid(),
+                    protocol::PropertyType::Value);
                 std::get<2>(current)++;
             }
             else if (auto next = std::dynamic_pointer_cast<Rpc>(std::get<2>(current)->second)) // an Rpc
             {
                 // add rpc to list;
-                log << logger::DEBUG << "FOUND RPC AT " << std::get<0>(current) +"/"+ std::get<2>(current)->first;
+                // log << logger::DEBUG << "FOUND RPC AT " << std::get<0>(current) +"/"+ std::get<2>(current)->first;
+                infolist.emplace_back(
+                    std::get<0>(current) +"/"+ std::get<2>(current)->first,
+                    next->getUuid(),
+                    protocol::PropertyType::Rpc);
                 std::get<2>(current)++;
             }
         }
@@ -300,6 +305,7 @@ void PTree::getPTreeInfo()
         // Done iterating the Node
         backTrack.pop_back();
     }
+    return infolist;
 }
 
 

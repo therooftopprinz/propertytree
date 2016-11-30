@@ -213,7 +213,7 @@ public:
         return p->getProperty<T>(parentChild.second);
     }
 
-    void getPTreeInfo();
+    std::list<std::tuple<std::string, protocol::Uuid, protocol::PropertyType>> getPTreeInfo();
     uint32_t deleteProperty(std::string path);
 private:
     NodePtr root;
