@@ -19,7 +19,8 @@ before_install:
 - ruby -v
 - which ruby
 - sudo -E apt-get install rubygems
-- sudo -H gem install coveralls-lcov
+- sudo ruby -v
+- gem install coveralls-lcov
 
 before_script:
 - sudo rm /usr/bin/gcc
