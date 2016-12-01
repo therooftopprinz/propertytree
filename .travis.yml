@@ -2,12 +2,16 @@ language: generic
 matrix:
   include:
     - os: linux
+      addons:
+        apt:
+          packages:
+            - g++-6
+          sources: &sources
+            - george-edison55-precise-backports # cmake 3.2.3 / doxygen 1.8.3
+            - llvm-toolchain-precise-3.8
+            - ubuntu-toolchain-r-test
 script:
-- printf "\n"|sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-- sudo apt update
-- sudo apt install gcc-6
-- sudo apt install g++-6
-- sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6
+- alias g++=g++-6
 - git clone https://github.com/google/googletest.git ../gtest/git
 - python ../gtest/git/googlemock/scripts/fuse_gmock_files.py ../gtest/git/googlemock/ ../gtest/
 - echo VExEID0gLi4KTElCT1VUID0gJChUTEQpL2xpYnMKQ0MgPSBnKysKSU5DTFVERSA9IC1JLgpDRkxBR1MgPSAtc3RkPWMrKzExIC1XYWxsIC1XZXJyb3IgJChJTkNMVURFKQoKYWxsOgoJbWtkaXIgLXAgJChMSUJPVVQpCgkkKENDKSAkKENGTEFHUykgLWMgZ21vY2stZ3Rlc3QtYWxsLmNjIC1vICQoTElCT1VUKS9ndGVzdC5v|base64 -d > ../gtest/Makefile
