@@ -2,13 +2,13 @@ language: generic
 matrix:
   include:
     - os: linux
-      env: COMPILER_NAME=gcc CXX=g++-5 CC=gcc-5
-      addons:
-        apt:
-          packages:
-            - g++-5
-          sources: &sources
-            - ubuntu-toolchain-r-test
-
 script:
-- make server_ut_run -j8
+- printf "\n"|sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+- sudo apt update
+- sudo apt install gcc-6
+- sudo apt install g++-6
+- sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6
+- git clone https://github.com/google/googletest.git ../gtest/git
+- python ../gtest/git/googlemock/scripts/fuse_gmock_files.py ../gtest/git/googlemock/ ../gtest/
+- echo VExEID0gLi4KTElCT1VUID0gJChUTEQpL2xpYnMKQ0MgPSBnKysKSU5DTFVERSA9IC1JLgpDRkxBR1MgPSAtc3RkPWMrKzExIC1XYWxsIC1XZXJyb3IgJChJTkNMVURFKQoKYWxsOgoJbWtkaXIgLXAgJChMSUJPVVQpCgkkKENDKSAkKENGTEFHUykgLWMgZ21vY2stZ3Rlc3QtYWxsLmNjIC1vICQoTElCT1VUKS9ndGVzdC5v|base64 -d > ../gtest/Makefile
+- make server_ut -j40
