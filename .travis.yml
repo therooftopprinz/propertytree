@@ -6,17 +6,23 @@ matrix:
         apt:
           packages:
             - g++-6
-            - ruby
             - rubygems
             - lcov
           sources: &sources
             - ubuntu-toolchain-r-test
-script:
+before_install:
+- gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+- \curl -sSL https://get.rvm.io | bash -s stable
+- rvm install 1.9.2
+
+before_script:
 - sudo gem install coveralls-lcov
 - sudo rm /usr/bin/gcc
 - sudo rm /usr/bin/g++
 - sudo ln -s /usr/bin/gcc-6 /usr/bin/gcc
 - sudo ln -s /usr/bin/g++-6 /usr/bin/g++
+
+script:
 - git clone https://github.com/google/googletest.git ../gtest/git
 - python ../gtest/git/googlemock/scripts/fuse_gmock_files.py ../gtest/git/googlemock/ ../gtest/
 - echo VExEID0gLi4KTElCT1VUID0gJChUTEQpL2xpYnMKQ0MgPSBnKysKSU5DTFVERSA9IC1JLgpDRkxBR1MgPSAtc3RkPWMrKzExIC1XYWxsIC1XZXJyb3IgJChJTkNMVURFKQoKYWxsOgoJbWtkaXIgLXAgJChMSUJPVVQpCgkkKENDKSAkKENGTEFHUykgLWMgZ21vY2stZ3Rlc3QtYWxsLmNjIC1vICQoTElCT1VUKS9ndGVzdC5v|base64 -d > ../gtest/Makefile
