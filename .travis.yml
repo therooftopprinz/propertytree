@@ -8,6 +8,9 @@ matrix:
             - g++-6
           sources: &sources
             - ubuntu-toolchain-r-test
+before_install:
+  - pip install --user cpp-coveralls
+
 script:
 - sudo rm /usr/bin/gcc
 - sudo rm /usr/bin/g++
@@ -17,3 +20,6 @@ script:
 - python ../gtest/git/googlemock/scripts/fuse_gmock_files.py ../gtest/git/googlemock/ ../gtest/
 - echo VExEID0gLi4KTElCT1VUID0gJChUTEQpL2xpYnMKQ0MgPSBnKysKSU5DTFVERSA9IC1JLgpDRkxBR1MgPSAtc3RkPWMrKzExIC1XYWxsIC1XZXJyb3IgJChJTkNMVURFKQoKYWxsOgoJbWtkaXIgLXAgJChMSUJPVVQpCgkkKENDKSAkKENGTEFHUykgLWMgZ21vY2stZ3Rlc3QtYWxsLmNjIC1vICQoTElCT1VUKS9ndGVzdC5v|base64 -d > ../gtest/Makefile
 - make server_ut_gcov_run -j40
+
+after_success:
+- coveralls -r . -b ../build/gcov/
