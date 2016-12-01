@@ -20,8 +20,10 @@ before_install:
 before_script:
 - sudo rm /usr/bin/gcc
 - sudo rm /usr/bin/g++
+- sudo rm /usr/bin/gcov
 - sudo ln -s /usr/bin/gcc-6 /usr/bin/gcc
 - sudo ln -s /usr/bin/g++-6 /usr/bin/g++
+- sudo ln -s /usr/bin/gcov-6 /usr/bin/gcov
 
 script:
 - git clone https://github.com/google/googletest.git ../gtest/git
