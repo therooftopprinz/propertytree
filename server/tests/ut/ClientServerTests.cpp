@@ -552,8 +552,8 @@ TEST_F(ClientServerTests, shouldSetSetValueWhenSetValueIndIsValid)
     core::ValuePtr val;
     ASSERT_NO_THROW(val = this->ptree->getPropertyByPath<core::Value>("/Test/Value"));
     EXPECT_EQ(41u, val->getValue<uint32_t>());
-
-    endpoint->waitForAllSending(10000.0);
+    std::this_thread::sleep_for(500ms);
+    endpoint->waitForAllSending(15000.0);
     server->teardown();
 
     logger::loggerServer.waitEmpty();
@@ -651,7 +651,7 @@ TEST_F(ClientServerTests, shouldSendPropertyUpdateNotificationWhenChanged)
 
     server->setup();
     using namespace std::chrono_literals;
-    std::this_thread::sleep_for(1s);
+    std::this_thread::sleep_for(100ms);
     endpoint->waitForAllSending(10000.0);
     server->teardown();
 
@@ -702,7 +702,7 @@ TEST_F(ClientServerTests, shouldNotSendPropertyUpdateNotificationWhenUnsubscribe
     server->setup();
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(500ms);
-    endpoint->waitForAllSending(500.0);
+    endpoint->waitForAllSending(10000.0);
     server->teardown();
 
     logger::loggerServer.waitEmpty();
@@ -741,8 +741,8 @@ TEST_F(ClientServerTests, shouldGetValue)
 
     server->setup();
     using namespace std::chrono_literals;
-    std::this_thread::sleep_for(1s);
-    endpoint->waitForAllSending(500.0);
+    std::this_thread::sleep_for(500ms);
+    endpoint->waitForAllSending(10000.0);
     server->teardown();
 
     logger::loggerServer.waitEmpty();
