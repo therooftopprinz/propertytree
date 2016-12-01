@@ -64,6 +64,9 @@ struct PACKED MessageHeader
 
 struct SigninRequest
 {
+    SigninRequest():
+        featureFlag(0)
+    {}
     enum class FeatureFlag : uint8_t
     {
         ENABLE_METAUPDATE = 0
@@ -96,7 +99,7 @@ struct SigninResponse
 {
     Simple<uint32_t> version;
     BlockArray<MetaCreate> creations;
-    MESSAGE_FIELDS(version, creations);
+    MESSAGE_FIELDS(version);
 };
 
 

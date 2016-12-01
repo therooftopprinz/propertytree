@@ -24,6 +24,8 @@ struct MessageCreationHelper
         protocol::SigninRequest signin;
         signin.version = version;
         signin.refreshRate = refreshRate;
+        signin.setFeature(protocol::SigninRequest::FeatureFlag::ENABLE_METAUPDATE);
+
         uint32_t sz = signin.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::SigninRequest, sz, transactionId);
@@ -41,7 +43,6 @@ struct MessageCreationHelper
     {
         protocol::SigninResponse signin;
         signin.version = version;
-
         for (const auto& i : metaList)
         {
             signin.creations->emplace_back(std::get<1>(i), std::get<2>(i), std::get<0>(i));
@@ -55,8 +56,10 @@ struct MessageCreationHelper
         protocol::Encoder en(enbuffv);
         signin >> en;
 
-
-
+        // enbuff[signin.size()-1]=0;
+        // enbuff[signin.size()-2]=0;
+        // enbuff[signin.size()-3]=0;
+        // enbuff[signin.size()-4]=0;
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;
