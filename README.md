@@ -1,5 +1,10 @@
 # Property Tree
 
+[![CircleCI](https://circleci.com/gh/rooftopprinz/propertytree/tree/master.svg?style=svg)](https://circleci.com/gh/rooftopprinz/propertytree/tree/master)
+[![Travis](https://travis-ci.org/rooftopprinz/propertytree.svg?branch=master)]
+(https://travis-ci.org/rooftopprinz/propertytree)
+[![Coverage Status](https://coveralls.io/repos/github/rooftopprinz/propertytree/badge.svg)](https://coveralls.io/github/rooftopprinz/propertytree)
+
 PropertyTree is a library for sharing objects data across a network. Property Tree is composed of PropertyTree Server Application and PropertyTree Client Library.
 
 The PropertyTree Server Application handles the communication and storage of all the client connected to the PropertyTree.
@@ -7,9 +12,6 @@ The PropertyTree Server Application handles the communication and storage of all
 The PropertyTree Client Library provides the interface in communicating the PropertyTree.
 
 Please see the [wiki](https://github.com/rooftopprinz/propertytree/wiki).
-
-#### Continous integration status: 
- [![CircleCI](https://circleci.com/gh/rooftopprinz/propertytree/tree/master.svg?style=svg)](https://circleci.com/gh/rooftopprinz/propertytree/tree/master)
 
 ## Building
 ```
