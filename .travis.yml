@@ -6,6 +6,7 @@ matrix:
         apt:
           packages:
             - g++-6
+            - gcov-6
           sources: &sources
             - ubuntu-toolchain-r-test
 before_install:
