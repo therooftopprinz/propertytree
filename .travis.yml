@@ -17,7 +17,6 @@ before_install:
 - gem install coveralls-lcov
 
 before_script:
-- ls /usr/bin
 - sudo rm /usr/bin/gcc
 - sudo rm /usr/bin/g++
 - sudo rm /usr/bin/gcov
