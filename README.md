@@ -1,7 +1,6 @@
 # Property Tree
 
-
-| Normal | Memcheck | Coverage |
+| <img src="http://i.imgur.com/m1A8VQU.jpg" width="12"> Normal | <img src="http://i.imgur.com/VRQhgoh.png" width="14"> Memcheck | <img src="http://i.imgur.com/kysuYC1.png" width="12"> Coverage |
 |---|:-:|---|
 | [![Travis](https://travis-ci.org/rooftopprinz/propertytree.svg?branch=master)](https://travis-ci.org/rooftopprinz/propertytree) | [![CircleCI](https://circleci.com/gh/rooftopprinz/propertytree/tree/master.svg?style=svg)](https://circleci.com/gh/rooftopprinz/propertytree/tree/master) | [![Coverage Status](https://coveralls.io/repos/github/rooftopprinz/propertytree/badge.svg?branch=master)](https://coveralls.io/github/rooftopprinz/propertytree?branch=master) |
 
