@@ -7,6 +7,7 @@ matrix:
           packages:
             - g++-6
             - ruby
+            - rubygems
             - lcov
           sources: &sources
             - ubuntu-toolchain-r-test
