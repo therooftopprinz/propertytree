@@ -321,7 +321,7 @@ TEST_F(ClientServerTests, shouldGenerateMessageCreateResponse)
     endpoint->expectSend(0, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
 
     server->setup();
-    endpoint->waitForAllSending(2500.0);
+    endpoint->waitForAllSending(15000.0);
     server->teardown();
 
     logger::loggerServer.waitEmpty();

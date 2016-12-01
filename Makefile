@@ -135,6 +135,9 @@ server_ut_run: server_ut
 	$(SERVER_TARGET)/server_ut $(TESTFLAG)
 
 server_ut_valgrind_run: server_ut
+	valgrind --leak-check=full --show-leak-kinds=all -v $(SERVER_TARGET)/server_ut $(TESTFLAG)
+
+server_ut_valgrind_run_detailed: server_ut
 	valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all -v $(SERVER_TARGET)/server_ut $(TESTFLAG)
 
 $(SERVER_TESTS_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
