@@ -6,10 +6,13 @@ matrix:
         apt:
           packages:
             - g++-6
+            - ruby
+            - lcov
           sources: &sources
             - ubuntu-toolchain-r-test
 before_install:
   - pip install --user cpp-coveralls
+  - sudo gem install coveralls-lcov
 
 script:
 - sudo rm /usr/bin/gcc
@@ -22,4 +25,6 @@ script:
 - make server_ut_gcov_run -j40
 
 after_success:
-- coveralls -r . -b ../build/gcov/ -t oUGH3So9ioJqKo89a6t43vTX6wVAGhU2t
+- lcov --rc lcov_branch_coverage=1 -c -b . -d ../build/gcov/ > ut_coverage.info
+- lcov -r ut_coverage.info '/usr/include*' '*/gtest/g*' > clean_ut_coverage.info
+- coveralls-lcov --repo-token oUGH3So9ioJqKo89a6t43vTX6wVAGhU2t clean_ut_coverage.info
