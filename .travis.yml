@@ -8,12 +8,12 @@ matrix:
             - g++-6
             - ruby
             - lcov
-            - rubygems
           sources: &sources
             - ubuntu-toolchain-r-test
-before_install:
-  - pip install --user cpp-coveralls
+
+after_install:
   - sudo gem install coveralls-lcov
+  - pip install --user cpp-coveralls
 
 script:
 - sudo rm /usr/bin/gcc
