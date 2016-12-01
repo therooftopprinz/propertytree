@@ -15,10 +15,10 @@ before_install:
 - rvm reload
 - rvm list rubies
 - rvm gemset list_all
-- rvm use ruby-2.3.1
+- rvm use ruby-2.3.1 --default 
 - ruby -v
 - which ruby
-- sudo -E apt-get install rubygems
+- sudo -H -E apt-get install rubygems
 
 before_script:
 - sudo gem install coveralls-lcov
