@@ -22,4 +22,4 @@ script:
 - make server_ut_gcov_run -j40
 
 after_success:
-- coveralls -r . -b ../build/gcov/
+- coveralls -r . -b ../build/gcov/ -t oUGH3So9ioJqKo89a6t43vTX6wVAGhU2t
