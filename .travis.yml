@@ -6,7 +6,6 @@ matrix:
         apt:
           packages:
             - g++-6
-            - lcov
           sources: &sources
             - ubuntu-toolchain-r-test
 before_install:
@@ -30,6 +29,8 @@ script:
 - make server_ut_gcov_run -j40
 
 after_success:
-- lcov -c -b . -d ../build/gcov/ > ut_coverage.info
-- lcov -r ut_coverage.info '/usr/include*' '*/gtest/g*' > clean_ut_coverage.info
+- git clone https://github.com/linux-test-project/lcov.git
+- chmod +x lcov/bin/lcov
+- ./lcov/bin/lcov -c -b . -d ../build/gcov/ > ut_coverage.info
+- ./lcov/bin/lcov -r ut_coverage.info '/usr/include*' '*/gtest/g*' > clean_ut_coverage.info
 - coveralls-lcov --repo-token oUGH3So9ioJqKo89a6t43vTX6wVAGhU2t clean_ut_coverage.info
