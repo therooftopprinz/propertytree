@@ -703,7 +703,7 @@ TEST_F(ClientServerTests, shouldNotSendPropertyUpdateNotificationWhenUnsubscribe
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(500ms);
     endpoint->waitForAllSending(10000.0);
-    server->teardown()
+    server->teardown();
 
     logger::loggerServer.waitEmpty();
 }
