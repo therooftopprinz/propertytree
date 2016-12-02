@@ -548,7 +548,7 @@ TEST_F(ClientServerTests, shouldSetSetValueWhenSetValueIndIsValid)
     log << logger::DEBUG << "Waiting for setval processing...";
     using namespace std::chrono_literals;
     /** TODO: use the value update notification matcher for this checking to avoid waiting **/
-    std::this_thread::sleep_for(4s);
+    std::this_thread::sleep_for(6s);
     core::ValuePtr val;
     ASSERT_NO_THROW(val = this->ptree->getPropertyByPath<core::Value>("/Test/Value"));
     EXPECT_EQ(41u, val->getValue<uint32_t>());
@@ -703,7 +703,7 @@ TEST_F(ClientServerTests, shouldNotSendPropertyUpdateNotificationWhenUnsubscribe
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(500ms);
     endpoint->waitForAllSending(10000.0);
-    server->teardown();
+    server->teardown()
 
     logger::loggerServer.waitEmpty();
 }
