@@ -1,4 +1,5 @@
 #include "PTreeClient.hpp"
+#include "MessageHandlerFactory.hpp"
 
 namespace ptree
 {
@@ -67,10 +68,9 @@ void PTreeClient::processMessage(protocol::MessageHeaderPtr header, BufferPtr me
 {
     processMessageRunning++;
     log << logger::DEBUG << "processMessage()";
-    // auto type = header->type;
-    std::lock_guard<std::mutex> guard(sendLock);
-
-    // messageHandlerFactory.get(type, this, endpoint, ptree, monitor)->handle(header, message);
+    auto type = header->type;
+    auto lval_this = shared_from_this();
+    MessageHandlerFactory::get(type, lval_this, endpoint)->handle(header, message);
 
     processMessageRunning--;
 }

@@ -2,7 +2,7 @@
 
 namespace ptree
 {
-namespace server
+namespace client
 {
 
 void MessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
@@ -19,5 +19,5 @@ Buffer MessageHandler::createHeader(protocol::MessageType type, uint32_t payload
     return header;
 }
 
-} // namespace server
+} // namespace client
 } // namespace ptree

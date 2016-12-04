@@ -64,6 +64,8 @@ public:
 
     void installUpdateHandler(uint64_t id, std::function<void()> handler);
 
+    void notifyTransactionCV(uint32_t transactionId);
+
 private:
     void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);
     void handleIncoming();
@@ -85,7 +87,6 @@ private:
 
     void addTransactionCV(uint32_t transactionId);
     bool waitTransactionCV(uint32_t transactionId);
-    void notifyTransactionCV(uint32_t transactionId);
 
     struct TransactionCV
     {
@@ -127,8 +128,10 @@ private:
         ERROR_MESSAGE_TIMEOUT
     };
     EIncomingState incomingState;
+
 };
 
+typedef std::shared_ptr<PTreeClient> PTreeClientPtr;
 }
 }
 

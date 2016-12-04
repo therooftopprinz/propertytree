@@ -135,7 +135,6 @@ private:
         ERROR_MESSAGE_TIMEOUT
     };
     EIncomingState incomingState;
-    MessageHandlerFactory messageHandlerFactory;
     logger::Logger log;
 };
 

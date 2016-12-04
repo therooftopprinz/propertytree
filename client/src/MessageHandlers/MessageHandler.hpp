@@ -1,20 +1,23 @@
-#ifndef SERVER_SERVERLET_MESSAGEHANDLERS_MESSAGEHANDLER_HPP_
-#define SERVER_SERVERLET_MESSAGEHANDLERS_MESSAGEHANDLER_HPP_
+#ifndef CLIENT_MESSAGEHANDLERS_MESSAGEHANDLER_HPP_
+#define CLIENT_MESSAGEHANDLERS_MESSAGEHANDLER_HPP_
 
 #include <common/src/IEndPoint.hpp>
 #include <common/src/Logger.hpp>
+#include <client/src/PTreeClient.hpp>
 
 namespace ptree
 {
 namespace client
 {
 
+using common::IEndPoint;
+using common::IEndPointPtr;
 
 struct PTreeClient;
 struct MessageHandler
 {
     MessageHandler(PTreeClient& pc, IEndPoint& ep):
-        clientServer(cs),
+        ptreeClient(pc),
         endpoint(ep)
     {}
 
@@ -38,7 +41,7 @@ struct MessageHandler
 };
 
 
-} // namespace server
+} // namespace client
 } // namespace ptree
 
-#endif  // SERVER_SERVERLET_MESSAGEHANDLERS_MESSAGEHANDLER_HPP_
+#endif  // CLIENT_MESSAGEHANDLERS_MESSAGEHANDLER_HPP_

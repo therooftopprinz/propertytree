@@ -3,16 +3,7 @@
 
 #include <interface/protocol.hpp>
 #include <memory>
-#include "MessageHandlers/MessageHandler.hpp"
-#include "MessageHandlers/SigninRequestMessageHandler.hpp"
-#include "MessageHandlers/CreateRequestMessageHandler.hpp"
-#include "MessageHandlers/DeleteRequestMessageHandler.hpp"
-#include "MessageHandlers/SetValueIndicationMessageHandler.hpp"
-#include "MessageHandlers/SubscribePropertyUpdateRequestMessageHandler.hpp"
-#include "MessageHandlers/UnsubscribePropertyUpdateRequestMessageHandler.hpp"
-#include "MessageHandlers/GetValueRequestMessageHandler.hpp"
-#include "MessageHandlers/RpcRequestMessageHandler.hpp"
-#include "MessageHandlers/HandleRpcResponseMessageHandler.hpp"
+#include "MessageHandlers/SigninResponseMessageHandler.hpp"
 
 namespace ptree
 {
@@ -22,10 +13,10 @@ namespace client
 struct MessageHandlerFactory
 {
     static std::unique_ptr<MessageHandler>
-        get(protocol::MessageType type, PTreeClientPtr& cs, IEndPointPtr& ep);
+        get(protocol::MessageType type, PTreeClientPtr& pc, IEndPointPtr& ep);
 };
 
-} // namespace server
+} // namespace client
 } // namespace ptree
 
 #endif  // SERVER_CLIENTSERVER_HPP_

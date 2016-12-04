@@ -130,7 +130,7 @@ void ClientServer::processMessage(protocol::MessageHeaderPtr header, BufferPtr m
     // if (type==protocol::MessageType::SubscribePropertyUpdateRequest)
     //     std::make_unique<SubscribePropertyUpdateRequestMessageHandler>(lval_this, *endpoint.get(), *ptree.get(), *monitor.get())->handle(header, message);
     // else
-        messageHandlerFactory.get(type, lval_this, endpoint, ptree, monitor)->handle(header, message);
+        MessageHandlerFactory::get(type, lval_this, endpoint, ptree, monitor)->handle(header, message);
 
     processMessageRunning--;
 }
