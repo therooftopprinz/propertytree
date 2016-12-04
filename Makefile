@@ -252,11 +252,19 @@ clean_server:
 	echo cleaning server
 	find $(BUILDDIR)/$(SERVER_SRCDIR) -type f -name *.cpp.o -exec rm {} \;
 
+clean_client_ut:
+	echo cleaning ut
+	find $(BUILDDIR)/$(CLIENT_UTDIR) -type f -name *.cpp.o -exec rm {} \;
+
+clean_client:
+	echo cleaning server
+	find $(BUILDDIR)/$(CLIENT_SRCDIR) -type f -name *.cpp.o -exec rm {} \;
+
 clean_gcov:
 	echo cleaning GCOV
 	find $(BUILDDIR_GCOV) -type f -name *.cpp.o -exec rm {} \;
 	find $(BUILDDIR_GCOV) -type f -name *.gcda -exec rm {} \;
 	find $(BUILDDIR_GCOV) -type f -name *.gcno -exec rm {} \;
 
-clean: clean_server_ut clean_server clean_gcov clean_common clean_common_testing
+clean: clean_client_ut clean_client clean_server_ut clean_server clean_gcov clean_common clean_common_testing
 	echo All cleaned

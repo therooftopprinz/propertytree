@@ -66,6 +66,20 @@ public:
 
     void notifyTransactionCV(uint32_t transactionId);
 
+    struct PTreeMeta
+    {
+        PTreeMeta(){}
+        PTreeMeta(std::string& path, protocol::PropertyType type):
+            path(path), type(type)
+        {}
+        std::string path;
+        protocol::PropertyType type;
+    };
+    /** TODO: common memory for string key and meta path **/
+    std::map<protocol::Uuid, PTreeMeta> uuidMetaMap;
+    std::map<std::string, protocol::Uuid> pathUuidMap;
+    std::mutex uuidMetaMapMutex;
+
 private:
     void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);
     void handleIncoming();
@@ -111,11 +125,7 @@ private:
     server::IEndPointPtr endpoint;
     std::mutex sendLock;
 
-    std::map<protocol::Uuid, std::string> uuidPathMap;
-    std::map<std::string, protocol::Uuid> pathUuidMap;
-    std::map<std::string, Buffer> pathValueMap;
-    std::mutex uuidPathMapMutex;
-    std::mutex pathValueMapMutex;
+
 
     logger::Logger log;
     enum class EIncomingState

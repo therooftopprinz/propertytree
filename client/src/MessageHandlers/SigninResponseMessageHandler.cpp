@@ -19,7 +19,20 @@ inline void SigninResponseMessageHandler::handle(protocol::MessageHeaderPtr head
     protocol::SigninResponse response;
     protocol::Decoder de(message->data(),message->data()+message->size());
     response << de;
-    ptreeClient.notifyTransactionCV(header->transactionId);
+    {
+        std::lock_guard<std::mutex> lock(ptreeClient.uuidMetaMapMutex);
+
+        for (auto& i : *response.creations)
+        {
+            log << logger::DEBUG << " meta entry, path: " <<  *i.path << " id:"  << unsigned(*i.uuid) << " ptype: "<< unsigned(*i.propertyType);
+            ptreeClient.uuidMetaMap[*i.uuid] = PTreeClient::PTreeMeta(*i.path, *i.propertyType);
+            ptreeClient.pathUuidMap[*i.path] = *i.uuid;
+        }
+
+    };
+    // std::map<protocol::Uuid, PTreeMeta> uuidMetaMap;
+    // std::map<std::string, protocol::Uuid> pathUuidMap;
+    
     // bool supported = true;
     // if (request.version != 1)
     // {
@@ -44,6 +57,7 @@ inline void SigninResponseMessageHandler::handle(protocol::MessageHeaderPtr head
 
     // messageSender(header->transactionId, protocol::MessageType::SigninResponse, response);
     // log << logger::DEBUG << "response size: " << response.size()+sizeof(protocol::MessageHeader);
+    ptreeClient.notifyTransactionCV(header->transactionId);
 }
 
 } // namespace client

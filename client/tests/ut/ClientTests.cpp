@@ -23,11 +23,13 @@ struct ClientTests : public common::MessageCreationHelper, public ::testing::Tes
 {
     ClientTests() :
         endpoint(std::make_shared<common::EndPointMock>()),
-        ptc(std::make_shared<PTreeClient>(endpoint))
+        ptc(std::make_shared<PTreeClient>(endpoint)),
+        log("TEST")
     {}
 
     std::shared_ptr<common::EndPointMock> endpoint;
     std::shared_ptr<PTreeClient> ptc;
+    logger::Logger log;
 };
 
 
@@ -37,7 +39,10 @@ TEST_F(ClientTests, shouldSendSignInRequestOnCreation)
 
     std::function<void()> signinRequestAction = [this]()
     {
-        this->endpoint->queueToReceive(createSigninResponseMessage(0, 1));
+        std::list<std::tuple<std::string, protocol::Uuid, protocol::PropertyType>> metaList;
+        metaList.emplace_back(std::make_tuple("/Test", protocol::Uuid(100), protocol::PropertyType::Node));
+        metaList.emplace_back(std::make_tuple("/Test/Value", protocol::Uuid(101), protocol::PropertyType::Value));
+        this->endpoint->queueToReceive(createSigninResponseMessage(0, 1, metaList));
     };
 
     endpoint->expectSend(0, 0, false, 1, signinRequestMessageMatcher.get(), signinRequestAction);

@@ -99,7 +99,7 @@ struct SigninResponse
 {
     Simple<uint32_t> version;
     BlockArray<MetaCreate> creations;
-    MESSAGE_FIELDS(version);
+    MESSAGE_FIELDS(version, creations);
 };
 
 
