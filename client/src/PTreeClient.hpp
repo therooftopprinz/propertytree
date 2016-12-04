@@ -85,7 +85,7 @@ private:
         endpoint->send(responseMessageBuffer.data(), responseMessageBuffer.size());
     }
 
-    /** TODO: Privatize and friendlize MessageHandler. Methodize.**/
+    /** TODO: Methodize.**/
     struct PTreeMeta
     {
         PTreeMeta(){}
