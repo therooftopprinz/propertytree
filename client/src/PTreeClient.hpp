@@ -7,6 +7,8 @@
 #include <mutex>
 #include <thread>
 #include <memory>
+#include <atomic>
+#include <condition_variable>
 #include <interface/protocol.hpp>
 #include <common/src/Logger.hpp>
 #include <common/src/IEndPoint.hpp>
@@ -20,18 +22,36 @@ typedef std::vector<uint8_t> Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
 
 
-class PTreeClient
+class TransactionIdGenerator
+{
+public:
+    TransactionIdGenerator():
+        id(0)
+    {
+    }
+    uint32_t get()
+    {
+        return id++;
+    }
+private:
+    std::atomic<uint32_t> id;
+};
+
+
+class PTreeClient : public std::enable_shared_from_this<PTreeClient>
 {
 public:
     PTreeClient(common::IEndPointPtr endpoint);
     ~PTreeClient();
 
+    void setup();
+    void signIn();
     void signIn(bool enableMetaUpdate, uint32_t updateRate);
     bool createValue(std::string path, BufferPtr value);
     bool createNode(std::string path);
     bool createRpc(std::string path);
 
-    bool delete(std::string path);
+    bool deleteProperty(std::string path);
 
     void subscribeUpdateNotification(std::string path);
     void unSubscribeUpdateNotification(std::string path);
@@ -47,7 +67,41 @@ public:
 private:
     void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);
     void handleIncoming();
+    void sendSignIn(int refreshRate, const std::list<protocol::SigninRequest::FeatureFlag> features);
 
+    /*** TODO: Commonize these with message handler***/
+    Buffer createHeader(protocol::MessageType type, uint32_t payloadSize, uint32_t transactionId);
+    template<class T>
+    void messageSender(uint32_t tid, protocol::MessageType mtype, T& msg)
+    {
+        Buffer header = createHeader(mtype, msg.size(), tid);
+        endpoint->send(header.data(), header.size());
+        Buffer responseMessageBuffer(msg.size());
+        protocol::BufferView responseMessageBufferView(responseMessageBuffer);
+        protocol::Encoder en(responseMessageBufferView);
+        msg >> en;
+        endpoint->send(responseMessageBuffer.data(), responseMessageBuffer.size());
+    }
+
+    void addTransactionCV(uint32_t transactionId);
+    bool waitTransactionCV(uint32_t transactionId);
+    void notifyTransactionCV(uint32_t transactionId);
+
+    struct TransactionCV
+    {
+        TransactionCV():
+            condition(false)
+        {}
+        std::mutex mutex;
+        std::condition_variable cv;
+        std::atomic<bool> condition;
+    };
+
+    std::mutex transactionIdCVLock;
+    typedef std::map<uint32_t, std::shared_ptr<TransactionCV>> TrCVMap;
+    TrCVMap transactionIdCV;
+
+    TransactionIdGenerator transactionIdGenerator;
     bool handleIncomingIsRunning;
     bool handleOutgoingIsRunning;
     bool killHandleIncoming;

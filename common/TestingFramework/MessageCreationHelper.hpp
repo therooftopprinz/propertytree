@@ -7,6 +7,7 @@ namespace common
 
 typedef std::vector<uint8_t> Buffer;
 
+/*** Remove inliners ***/
 struct MessageCreationHelper
 {
     inline Buffer createHeader(protocol::MessageType type, uint32_t size, uint32_t transactionId)

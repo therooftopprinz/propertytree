@@ -32,6 +32,7 @@ public:
     virtual void returnId(uint32_t id);
 };
 
+/*** TODO: mutex on list of ids ***/
 class IdGenerator
 {
 public:

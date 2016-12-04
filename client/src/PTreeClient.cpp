@@ -33,6 +33,36 @@ PTreeClient::~PTreeClient()
     log << logger::DEBUG << "PTreeClient Teardown complete.";
 }
 
+void PTreeClient::signIn()
+{
+    std::list<protocol::SigninRequest::FeatureFlag> features;
+    features.push_back(protocol::SigninRequest::FeatureFlag::ENABLE_METAUPDATE);
+    sendSignIn(300, features);
+}
+
+void PTreeClient::sendSignIn(int refreshRate, const std::list<protocol::SigninRequest::FeatureFlag> features)
+{
+    std::lock_guard<std::mutex> guard(sendLock);
+    protocol::SigninRequest signIn;
+    signIn.version = 1;
+    signIn.refreshRate = refreshRate;
+    for (const auto& i : features)
+    {
+        signIn.setFeature(i);
+    }
+    auto tid = transactionIdGenerator.get();
+    messageSender(tid, protocol::MessageType::SigninRequest, signIn);
+    addTransactionCV(tid);
+    if (waitTransactionCV(tid))
+    {
+        log << logger::DEBUG << "SIGNIN OK";
+    }
+    else
+    {
+        log << logger::ERROR << "SIGNIN OK TIMEOUT";
+    }
+}
+
 void PTreeClient::processMessage(protocol::MessageHeaderPtr header, BufferPtr message)
 {
     processMessageRunning++;
@@ -43,6 +73,78 @@ void PTreeClient::processMessage(protocol::MessageHeaderPtr header, BufferPtr me
     // messageHandlerFactory.get(type, this, endpoint, ptree, monitor)->handle(header, message);
 
     processMessageRunning--;
+}
+
+
+Buffer PTreeClient::createHeader(protocol::MessageType type, uint32_t payloadSize, uint32_t transactionId)
+{
+    Buffer header(sizeof(protocol::MessageHeader));
+    protocol::MessageHeader& headerRaw = *((protocol::MessageHeader*)header.data());
+    headerRaw.type = type;
+    headerRaw.size = payloadSize+sizeof(protocol::MessageHeader);
+    headerRaw.transactionId = transactionId;
+    return header;
+}
+
+void PTreeClient::addTransactionCV(uint32_t transactionId)
+{
+    std::lock_guard<std::mutex> guard(transactionIdCVLock);
+    transactionIdCV[transactionId] = std::make_shared<TransactionCV>();
+}
+
+void PTreeClient::notifyTransactionCV(uint32_t transactionId)
+{
+    std::shared_ptr<TransactionCV> tcv;
+    {
+        std::lock_guard<std::mutex> guard(transactionIdCVLock);
+        auto it = transactionIdCV.find(transactionId);
+        if (it == transactionIdCV.end())
+        {
+            log << logger::ERROR << "transactionId not found in CV list.";
+            return;
+        }
+        tcv = it->second;
+    }
+
+    tcv->condition = true;
+
+    {
+        std::lock_guard<std::mutex> guard(tcv->mutex);
+        tcv->cv.notify_all();
+    }
+
+    {
+        std::lock_guard<std::mutex> guard(transactionIdCVLock);
+        auto it = transactionIdCV.find(transactionId);
+        if (it == transactionIdCV.end())
+        {
+            log << logger::ERROR << "transactionId not found in CV list.";
+            return;
+        }
+        transactionIdCV.erase(it);
+    }
+}
+
+bool PTreeClient::waitTransactionCV(uint32_t transactionId)
+{
+    std::shared_ptr<TransactionCV> tcv;
+    {
+        std::lock_guard<std::mutex> guard(transactionIdCVLock);
+        auto it = transactionIdCV.find(transactionId);
+        if (it == transactionIdCV.end())
+        {
+            log << logger::ERROR << "transactionId not found in CV list.";
+            return false;
+        }
+        tcv = it->second;
+    }
+
+    {
+        std::unique_lock<std::mutex> guard(tcv->mutex);
+        using namespace std::chrono_literals;
+        tcv->cv.wait_for(guard, 1s,[&tcv](){return bool(tcv->condition);});
+        return tcv->condition;
+    }
 }
 
 void PTreeClient::handleIncoming()

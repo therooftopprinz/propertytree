@@ -35,7 +35,12 @@ TEST_F(ClientTests, shouldSendSignInRequestOnCreation)
 {
     MessageMatcher signinRequestMessageMatcher(createSigninRequestMessage(0, 1, 300));
 
-    endpoint->expectSend(0, 0, false, 1, signinRequestMessageMatcher.get(), DefaultAction::get());
+    std::function<void()> signinRequestAction = [](){};
+
+    endpoint->expectSend(0, 0, false, 1, signinRequestMessageMatcher.get(), signinRequestAction);
+
+    ptc.signIn();
+
     endpoint->waitForAllSending(2500.0);
     logger::loggerServer.waitEmpty();
 }
