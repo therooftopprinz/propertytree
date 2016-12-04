@@ -66,20 +66,6 @@ public:
 
     void notifyTransactionCV(uint32_t transactionId);
 
-    struct PTreeMeta
-    {
-        PTreeMeta(){}
-        PTreeMeta(std::string& path, protocol::PropertyType type):
-            path(path), type(type)
-        {}
-        std::string path;
-        protocol::PropertyType type;
-    };
-    /** TODO: common memory for string key and meta path **/
-    std::map<protocol::Uuid, PTreeMeta> uuidMetaMap;
-    std::map<std::string, protocol::Uuid> pathUuidMap;
-    std::mutex uuidMetaMapMutex;
-
 private:
     void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);
     void handleIncoming();
@@ -98,6 +84,21 @@ private:
         msg >> en;
         endpoint->send(responseMessageBuffer.data(), responseMessageBuffer.size());
     }
+
+    /** TODO: Privatize and friendlize MessageHandler. Methodize.**/
+    struct PTreeMeta
+    {
+        PTreeMeta(){}
+        PTreeMeta(std::string& path, protocol::PropertyType type):
+            path(path), type(type)
+        {}
+        std::string path;
+        protocol::PropertyType type;
+    };
+    /** TODO: common memory for string key and meta path **/
+    std::map<protocol::Uuid, PTreeMeta> uuidMetaMap;
+    std::map<std::string, protocol::Uuid> pathUuidMap;
+    std::mutex uuidMetaMapMutex;
 
     void addTransactionCV(uint32_t transactionId);
     bool waitTransactionCV(uint32_t transactionId);
@@ -139,6 +140,7 @@ private:
     };
     EIncomingState incomingState;
 
+    friend class SigninResponseMessageHandler;
 };
 
 typedef std::shared_ptr<PTreeClient> PTreeClientPtr;
