@@ -51,6 +51,7 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Buff
 
     protocol::CreateResponse response;
     response.response = protocol::CreateResponse::Response::OK;
+    response.uuid = id;
 
     try
     {
@@ -114,6 +115,7 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Buff
         response.uuid = id;
         monitor.notifyCreation(id, static_cast<protocol::PropertyType>(*request.type), *request.path);
     }
+
     log << logger::DEBUG << "is created: " << created;  
 
     messageSender(header->transactionId, protocol::MessageType::CreateResponse, response);
