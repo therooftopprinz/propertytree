@@ -51,7 +51,7 @@ void RpcRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferP
         if (rpc)
         {
             log << logger::DEBUG << "Calling RPC object ";
-            (*rpc)((uintptr_t) cs.get(), header->transactionId, cs, std::move(*request.parameter));
+            (*rpc)((uintptr_t) cs.get(), header->transactionId, std::move(*request.parameter));
         }
         else
         {

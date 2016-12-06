@@ -3,7 +3,7 @@
 
 #include <interface/protocol.hpp>
 #include <memory>
-#include "MessageHandlers/SigninResponseMessageHandler.hpp"
+#include "MessageHandlers/GenericResponseMessageHandler.hpp"
 
 namespace ptree
 {

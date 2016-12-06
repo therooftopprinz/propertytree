@@ -49,10 +49,11 @@ namespace core
     class IProperty;
 
     typedef std::shared_ptr<IProperty> IPropertyPtr;
+    /** TODO: remove ValueContainer, make all defs to Buffer to avoid ambiguity **/
     typedef server::Buffer ValueContainer;
     typedef std::shared_ptr<ValueContainer> ValueContainerPtr;
     typedef std::function<bool(ValuePtr)> ValueWatcher;
-    typedef std::function<void(uint64_t, uint32_t, server::ClientServerWkPtr, ValueContainer&& parameter)> RpcWatcher;
+    typedef std::function<void(uint64_t, uint32_t, ValueContainer&& parameter)> RpcWatcher;
 
     class PTree;
     class IdGenerator;

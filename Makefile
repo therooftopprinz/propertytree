@@ -248,7 +248,7 @@ clean_server_ut:
 	echo cleaning ut
 	find $(BUILDDIR)/$(SERVER_UTDIR) -type f -name *.cpp.o -exec rm {} \;
 
-clean_server:
+clean_server: clean_server_ut
 	echo cleaning server
 	find $(BUILDDIR)/$(SERVER_SRCDIR) -type f -name *.cpp.o -exec rm {} \;
 
@@ -256,7 +256,7 @@ clean_client_ut:
 	echo cleaning ut
 	find $(BUILDDIR)/$(CLIENT_UTDIR) -type f -name *.cpp.o -exec rm {} \;
 
-clean_client:
+clean_client: clean_client_ut
 	echo cleaning server
 	find $(BUILDDIR)/$(CLIENT_SRCDIR) -type f -name *.cpp.o -exec rm {} \;
 

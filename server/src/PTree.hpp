@@ -110,7 +110,7 @@ public:
     ~Rpc();
 
     void setWatcher(RpcWatcher& handler);
-    void operator()(uint64_t csid, uint32_t tid, server::ClientServerWkPtr cswkptr, ValueContainer&& parameter);
+    void operator()(uint64_t csid, uint32_t tid, ValueContainer&& parameter);
 
 private:
     RpcWatcher watcher;

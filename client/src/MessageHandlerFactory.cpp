@@ -17,7 +17,8 @@ std::unique_ptr<MessageHandler>
     switch (uint8_t(type))
     {
         case (Enum) protocol::MessageType::SigninResponse:
-            return std::make_unique<SigninResponseMessageHandler>(*pc.get(), *ep.get());
+        case (Enum) protocol::MessageType::CreateResponse:
+            return std::make_unique<GenericResponseMessageHandler>(*pc.get(), *ep.get());
     }
 
     log << logger::ERROR << "Unregconize message type.";

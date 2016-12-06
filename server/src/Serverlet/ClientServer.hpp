@@ -86,7 +86,7 @@ public:
     void notifyDeletion(uint32_t uuid);
     void notifyValueUpdate(core::ValuePtr);
 
-    void notifyRpcRequest(protocol::Uuid uuid, uint64_t clientServerId, uint32_t transactionId, server::ClientServerWkPtr cswkptr, Buffer&& parameter);
+    void notifyRpcRequest(protocol::Uuid uuid, uint64_t clientServerId, uint32_t transactionId, Buffer&& parameter);
     void notifyRpcResponse(uint32_t transactionId, Buffer&& returnValue);
 
     void setUpdateInterval(uint32_t interval);

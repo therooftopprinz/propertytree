@@ -17,6 +17,60 @@ PTreeClient::PTreeClient(common::IEndPointPtr endpoint):
     std::thread incomingThread(incoming);
     incomingThread.detach();
     log << logger::DEBUG << "Created threads detached.";
+    log << logger::DEBUG << "Sigining to server.";
+}
+
+void PTreeClient::addMeta(protocol::Uuid uuid, std::string path, protocol::PropertyType type)
+{
+    std::lock_guard<std::mutex> lock(uuidMetaMapMutex);
+    uuidMetaMap[uuid] = PTreeMeta(path,type);  
+    pathUuidMap[path] = uuid;
+}
+
+void PTreeClient::removeMeta(protocol::Uuid uuid)
+{
+    std::lock_guard<std::mutex> lock(uuidMetaMapMutex);
+    auto i = uuidMetaMap.find(uuid);
+    if (i == uuidMetaMap.end())
+    {
+       return;
+    }
+    auto j = pathUuidMap.find(i->second.path);
+    uuidMetaMap.erase(i);
+    pathUuidMap.erase(j);
+}
+
+protocol::Uuid PTreeClient::getUuid(std::string path)
+{
+    std::lock_guard<std::mutex> lock(uuidMetaMapMutex);
+    auto i = pathUuidMap.find(path);
+    if (i == pathUuidMap.end())
+    {
+        return protocol::Uuid();
+    }
+    return i->second;
+}
+
+std::string PTreeClient::getPath(protocol::Uuid uuid)
+{
+    std::lock_guard<std::mutex> lock(uuidMetaMapMutex);
+    auto i = uuidMetaMap.find(uuid);
+    if (i == uuidMetaMap.end())
+    {
+        return std::string();
+    }
+    return i->second.path;
+}
+ 
+PTreeClient::PTreeMeta PTreeClient::getMeta(protocol::Uuid uuid)
+{
+    std::lock_guard<std::mutex> lock(uuidMetaMapMutex);
+    auto i = uuidMetaMap.find(uuid);
+    if (i == uuidMetaMap.end())
+    {
+        return PTreeMeta();
+    }
+    return i->second;
 }
 
 PTreeClient::~PTreeClient()
@@ -53,15 +107,93 @@ void PTreeClient::sendSignIn(int refreshRate, const std::list<protocol::SigninRe
     }
     auto tid = transactionIdGenerator.get();
     messageSender(tid, protocol::MessageType::SigninRequest, signIn);
-    addTransactionCV(tid);
+    auto tcv = addTransactionCV(tid);
     if (waitTransactionCV(tid))
     {
-        log << logger::DEBUG << "SIGNIN OK";
+        log << logger::DEBUG << "signin response received.";
+
+        protocol::SigninResponse response;
+        protocol::Decoder de(tcv->value.data(),tcv->value.data()+tcv->value.size());
+        response << de;
+        {
+            for (auto& i : *response.creations)
+            {
+                log << logger::DEBUG << " meta entry, path: " <<  *i.path << " id:"  << unsigned(*i.uuid) << " ptype: "<< unsigned(*i.propertyType);
+                addMeta(*i.uuid, *i.path, *i.propertyType);
+            }
+        };
     }
     else
     {
-        log << logger::ERROR << "SIGNIN OK TIMEOUT";
+        log << logger::ERROR << "SIGNIN TIMEOUT";
     }
+}
+ValueContainer::ValueContainer(PTreeClientPtr ptc, Buffer value) :
+    ptreeClient(ptc), value(value)
+{
+}
+
+ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
+{
+    protocol::CreateRequest request;
+    request.path = path;
+    request.data = value;
+    request.type = protocol::PropertyType::Value;
+    auto tid = transactionIdGenerator.get();
+    messageSender(tid, protocol::MessageType::CreateRequest, request);
+    auto tcv = addTransactionCV(tid);
+    if (waitTransactionCV(tid))
+    {
+        protocol::CreateResponse response;
+        protocol::Decoder de(tcv->value.data(),tcv->value.data()+tcv->value.size());
+        response << de;
+        if ( *response.response  == protocol::CreateResponse::Response::OK)
+        {
+            log << logger::DEBUG << "VALUE CREATED WITH UUID " << *response.uuid;
+            std::lock_guard<std::mutex> lock(valuesMutex);
+            values.emplace(std::make_pair(*response.uuid, std::make_shared<ValueContainer>(shared_from_this(), value)));
+        }
+        else
+        {
+            log << logger::ERROR << "VALUE CREATE REQUEST NOT OK";
+        }
+    }
+    else
+    {
+        log << logger::ERROR << "VALUE CREATE REQUEST TIMEOUT";
+    }
+    return ValueContainerPtr();
+}
+
+
+bool PTreeClient::createNode(std::string path)
+{
+    protocol::CreateRequest request;
+    request.path = path;
+    request.type = protocol::PropertyType::Node;
+    auto tid = transactionIdGenerator.get();
+    messageSender(tid, protocol::MessageType::CreateRequest, request);
+    auto tcv = addTransactionCV(tid);
+    if (waitTransactionCV(tid))
+    {
+        protocol::CreateResponse response;
+        protocol::Decoder de(tcv->value.data(),tcv->value.data()+tcv->value.size());
+        response << de;
+        if ( *response.response  == protocol::CreateResponse::Response::OK)
+        {
+            log << logger::DEBUG << "NODE CREATED WITH UUID " << *response.uuid;
+            return true;
+        }
+        else
+        {
+            log << logger::ERROR << "NODE CREATE REQUEST NOT OK";
+        }
+    }
+    else
+    {
+        log << logger::ERROR << "NODE CREATE REQUEST TIMEOUT";
+    }
+    return false;
 }
 
 void PTreeClient::processMessage(protocol::MessageHeaderPtr header, BufferPtr message)
@@ -75,7 +207,6 @@ void PTreeClient::processMessage(protocol::MessageHeaderPtr header, BufferPtr me
     processMessageRunning--;
 }
 
-
 Buffer PTreeClient::createHeader(protocol::MessageType type, uint32_t payloadSize, uint32_t transactionId)
 {
     Buffer header(sizeof(protocol::MessageHeader));
@@ -86,13 +217,15 @@ Buffer PTreeClient::createHeader(protocol::MessageType type, uint32_t payloadSiz
     return header;
 }
 
-void PTreeClient::addTransactionCV(uint32_t transactionId)
+std::shared_ptr<PTreeClient::TransactionCV> PTreeClient::addTransactionCV(uint32_t transactionId)
 {
     std::lock_guard<std::mutex> guard(transactionIdCVLock);
-    transactionIdCV[transactionId] = std::make_shared<TransactionCV>();
+    // TODO: emplace
+    transactionIdCV[transactionId] = std::make_shared<PTreeClient::TransactionCV>();
+    return transactionIdCV[transactionId];
 }
 
-void PTreeClient::notifyTransactionCV(uint32_t transactionId)
+void PTreeClient::notifyTransactionCV(uint32_t transactionId, BufferPtr value)
 {
     std::shared_ptr<TransactionCV> tcv;
     {
@@ -110,6 +243,7 @@ void PTreeClient::notifyTransactionCV(uint32_t transactionId)
 
     {
         std::lock_guard<std::mutex> guard(tcv->mutex);
+        tcv->value = std::move(*value);
         tcv->cv.notify_all();
     }
 

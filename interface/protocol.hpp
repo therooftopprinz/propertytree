@@ -115,7 +115,8 @@ struct CreateResponse
 {
     enum class Response : uint8_t {OK, PARENT_NOT_FOUND, MALFORMED_PATH, ALREADY_EXIST, TYPE_ERROR};
     Simple<Response> response;
-    MESSAGE_FIELDS(response);
+    Simple<Uuid> uuid;
+    MESSAGE_FIELDS(response, uuid);
 };
 
 struct MetaCreate

@@ -169,9 +169,9 @@ void Rpc::setWatcher(RpcWatcher& watcher)
     this->watcher = watcher;
 }
 
-void Rpc::operator()(uint64_t csid, uint32_t tid, server::ClientServerWkPtr cswkptr, ValueContainer&& parameter)
+void Rpc::operator()(uint64_t csid, uint32_t tid, ValueContainer&& parameter)
 {
-    watcher(csid, tid, cswkptr, std::move(parameter));
+    watcher(csid, tid, std::move(parameter));
 }
 
 PTree::PTree(IIdGeneratorPtr idgen) :

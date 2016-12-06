@@ -170,6 +170,26 @@ struct MessageCreationHelper
         return message;
     }
 
+    inline Buffer createCreateResponseMessage(uint32_t transactionId, protocol::CreateResponse::Response response,
+        protocol::Uuid uuid)
+    {
+        protocol::CreateResponse responseMsg;
+        responseMsg.response = response;
+        responseMsg.uuid = uuid;
+
+        uint32_t sz = responseMsg.size() + sizeof(protocol::MessageHeader);
+
+        Buffer message = createHeader(protocol::MessageType::CreateResponse , sz, transactionId);
+        Buffer enbuff(responseMsg.size());
+        protocol::BufferView enbuffv(enbuff);
+        protocol::Encoder en(enbuffv);
+        responseMsg >> en;
+        message.insert(message.end(), enbuff.begin(), enbuff.end());
+
+        return message;
+    }
+
+
     inline Buffer createGetValueRequestMessage(uint32_t transactionId, protocol::Uuid uuid)
     {
         protocol::GetValueRequest request;

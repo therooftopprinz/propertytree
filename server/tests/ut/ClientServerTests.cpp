@@ -59,16 +59,17 @@ struct ClientServerTests : public common::MessageCreationHelper, public ::testin
         using protocol::UnsubscribePropertyUpdateResponse;
         using protocol::MessageType;
 
-        createTestResponseFullMatcher = createCommonResponse<CreateResponse, MessageType::CreateResponse>
-                (createTestRequestTid, CreateResponse::Response::OK);
-        createValueResponseFullMatcher = createCommonResponse<CreateResponse, MessageType::CreateResponse>
-                (createValueRequestTid, CreateResponse::Response::OK);
-        createValueResponseAlreadyExistFullMatcher = createCommonResponse<CreateResponse, MessageType::CreateResponse>
-                (createValueRequest2Tid, CreateResponse::Response::ALREADY_EXIST);
-        createValueResponseInvalidPathFullMatcher = createCommonResponse<CreateResponse, MessageType::CreateResponse>
-                (createValueRequestTid, CreateResponse::Response::MALFORMED_PATH);
-        createValueResponseInvalidParentFullMatcher = createCommonResponse<CreateResponse, MessageType::CreateResponse>
-                (createValueRequestTid, CreateResponse::Response::PARENT_NOT_FOUND);
+        createTestResponseFullMatcher = createCreateResponse(createTestRequestTid,
+            CreateResponse::Response::OK, protocol::Uuid(100));
+        createValueResponseFullMatcher = createCreateResponse(createValueRequestTid,
+            CreateResponse::Response::OK, protocol::Uuid(101));
+        createValueResponseAlreadyExistFullMatcher = createCreateResponse(createValueRequest2Tid,
+            CreateResponse::Response::ALREADY_EXIST, protocol::Uuid(0));
+        createValueResponseInvalidPathFullMatcher = createCreateResponse(createValueRequestTid,
+            CreateResponse::Response::MALFORMED_PATH, protocol::Uuid(0));
+        createValueResponseInvalidParentFullMatcher = createCreateResponse(createValueRequestTid,
+            CreateResponse::Response::PARENT_NOT_FOUND, protocol::Uuid(0));
+
         deleteValueResponseOkMatcher = createCommonResponse<DeleteResponse, MessageType::DeleteResponse>
                 (deleteValueRequestTid, DeleteResponse::Response::OK);
         deleteValueResponseNotFoundMatcher = createCommonResponse<DeleteResponse, MessageType::DeleteResponse>

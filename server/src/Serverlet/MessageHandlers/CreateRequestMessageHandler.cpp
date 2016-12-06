@@ -20,12 +20,12 @@ RcpHandler::~RcpHandler()
 {
 }
 
-void RcpHandler::handle(uint64_t csid, uint32_t tid, server::ClientServerWkPtr cswkptr, Buffer&& parameter)
+void RcpHandler::handle(uint64_t csid, uint32_t tid, Buffer&& parameter)
 {
     auto csshared = clientServer.lock();
     if(csshared)
     {
-        csshared->notifyRpcRequest(uuid, csid, tid, cswkptr, std::move(parameter));
+        csshared->notifyRpcRequest(uuid, csid, tid, std::move(parameter));
     }
 }
 
@@ -80,7 +80,7 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Buff
             using std::placeholders::_2;
             using std::placeholders::_3;
             using std::placeholders::_4;
-            core::RpcWatcher watcher = std::bind(&RcpHandler::handle, rcphandler, _1, _2, _3, _4);
+            core::RpcWatcher watcher = std::bind(&RcpHandler::handle, rcphandler, _1, _2, _3);
             val.second->setWatcher(watcher);
         }
         else
@@ -111,6 +111,7 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Buff
 
     if (created)
     {
+        response.uuid = id;
         monitor.notifyCreation(id, static_cast<protocol::PropertyType>(*request.type), *request.path);
     }
     log << logger::DEBUG << "is created: " << created;  

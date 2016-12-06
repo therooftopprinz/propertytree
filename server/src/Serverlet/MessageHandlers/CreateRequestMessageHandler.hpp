@@ -14,7 +14,7 @@ public:
     RcpHandler();
     RcpHandler(RcpHandler&);
     RcpHandler(ClientServerWkPtr clientServer, protocol::Uuid uuid);
-    void handle(uint64_t csid, uint32_t tid, server::ClientServerWkPtr cswkptr, Buffer&& parameter);
+    void handle(uint64_t csid, uint32_t tid, Buffer&& parameter);
     ~RcpHandler();
 private:
     ClientServerWkPtr clientServer;

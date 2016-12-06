@@ -13,7 +13,6 @@ namespace client
 using common::IEndPoint;
 using common::IEndPointPtr;
 
-struct PTreeClient;
 struct MessageHandler
 {
     MessageHandler(PTreeClient& pc, IEndPoint& ep):
