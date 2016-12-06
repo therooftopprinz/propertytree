@@ -59,15 +59,15 @@ struct ClientServerTests : public common::MessageCreationHelper, public ::testin
         using protocol::UnsubscribePropertyUpdateResponse;
         using protocol::MessageType;
 
-        createTestResponseFullMatcher = createCreateResponse(createTestRequestTid,
+        createTestResponseFullMatcher = createCreateResponseMessage(createTestRequestTid,
             CreateResponse::Response::OK, protocol::Uuid(100));
-        createValueResponseFullMatcher = createCreateResponse(createValueRequestTid,
+        createValueResponseFullMatcher = createCreateResponseMessage(createValueRequestTid,
             CreateResponse::Response::OK, protocol::Uuid(101));
-        createValueResponseAlreadyExistFullMatcher = createCreateResponse(createValueRequest2Tid,
+        createValueResponseAlreadyExistFullMatcher = createCreateResponseMessage(createValueRequest2Tid,
             CreateResponse::Response::ALREADY_EXIST, protocol::Uuid(0));
-        createValueResponseInvalidPathFullMatcher = createCreateResponse(createValueRequestTid,
+        createValueResponseInvalidPathFullMatcher = createCreateResponseMessage(createValueRequestTid,
             CreateResponse::Response::MALFORMED_PATH, protocol::Uuid(0));
-        createValueResponseInvalidParentFullMatcher = createCreateResponse(createValueRequestTid,
+        createValueResponseInvalidParentFullMatcher = createCreateResponseMessage(createValueRequestTid,
             CreateResponse::Response::PARENT_NOT_FOUND, protocol::Uuid(0));
 
         deleteValueResponseOkMatcher = createCommonResponse<DeleteResponse, MessageType::DeleteResponse>
