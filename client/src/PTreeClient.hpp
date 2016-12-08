@@ -53,6 +53,8 @@ public:
         std::atomic<bool> condition;
     };
 
+    /** TODO: on destruction if meta uuid is not watched delete meta. **/
+
     template<typename T>
     T& get()
     {
@@ -176,6 +178,7 @@ private:
     EIncomingState incomingState;
 
     friend class GenericResponseMessageHandler;
+    friend class MetaUpdateNotificationMessageHandler;
 };
 
 }
