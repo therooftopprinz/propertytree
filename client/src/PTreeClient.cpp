@@ -165,6 +165,27 @@ ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
     return ValueContainerPtr();
 }
 
+ValueContainerPtr PTreeClient::getValue(std::string path)
+{
+    auto uuid = getUuid(path);
+    if (!uuid)
+    {
+        return ValueContainerPtr();
+    }
+
+    auto i = values.find(uuid);
+    if (i == values.end())
+    {
+        // value not fetched yet
+        // fetch value using GetValueRequest
+    }
+    else
+    {
+        // if not subscribed fetch value using GetValueRequest
+        // else return stored value
+    }
+    return ValueContainerPtr();
+}
 
 bool PTreeClient::createNode(std::string path)
 {

@@ -77,6 +77,7 @@ public:
     void signIn();
     ValueContainerPtr createValue(std::string path, Buffer value);
     bool createNode(std::string path);
+    ValueContainerPtr getValue(std::string path);
 
 private:
     void signIn(bool enableMetaUpdate, uint32_t updateRate);
@@ -85,7 +86,6 @@ private:
     void subscribeUpdateNotification(std::string path);
     void unSubscribeUpdateNotification(std::string path);
     void setValue(std::string path, BufferPtr value);
-    BufferPtr getValue(std::string path);
     BufferPtr rpcRequest(Buffer argument);
     void handleRpcResponse(BufferPtr returnType, uint64_t calee, uint32_t transactionId);
     void installUpdateHandler(uint64_t id, std::function<void()> handler);

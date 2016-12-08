@@ -103,7 +103,28 @@ TEST_F(ClientTests, shouldCreateValue)
     logger::loggerServer.waitEmpty();
 }
 
+TEST_F(ClientTests, shouldFetchValue)
+{
 
+    auto expectedVal = utils::buildBufferedValue<uint32_t>(42);
+    MessageMatcher createRequestMessageMatcher(createGetValueRequestMessage(0, protocol::Uuid(100)));
+
+    std::function<void()> getValueRequestAction = [this, &expectedVal]()
+    {
+        this->endpoint->queueToReceive(createGetValueResponseMessage(0, expectedVal));
+    };
+
+    endpoint->expectSend(0, 0, false, 1, createRequestMessageMatcher.get(), getValueRequestAction);
+
+    ptc = std::make_shared<PTreeClient>(endpoint);
+
+    auto value = ptc->getValue("/Value");
+
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1ms);
+    endpoint->waitForAllSending(2500.0);
+    logger::loggerServer.waitEmpty();
+}
 
 } // namespace client
 } // namespace ptree

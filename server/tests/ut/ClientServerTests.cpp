@@ -722,6 +722,7 @@ TEST_F(ClientServerTests, shouldGetValue)
     std::function<void()> subscribeValueRspAction = [this, &expectedValue]()
     {
         log << logger::DEBUG << "Subscribed to uuid: " << this->uuidOfValue;
+        /** TODO: setValueReqTid **/
         this->endpoint->queueToReceive(createSetValueIndicationMessage(getValueReqTid, this->uuidOfValue, *expectedValue));
     };
 
