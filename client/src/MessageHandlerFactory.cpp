@@ -18,6 +18,8 @@ std::unique_ptr<MessageHandler>
     {
         case (Enum) protocol::MessageType::SigninResponse:
         case (Enum) protocol::MessageType::CreateResponse:
+        case (Enum) protocol::MessageType::GetSpecificMetaResponse:
+        case (Enum) protocol::MessageType::GetValueResponse:
             return std::make_unique<GenericResponseMessageHandler>(*pc.get(), *ep.get());
     }
 

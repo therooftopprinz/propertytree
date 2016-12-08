@@ -39,10 +39,7 @@ TEST_F(ClientTests, shouldSendSignInRequestOnCreation)
 
     std::function<void()> signinRequestAction = [this]()
     {
-        std::list<std::tuple<std::string, protocol::Uuid, protocol::PropertyType>> metaList;
-        metaList.emplace_back(std::make_tuple("/Test", protocol::Uuid(100), protocol::PropertyType::Node));
-        metaList.emplace_back(std::make_tuple("/Test/Value", protocol::Uuid(101), protocol::PropertyType::Value));
-        this->endpoint->queueToReceive(createSigninResponseMessage(0, 1, metaList));
+        this->endpoint->queueToReceive(createSigninResponseMessage(0, 1));
     };
 
     endpoint->expectSend(0, 0, false, 1, signinRequestMessageMatcher.get(), signinRequestAction);
@@ -103,18 +100,25 @@ TEST_F(ClientTests, shouldCreateValue)
     logger::loggerServer.waitEmpty();
 }
 
-TEST_F(ClientTests, shouldFetchValue)
+TEST_F(ClientTests, shouldFetchValueWithGetSpecificMetaWhenNotAutoUpdate)
 {
-
+    std::string path = "/Value";
     auto expectedVal = utils::buildBufferedValue<uint32_t>(42);
-    MessageMatcher createRequestMessageMatcher(createGetValueRequestMessage(0, protocol::Uuid(100)));
+    MessageMatcher getSpecificMetaRequestMessageMatcher(createGetSpecificMetaRequestMessage(0, path));
+    MessageMatcher getValueRequestMessageMatcher(createGetValueRequestMessage(1, protocol::Uuid(100)));
+
+    std::function<void()> getSpecificMetaRequestAction = [this, &expectedVal, &path]()
+    {
+        this->endpoint->queueToReceive(createGetSpecificMetaResponseMessage(0, 100, protocol::PropertyType::Value, path));
+    };
 
     std::function<void()> getValueRequestAction = [this, &expectedVal]()
     {
-        this->endpoint->queueToReceive(createGetValueResponseMessage(0, expectedVal));
+        this->endpoint->queueToReceive(createGetValueResponseMessage(1, expectedVal));
     };
 
-    endpoint->expectSend(0, 0, false, 1, createRequestMessageMatcher.get(), getValueRequestAction);
+    endpoint->expectSend(1, 0, false, 1, getSpecificMetaRequestMessageMatcher.get(), getSpecificMetaRequestAction);
+    endpoint->expectSend(2, 1, false, 1, getValueRequestMessageMatcher.get(), getValueRequestAction);
 
     ptc = std::make_shared<PTreeClient>(endpoint);
 

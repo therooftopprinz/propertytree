@@ -46,7 +46,7 @@ protocol::Uuid PTreeClient::getUuid(std::string path)
     auto i = pathUuidMap.find(path);
     if (i == pathUuidMap.end())
     {
-        return protocol::Uuid();
+        return static_cast<protocol::Uuid>(-1);
     }
     return i->second;
 }
@@ -115,13 +115,6 @@ void PTreeClient::sendSignIn(int refreshRate, const std::list<protocol::SigninRe
         protocol::SigninResponse response;
         protocol::Decoder de(tcv->value.data(),tcv->value.data()+tcv->value.size());
         response << de;
-        {
-            for (auto& i : *response.creations)
-            {
-                log << logger::DEBUG << " meta entry, path: " <<  *i.path << " id:"  << unsigned(*i.uuid) << " ptype: "<< unsigned(*i.propertyType);
-                addMeta(*i.uuid, *i.path, *i.propertyType);
-            }
-        };
     }
     else
     {
@@ -129,14 +122,26 @@ void PTreeClient::sendSignIn(int refreshRate, const std::list<protocol::SigninRe
     }
 }
 
-ValueContainer::ValueContainer(PTreeClientPtr ptc, Buffer &&value) :
-    ptreeClient(ptc), value(std::move(value))
+ValueContainer::ValueContainer(PTreeClientPtr ptc, Buffer &value) :
+    autoUpdate(false), ptreeClient(ptc), value(value)
 {
 }
 
-ValueContainer::ValueContainer(PTreeClientPtr ptc, Buffer value) :
-    ptreeClient(ptc), value(value)
+ValueContainer::ValueContainer(PTreeClientPtr ptc, Buffer &&value) :
+    autoUpdate(false), ptreeClient(ptc), value(std::move(value))
 {
+}
+
+
+void ValueContainer::setUpdate(bool autoUpdate)
+{
+    /** TODO: subrscribe **/
+    this->autoUpdate = autoUpdate;
+}
+bool ValueContainer::isAutoUpdate()
+{
+    /** TODO: unsubrscribe **/
+    return autoUpdate;
 }
 
 ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
@@ -174,22 +179,47 @@ ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
 ValueContainerPtr PTreeClient::getValue(std::string path)
 {
     auto uuid = getUuid(path);
-    if (!uuid)
+
+    log << logger::DEBUG << "GET VALUE (" << uuid << ")" << path;
+
+    if (uuid == static_cast<protocol::Uuid>(-1))
     {
-        /** TODO: Handle when auto metaupdate is off fetch meta using GetSpecificMetaRequest **/
-        return ValueContainerPtr();
+        /** TODO: Value not yet in local meta GetSpecificMetaRequest **/
+        protocol::GetSpecificMetaRequest request;
+        request.path = path;
+        auto tid = transactionIdGenerator.get();
+        messageSender(tid, protocol::MessageType::GetSpecificMetaRequest, request);
+        auto tcv = addTransactionCV(tid);
+        if (waitTransactionCV(tid))
+        {
+            protocol::GetSpecificMetaResponse response;
+            protocol::Decoder de(tcv->value.data(),tcv->value.data()+tcv->value.size());
+            response << de;
+            if (response.meta.uuid == static_cast<protocol::Uuid>(-1))
+            {
+                return ValueContainerPtr();
+            }
+
+            uuid = response.meta.uuid;
+            addMeta(response.meta.uuid, response.meta.path, response.meta.propertyType);
+
+        }
+        else
+        {
+            log << logger::ERROR << "GET SPECIFIC META REQUEST TIMEOUT";
+            return ValueContainerPtr();
+        }
     }
 
+    std::lock_guard<std::mutex> lock(valuesMutex);
     auto i = values.find(uuid);
-    if (i == values.end())
+    if (i == values.end() || !i->second->isAutoUpdate())
     {
         protocol::GetValueRequest request;
         request.uuid = uuid;
         auto tid = transactionIdGenerator.get();
-        messageSender(tid, protocol::MessageType::CreateRequest, request);
+        messageSender(tid, protocol::MessageType::GetValueRequest, request);
         auto tcv = addTransactionCV(tid);
-        // value not fetched yet
-        // fetch value using GetValueRequest
 
         if (waitTransactionCV(tid))
         {
@@ -199,8 +229,7 @@ ValueContainerPtr PTreeClient::getValue(std::string path)
             if (response.data.size())
             {
                 auto vc = std::make_shared<ValueContainer>(shared_from_this(), std::move(*response.data));
-                std::lock_guard<std::mutex> lock(valuesMutex);
-                values.emplace(std::make_pair(uuid, vc));
+                values[uuid] = vc;
                 return vc;
             }
             else

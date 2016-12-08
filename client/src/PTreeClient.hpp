@@ -44,26 +44,29 @@ private:
 class ValueContainer : public std::enable_shared_from_this<ValueContainer>
 {
 public:
-ValueContainer() = delete;
+    ValueContainer() = delete;
 
-struct ConditionVariable
-{
-    std::condition_variable cv;
-    std::mutex m;
-    std::atomic<bool> condition;
-};
+    struct ConditionVariable
+    {
+        std::condition_variable cv;
+        std::mutex m;
+        std::atomic<bool> condition;
+    };
 
-template<typename T>
-T fetchValue()
-{
-    return T();
-}
+    template<typename T>
+    T fetchValue()
+    {
+        return T();
+    }
 
-friend class PTreeClient;
+    friend class PTreeClient;
 
-private:
-    ValueContainer(PTreeClientPtr ptc, Buffer value);
+    ValueContainer(PTreeClientPtr ptc, Buffer &value);
     ValueContainer(PTreeClientPtr ptc, Buffer &&value);
+    void setUpdate(bool autoUpdate);
+    bool isAutoUpdate();
+private:
+    bool autoUpdate;
     std::weak_ptr<PTreeClient> ptreeClient;
     Buffer value;
     std::shared_ptr<ConditionVariable> conditionVariable;
