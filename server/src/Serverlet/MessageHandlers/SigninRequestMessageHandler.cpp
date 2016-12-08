@@ -33,14 +33,14 @@ inline void SigninRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
 
     protocol::SigninResponse response;
     response.version = supported ? *request.version : 0;
-    if (supported)
-    {
-        auto meta = ptree.getPTreeInfo();
-        for (const auto& i : meta)
-        {
-            response.creations->emplace_back(std::get<1>(i), std::get<2>(i), std::get<0>(i));
-        }
-    }
+    // if (supported)
+    // {
+    //     auto meta = ptree.getPTreeInfo();
+    //     for (const auto& i : meta)
+    //     {
+    //         response.creations->emplace_back(std::get<1>(i), std::get<2>(i), std::get<0>(i));
+    //     }
+    // }
 
     messageSender(header->transactionId, protocol::MessageType::SigninResponse, response);
     log << logger::DEBUG << "response size: " << response.size()+sizeof(protocol::MessageHeader);

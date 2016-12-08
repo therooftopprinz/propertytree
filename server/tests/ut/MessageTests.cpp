@@ -328,7 +328,6 @@ TEST_F(MessagingTests, encodeTVUnion)
     std::this_thread::sleep_for(1ms);
 }
 
-
 // TEST_F(MessagingTests, benchMarkingGeneration)
 // {
 //     BufferPtr value = std::make_shared<Buffer>(Buffer{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0});

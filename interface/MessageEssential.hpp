@@ -1,6 +1,7 @@
 #ifndef INTERFACE_MESSAGEESSENTIAL_HPP_
 #define INTERFACE_MESSAGEESSENTIAL_HPP_
 
+#include <iostream>
 #include <vector>
 #include <cstring>  
 
@@ -402,7 +403,7 @@ inline uint8_t* parse(uint8_t* start, uint8_t* limit)\
     *this << de;\
     return de.getNext();\
 }\
-uint32_t size()\
+inline uint32_t size()\
 {\
     SizeReader sr;\
     sr.translate(__VA_ARGS__);\
@@ -437,7 +438,7 @@ if (type == id){ \
     type = *start; \
     start += sizeof(uint8_t); \
     return multiDoFuntion(nuller, start, limit, 1); \
-} uint8_t type; uint32_t size() { \
+} uint8_t type; inline uint32_t size() { \
     ptree::protocol::BufferView nuller; \
     return (uintptr_t)multiDoFuntion(nuller, nullptr, nullptr, 2) + sizeof(uint8_t); \
 }

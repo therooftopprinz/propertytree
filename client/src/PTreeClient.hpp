@@ -61,8 +61,9 @@ T fetchValue()
 
 friend class PTreeClient;
 
-    ValueContainer(PTreeClientPtr ptc, Buffer value);
 private:
+    ValueContainer(PTreeClientPtr ptc, Buffer value);
+    ValueContainer(PTreeClientPtr ptc, Buffer &&value);
     std::weak_ptr<PTreeClient> ptreeClient;
     Buffer value;
     std::shared_ptr<ConditionVariable> conditionVariable;

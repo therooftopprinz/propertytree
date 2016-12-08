@@ -39,15 +39,10 @@ struct MessageCreationHelper
         return message;
     }
 
-    inline Buffer createSigninResponseMessage(uint32_t transactionId, uint32_t version,
-        std::list<std::tuple<std::string, protocol::Uuid, protocol::PropertyType>> metaList = std::list<std::tuple<std::string, protocol::Uuid, protocol::PropertyType>>())
+    inline Buffer createSigninResponseMessage(uint32_t transactionId, uint32_t version)
     {
         protocol::SigninResponse signin;
         signin.version = version;
-        for (const auto& i : metaList)
-        {
-            signin.creations->emplace_back(std::get<1>(i), std::get<2>(i), std::get<0>(i));
-        }
 
         uint32_t sz = signin.size() + sizeof(protocol::MessageHeader);
 
@@ -57,10 +52,6 @@ struct MessageCreationHelper
         protocol::Encoder en(enbuffv);
         signin >> en;
 
-        // enbuff[signin.size()-1]=0;
-        // enbuff[signin.size()-2]=0;
-        // enbuff[signin.size()-3]=0;
-        // enbuff[signin.size()-4]=0;
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;
@@ -293,6 +284,42 @@ struct MessageCreationHelper
         protocol::BufferView enbuffv(enbuff);
         protocol::Encoder en(enbuffv);
         response >> en;
+        message.insert(message.end(), enbuff.begin(), enbuff.end());
+
+        return message;
+    }
+
+    inline Buffer createGetSpecificMetaRequestMessage(uint32_t transactionId, std::string path)
+    {
+        protocol::GetSpecificMetaRequest request;
+        request.path = path;
+
+        uint32_t sz = request.size() + sizeof(protocol::MessageHeader);
+
+        Buffer message = createHeader(protocol::MessageType::GetSpecificMetaRequest, sz, transactionId);
+        Buffer enbuff(request.size());
+        protocol::BufferView enbuffv(enbuff);
+        protocol::Encoder en(enbuffv);
+        request >> en;
+        message.insert(message.end(), enbuff.begin(), enbuff.end());
+
+        return message;
+    }
+
+    inline Buffer createGetSpecificMetaResponseMessage(uint32_t transactionId, protocol::Uuid uuid,
+        protocol::PropertyType ptype, std::string path)
+    {
+        protocol::GetSpecificMetaResponse response;
+        response.meta = protocol::MetaCreate(uuid, ptype, path);
+
+        uint32_t sz = response.size() + sizeof(protocol::MessageHeader);
+
+        Buffer message = createHeader(protocol::MessageType::GetSpecificMetaResponse, sz, transactionId);
+        Buffer enbuff(response.size());
+        protocol::BufferView enbuffv(enbuff);
+        protocol::Encoder en(enbuffv);
+        response >> en;
+
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;

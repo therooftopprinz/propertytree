@@ -47,6 +47,8 @@ enum class MessageType : uint8_t
     RpcResponse, // 3a
     HandleRpcRequest, // 3b
     HandleRpcResponse, // 3c
+    GetSpecificMetaRequest, // 3d
+    GetSpecificMetaResponse, // 3e
 
     AquireOwnershipRequest,
     AquireOwnershipResponse,
@@ -98,8 +100,7 @@ struct MetaCreate;
 struct SigninResponse
 {
     Simple<uint32_t> version;
-    BlockArray<MetaCreate> creations;
-    MESSAGE_FIELDS(version, creations);
+    MESSAGE_FIELDS(version);
 };
 
 
@@ -163,7 +164,7 @@ struct DeleteRequest
 
 struct DeleteResponse
 {
-    enum class Response : uint8_t {OK, OBJECT_NOT_FOUND, NOT_PERMITTED, NOT_EMPTY};
+    enum class Response : uint8_t {OK, OBJECT_NOT_FOUND, NOT_PERMITTED, NOT_EMPTY, MALFORMED_PATH};
     Simple<Response> response;
     MESSAGE_FIELDS(response);
 };
@@ -261,6 +262,19 @@ struct HandleRpcResponse
     Simple<uint32_t> callerTransactionId;
     BufferBlock returnValue;
     MESSAGE_FIELDS(callerId, callerTransactionId, returnValue);
+};
+
+
+struct GetSpecificMetaRequest
+{
+    String path;
+    MESSAGE_FIELDS(path);
+};
+
+struct GetSpecificMetaResponse
+{
+    MetaCreate meta;
+    MESSAGE_FIELDS(meta);
 };
 
 //////////////////

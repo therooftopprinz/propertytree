@@ -44,15 +44,22 @@ inline void DeleteRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
     }
     catch (core::ObjectNotFound)
     {
+        deleted = false;
         response.response = protocol::DeleteResponse::Response::OBJECT_NOT_FOUND;
         log << logger::ERROR << "Object not found: " << *request.path;
     }
     catch (core::NotEmpty)
     {
+        deleted = false;
         response.response = protocol::DeleteResponse::Response::NOT_EMPTY;
         log << logger::ERROR << "Node not empty: " << *request.path;
     }
-
+    catch (core::MalformedPath)
+    {
+        deleted = false;
+        response.response = protocol::DeleteResponse::Response::MALFORMED_PATH;
+        log << logger::ERROR << "Malformed path thrown!";
+    }
     if (deleted)
     {
         monitor.notifyDeletion(uuid);    

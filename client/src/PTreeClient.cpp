@@ -128,6 +128,12 @@ void PTreeClient::sendSignIn(int refreshRate, const std::list<protocol::SigninRe
         log << logger::ERROR << "SIGNIN TIMEOUT";
     }
 }
+
+ValueContainer::ValueContainer(PTreeClientPtr ptc, Buffer &&value) :
+    ptreeClient(ptc), value(std::move(value))
+{
+}
+
 ValueContainer::ValueContainer(PTreeClientPtr ptc, Buffer value) :
     ptreeClient(ptc), value(value)
 {
@@ -170,14 +176,43 @@ ValueContainerPtr PTreeClient::getValue(std::string path)
     auto uuid = getUuid(path);
     if (!uuid)
     {
+        /** TODO: Handle when auto metaupdate is off fetch meta using GetSpecificMetaRequest **/
         return ValueContainerPtr();
     }
 
     auto i = values.find(uuid);
     if (i == values.end())
     {
+        protocol::GetValueRequest request;
+        request.uuid = uuid;
+        auto tid = transactionIdGenerator.get();
+        messageSender(tid, protocol::MessageType::CreateRequest, request);
+        auto tcv = addTransactionCV(tid);
         // value not fetched yet
         // fetch value using GetValueRequest
+
+        if (waitTransactionCV(tid))
+        {
+            protocol::GetValueResponse response;
+            protocol::Decoder de(tcv->value.data(),tcv->value.data()+tcv->value.size());
+            response << de;
+            if (response.data.size())
+            {
+                auto vc = std::make_shared<ValueContainer>(shared_from_this(), std::move(*response.data));
+                std::lock_guard<std::mutex> lock(valuesMutex);
+                values.emplace(std::make_pair(uuid, vc));
+                return vc;
+            }
+            else
+            {
+                return ValueContainerPtr();
+            }
+        }
+        else
+        {
+            log << logger::ERROR << "GET VALUE REQUEST TIMEOUT";
+            return ValueContainerPtr();
+        }
     }
     else
     {

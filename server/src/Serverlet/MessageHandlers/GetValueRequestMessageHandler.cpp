@@ -33,6 +33,10 @@ void GetValueRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Bu
         {
             response.data = value->getValue();
         }
+        else
+        {
+            response.data = Buffer();
+        }
     }
     catch (core::ObjectNotFound)
     {

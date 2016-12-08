@@ -13,6 +13,7 @@
 #include "MessageHandlers/GetValueRequestMessageHandler.hpp"
 #include "MessageHandlers/RpcRequestMessageHandler.hpp"
 #include "MessageHandlers/HandleRpcResponseMessageHandler.hpp"
+#include "MessageHandlers/GetSpecificMetaRequestMessageHandler.hpp"
 
 namespace ptree
 {
