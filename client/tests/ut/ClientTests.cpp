@@ -103,7 +103,7 @@ TEST_F(ClientTests, shouldCreateValue)
 TEST_F(ClientTests, shouldFetchValueWithGetSpecificMetaWhenNotAutoUpdate)
 {
     std::string path = "/Value";
-    auto expectedVal = utils::buildBufferedValue<uint32_t>(42);
+    auto expectedVal = utils::buildBufferedValue<uint32_t>(42u);
     MessageMatcher getSpecificMetaRequestMessageMatcher(createGetSpecificMetaRequestMessage(0, path));
     MessageMatcher getValueRequestMessageMatcher(createGetValueRequestMessage(1, protocol::Uuid(100)));
 
@@ -123,6 +123,8 @@ TEST_F(ClientTests, shouldFetchValueWithGetSpecificMetaWhenNotAutoUpdate)
     ptc = std::make_shared<PTreeClient>(endpoint);
 
     auto value = ptc->getValue("/Value");
+
+    EXPECT_EQ(value->get<uint32_t>(), 42u);
 
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(1ms);

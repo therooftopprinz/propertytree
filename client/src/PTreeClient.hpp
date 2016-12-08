@@ -54,9 +54,10 @@ public:
     };
 
     template<typename T>
-    T fetchValue()
+    T& get()
     {
-        return T();
+        assert(sizeof(T) == value.size());
+        return *(T*)(value.data());
     }
 
     friend class PTreeClient;
@@ -149,13 +150,6 @@ private:
     std::shared_ptr<TransactionCV> addTransactionCV(uint32_t transactionId);
     bool waitTransactionCV(uint32_t transactionId);
 
-    // TODO: Make it in Utils
-    template <typename T>
-    T& getTRefFromBuffer(Buffer& value)
-    {
-        assert(sizeof(T) == value.size());
-        return static_cast<T>(value.data());
-    }
     std::mutex transactionIdCVLock;
     typedef std::map<uint32_t, std::shared_ptr<TransactionCV>> TrCVMap;
     TrCVMap transactionIdCV;
