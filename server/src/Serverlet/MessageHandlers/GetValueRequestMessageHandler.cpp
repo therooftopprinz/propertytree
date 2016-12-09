@@ -20,8 +20,7 @@ void GetValueRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Bu
     logger::Logger log("GetValueRequestMessageHandler");
 
     protocol::GetValueRequest request;
-    protocol::Decoder de(message->data(),message->data()+message->size());
-    request << de;
+    request.unpackFrom(*message);
 
     protocol::GetValueResponse response;
 

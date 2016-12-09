@@ -306,10 +306,7 @@ void ClientServer::notifyRpcResponse( uint32_t transactionId, Buffer&& returnVal
     protocol::RpcResponse response;
     response.returnValue = std::move(returnValue);
 
-    Buffer enbuff(response.size());
-    protocol::BufferView enbuffv(enbuff);
-    protocol::Encoder en(enbuffv);
-    response >> en;
+    Buffer enbuff = response.getPacked();
 
     Buffer header(sizeof(protocol::MessageHeader));
     protocol::MessageHeader& headerRaw = *((protocol::MessageHeader*)header.data());
@@ -329,10 +326,7 @@ void ClientServer::notifyRpcRequest(protocol::Uuid uuid, uint64_t clientServerId
     request.uuid = uuid;
     request.parameter = std::move(parameter);
 
-    Buffer enbuff(request.size());
-    protocol::BufferView enbuffv(enbuff);
-    protocol::Encoder en(enbuffv);
-    request >> en;
+    Buffer enbuff = request.getPacked();
 
     Buffer header(sizeof(protocol::MessageHeader));
     protocol::MessageHeader& headerRaw = *((protocol::MessageHeader*)header.data());
@@ -391,10 +385,7 @@ void ClientServer::handleOutgoing()
                         static_cast<uint32_t>(-1));
                 endpoint->send(notifheader.data(), notifheader.size());
 
-                Buffer enbuff(metaUpdateNotif.size());
-                protocol::BufferView enbuffv(enbuff);
-                protocol::Encoder en(enbuffv);
-                metaUpdateNotif >> en;
+                Buffer enbuff = metaUpdateNotif.getPacked();
                 endpoint->send(enbuff.data(), enbuff.size());
 
                 log << logger::DEBUG << "MetaUpdateNotification sent!";
@@ -421,10 +412,7 @@ void ClientServer::handleOutgoing()
                         static_cast<uint32_t>(-1));
                 endpoint->send(notifheader.data(), notifheader.size());
 
-                Buffer enbuff(propertyUpdateNotifs.size());
-                protocol::BufferView enbuffv(enbuff);
-                protocol::Encoder en(enbuffv);
-                propertyUpdateNotifs >> en;
+                Buffer enbuff = propertyUpdateNotifs.getPacked();
 
                 std::lock_guard<std::mutex> sendGuard(sendLock);
                 endpoint->send(enbuff.data(), enbuff.size());

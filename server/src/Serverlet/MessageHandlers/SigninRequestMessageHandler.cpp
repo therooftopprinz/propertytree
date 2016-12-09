@@ -17,8 +17,7 @@ inline void SigninRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
     logger::Logger log("SigninRequestMessageHandler");
 
     protocol::SigninRequest request;
-    protocol::Decoder de(message->data(),message->data()+message->size());
-    request << de;
+    request.unpackFrom(*message);
 
     bool supported = true;
     if (request.version != 1)

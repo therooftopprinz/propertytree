@@ -38,10 +38,7 @@ struct MessageHandler
         Buffer header = createHeader(mtype, msg.size(), tid);
         endpoint.send(header.data(), header.size());
 
-        Buffer responseMessageBuffer(msg.size());
-        protocol::BufferView responseMessageBufferView(responseMessageBuffer);
-        protocol::Encoder en(responseMessageBufferView);
-        msg >> en;
+        Buffer responseMessageBuffer = msg.getPacked();
         endpoint.send(responseMessageBuffer.data(), responseMessageBuffer.size());
     }
 

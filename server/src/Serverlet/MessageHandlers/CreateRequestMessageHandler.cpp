@@ -40,8 +40,7 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Buff
     logger::Logger log("CreateRequestMessageHandler");
 
     protocol::CreateRequest request;
-    protocol::Decoder de(message->data(),message->data()+message->size());
-    request << de;
+    request.unpackFrom(*message);
 
     log << logger::DEBUG << "value sz: " << (*request.data).size();
     log << logger::DEBUG << "path: " << *request.path;

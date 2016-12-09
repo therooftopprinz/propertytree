@@ -19,8 +19,7 @@ void SetValueIndicationMessageHandler::handle(protocol::MessageHeaderPtr header,
     logger::Logger log("SetValueIndication");
 
     protocol::SetValueIndication request;
-    protocol::Decoder de(message->data(),message->data()+message->size());
-    request << de;
+    request.unpackFrom(*message);
 
     log << logger::DEBUG << "Setting value of (" << *request.uuid << ") with size " << request.data->size();
     utils::printRaw(request.data->data(), request.data->size());

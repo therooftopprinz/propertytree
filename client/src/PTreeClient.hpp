@@ -66,13 +66,15 @@ public:
 
     ValueContainer(PTreeClientPtr ptc, Buffer &value);
     ValueContainer(PTreeClientPtr ptc, Buffer &&value);
-    void setUpdate(bool autoUpdate);
     bool isAutoUpdate();
 private:
+    void setUpdate(bool autoUpdate);
     bool autoUpdate;
     std::weak_ptr<PTreeClient> ptreeClient;
+    protocol::Uuid uuid;
     Buffer value;
     std::shared_ptr<ConditionVariable> conditionVariable;
+    logger::Logger log;
 };
 
 class PTreeClient : public std::enable_shared_from_this<PTreeClient>
@@ -85,6 +87,16 @@ public:
     ValueContainerPtr createValue(std::string path, Buffer value);
     bool createNode(std::string path);
     ValueContainerPtr getValue(std::string path);
+
+
+    uint32_t getTransactionId()
+    {
+        std::lock_guard<std::mutex> lock(transactionIdGeneratorLock);
+        return transactionIdGenerator.get();
+    }
+
+    bool enableAutoUpdate(std::string&& path);
+    bool disableAutoUpdate(std::string&& path);
 
 private:
     void signIn(bool enableMetaUpdate, uint32_t updateRate);
@@ -102,22 +114,20 @@ private:
     void handleIncoming();
     void sendSignIn(int refreshRate, const std::list<protocol::SigninRequest::FeatureFlag> features);
 
-    std::mutex valuesMutex;
-    std::map<protocol::Uuid, ValueContainerPtr> values;
-
     /*** TODO: Commonize these with message handler***/
     Buffer createHeader(protocol::MessageType type, uint32_t payloadSize, uint32_t transactionId);
     template<class T>
     void messageSender(uint32_t tid, protocol::MessageType mtype, T& msg)
     {
+        std::lock_guard<std::mutex> guard(sendLock);
         Buffer header = createHeader(mtype, msg.size(), tid);
         endpoint->send(header.data(), header.size());
-        Buffer responseMessageBuffer(msg.size());
-        protocol::BufferView responseMessageBufferView(responseMessageBuffer);
-        protocol::Encoder en(responseMessageBufferView);
-        msg >> en;
+        Buffer responseMessageBuffer = msg.getPacked();
         endpoint->send(responseMessageBuffer.data(), responseMessageBuffer.size());
     }
+
+    std::mutex valuesMutex;
+    std::map<protocol::Uuid, ValueContainerPtr> values;
 
     void addMeta(protocol::Uuid, std::string path, protocol::PropertyType type);
     void removeMeta(protocol::Uuid);
@@ -157,6 +167,8 @@ private:
     TrCVMap transactionIdCV;
 
     TransactionIdGenerator transactionIdGenerator;
+    std::mutex transactionIdGeneratorLock;
+
     bool handleIncomingIsRunning;
     bool handleOutgoingIsRunning;
     bool killHandleIncoming;

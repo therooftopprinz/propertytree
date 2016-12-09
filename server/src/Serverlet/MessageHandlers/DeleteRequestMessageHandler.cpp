@@ -17,8 +17,7 @@ inline void DeleteRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
     logger::Logger log("DeleteRequestMessageHandler");
 
     protocol::DeleteRequest request;
-    protocol::Decoder de(message->data(),message->data()+message->size());
-    request << de;
+    request.unpackFrom(*message);
 
     log << logger::DEBUG << "path: " << *request.path;
     bool deleted = true;

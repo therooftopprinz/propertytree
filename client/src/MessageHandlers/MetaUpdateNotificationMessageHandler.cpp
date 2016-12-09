@@ -15,8 +15,7 @@ void MetaUpdateNotificationMessageHandler::handle(protocol::MessageHeaderPtr hea
     logger::Logger log("MetaUpdateNotificationMessageHandler");
 
     protocol::MetaUpdateNotification notif;
-    protocol::Decoder de(message->data(),message->data()+message->size());
-    notif << de;
+    notif.unpackFrom(*message);
 
     // Handle creates
     // for (auto& i : *notif.creations)

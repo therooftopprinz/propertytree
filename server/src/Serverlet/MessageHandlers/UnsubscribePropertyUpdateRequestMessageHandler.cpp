@@ -20,8 +20,7 @@ void UnsubscribePropertyUpdateRequestMessageHandler::handle(protocol::MessageHea
     logger::Logger log("UnsubscribePropertyUpdateRequestHandler");
 
     protocol::UnsubscribePropertyUpdateRequest request;
-    protocol::Decoder de(message->data(),message->data()+message->size());
-    request << de;
+    request.unpackFrom(*message);
 
     protocol::UnsubscribePropertyUpdateResponse response;
     response.response = protocol::UnsubscribePropertyUpdateResponse::Response::OK;

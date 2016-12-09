@@ -132,5 +132,50 @@ TEST_F(ClientTests, shouldFetchValueWithGetSpecificMetaWhenNotAutoUpdate)
     logger::loggerServer.waitEmpty();
 }
 
+TEST_F(ClientTests, shouldSubscribeUpdateNotification)
+{
+    std::string path = "/Value";
+    auto expectedVal = utils::buildBufferedValue<uint32_t>(42u);
+
+    MessageMatcher getSpecificMetaRequestMessageMatcher(createGetSpecificMetaRequestMessage(0, path));
+    MessageMatcher getValueRequestMessageMatcher(createGetValueRequestMessage(1, protocol::Uuid(100)));
+    MessageMatcher subscribeUpdateNotificationRequestMessageMatcher(createSubscribePropertyUpdateRequestMessage(2, protocol::Uuid(100)));
+
+    std::function<void()> getSpecificMetaRequestAction = [this, &expectedVal, &path]()
+    {
+        this->endpoint->queueToReceive(createGetSpecificMetaResponseMessage(0, 100, protocol::PropertyType::Value, path));
+    };
+
+    std::function<void()> getValueRequestAction = [this, &expectedVal]()
+    {
+        this->endpoint->queueToReceive(createGetValueResponseMessage(1, expectedVal));
+    };
+
+    std::function<void()> subscribeUpdateNotificatioRequestAction = [this, &expectedVal]()
+    {
+        this->endpoint->queueToReceive(createCommonResponse<
+            protocol::SubscribePropertyUpdateResponse,
+            protocol::MessageType::SubscribePropertyUpdateResponse,
+            protocol::SubscribePropertyUpdateResponse::Response>
+            (2, protocol::SubscribePropertyUpdateResponse::Response::OK));
+    };
+
+    endpoint->expectSend(1, 0, false, 1, getSpecificMetaRequestMessageMatcher.get(), getSpecificMetaRequestAction);
+    endpoint->expectSend(2, 1, false, 1, getValueRequestMessageMatcher.get(), getValueRequestAction);
+    endpoint->expectSend(2, 1, false, 1, subscribeUpdateNotificationRequestMessageMatcher.get(), subscribeUpdateNotificatioRequestAction);
+
+    ptc = std::make_shared<PTreeClient>(endpoint);
+
+    auto value = ptc->getValue(std::string("/Value"));
+
+
+    ptc->enableAutoUpdate(std::string("/Value"));
+
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1ms);
+    endpoint->waitForAllSending(2500.0);
+    logger::loggerServer.waitEmpty();
+}
+
 } // namespace client
 } // namespace ptree

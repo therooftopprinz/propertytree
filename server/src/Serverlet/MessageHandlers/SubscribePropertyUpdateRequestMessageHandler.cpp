@@ -39,8 +39,7 @@ void SubscribePropertyUpdateRequestMessageHandler::handle(protocol::MessageHeade
     logger::Logger log("SubscribePropertyUpdateRequest");
 
     protocol::SubscribePropertyUpdateRequest request;
-    protocol::Decoder de(message->data(),message->data()+message->size());
-    request << de;
+    request.unpackFrom(*message);
 
     protocol::SubscribePropertyUpdateResponse response;
     response.response = protocol::SubscribePropertyUpdateResponse::Response::OK;
@@ -54,7 +53,11 @@ void SubscribePropertyUpdateRequestMessageHandler::handle(protocol::MessageHeade
             auto sbr = std::make_shared<UpdateNotificationHandler>(cs);
             using std::placeholders::_1;
             core::ValueWatcher fn = std::bind(&UpdateNotificationHandler::handle, sbr, _1);
-            value->addWatcher(&clientServer, fn);
+
+            if (!value->addWatcher(&clientServer, fn))
+            {
+                log << logger::WARNING << "Is value already subscribed?!";
+            }
         }
         else
         {

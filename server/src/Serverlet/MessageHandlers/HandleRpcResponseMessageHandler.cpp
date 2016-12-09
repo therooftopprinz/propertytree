@@ -21,8 +21,7 @@ void HandleRpcResponseMessageHandler::handle(protocol::MessageHeaderPtr header, 
     logger::Logger log("HandleRcpResponseMessageHandler");
 
     protocol::HandleRpcResponse response;
-    protocol::Decoder de(message->data(),message->data()+message->size());
-    response << de;
+    response.unpackFrom(*message);
 
     log << logger::DEBUG << "requesting handle rpc for: " << *response.callerId << " at: "
         << *response.callerTransactionId;

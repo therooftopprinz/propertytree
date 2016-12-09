@@ -17,7 +17,7 @@ PTreeClient::PTreeClient(common::IEndPointPtr endpoint):
     std::thread incomingThread(incoming);
     incomingThread.detach();
     log << logger::DEBUG << "Created threads detached.";
-    log << logger::DEBUG << "Sigining to server.";
+    log << logger::DEBUG << "Signing to server.";
 }
 
 void PTreeClient::addMeta(protocol::Uuid uuid, std::string path, protocol::PropertyType type)
@@ -97,7 +97,6 @@ void PTreeClient::signIn()
 
 void PTreeClient::sendSignIn(int refreshRate, const std::list<protocol::SigninRequest::FeatureFlag> features)
 {
-    std::lock_guard<std::mutex> guard(sendLock);
     protocol::SigninRequest signIn;
     signIn.version = 1;
     signIn.refreshRate = refreshRate;
@@ -105,7 +104,7 @@ void PTreeClient::sendSignIn(int refreshRate, const std::list<protocol::SigninRe
     {
         signIn.setFeature(i);
     }
-    auto tid = transactionIdGenerator.get();
+    auto tid = getTransactionId();
     messageSender(tid, protocol::MessageType::SigninRequest, signIn);
     auto tcv = addTransactionCV(tid);
     if (waitTransactionCV(tid))
@@ -113,8 +112,7 @@ void PTreeClient::sendSignIn(int refreshRate, const std::list<protocol::SigninRe
         log << logger::DEBUG << "signin response received.";
 
         protocol::SigninResponse response;
-        protocol::Decoder de(tcv->value.data(),tcv->value.data()+tcv->value.size());
-        response << de;
+        response.unpackFrom(tcv->value);
     }
     else
     {
@@ -123,24 +121,17 @@ void PTreeClient::sendSignIn(int refreshRate, const std::list<protocol::SigninRe
 }
 
 ValueContainer::ValueContainer(PTreeClientPtr ptc, Buffer &value) :
-    autoUpdate(false), ptreeClient(ptc), value(value)
+    autoUpdate(false), ptreeClient(ptc), value(value), log("ValueContainer")
 {
 }
 
 ValueContainer::ValueContainer(PTreeClientPtr ptc, Buffer &&value) :
-    autoUpdate(false), ptreeClient(ptc), value(std::move(value))
+    autoUpdate(false), ptreeClient(ptc), value(std::move(value)), log("ValueContainer")
 {
 }
 
-
-void ValueContainer::setUpdate(bool autoUpdate)
-{
-    /** TODO: subrscribe **/
-    this->autoUpdate = autoUpdate;
-}
 bool ValueContainer::isAutoUpdate()
 {
-    /** TODO: unsubrscribe **/
     return autoUpdate;
 }
 
@@ -150,19 +141,20 @@ ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
     request.path = path;
     request.data = value;
     request.type = protocol::PropertyType::Value;
-    auto tid = transactionIdGenerator.get();
+    auto tid = getTransactionId();
     messageSender(tid, protocol::MessageType::CreateRequest, request);
     auto tcv = addTransactionCV(tid);
     if (waitTransactionCV(tid))
     {
         protocol::CreateResponse response;
-        protocol::Decoder de(tcv->value.data(),tcv->value.data()+tcv->value.size());
-        response << de;
+        response.unpackFrom(tcv->value);
         if ( *response.response  == protocol::CreateResponse::Response::OK)
         {
             log << logger::DEBUG << "VALUE CREATED WITH UUID " << *response.uuid;
             std::lock_guard<std::mutex> lock(valuesMutex);
-            values.emplace(std::make_pair(*response.uuid, std::make_shared<ValueContainer>(shared_from_this(), value)));
+            auto vc = std::make_shared<ValueContainer>(shared_from_this(),  value);
+            values.emplace(std::make_pair(*response.uuid, vc));
+            return vc;
         }
         else
         {
@@ -184,17 +176,15 @@ ValueContainerPtr PTreeClient::getValue(std::string path)
 
     if (uuid == static_cast<protocol::Uuid>(-1))
     {
-        /** TODO: Value not yet in local meta GetSpecificMetaRequest **/
         protocol::GetSpecificMetaRequest request;
         request.path = path;
-        auto tid = transactionIdGenerator.get();
+        auto tid = getTransactionId();
         messageSender(tid, protocol::MessageType::GetSpecificMetaRequest, request);
         auto tcv = addTransactionCV(tid);
         if (waitTransactionCV(tid))
         {
             protocol::GetSpecificMetaResponse response;
-            protocol::Decoder de(tcv->value.data(),tcv->value.data()+tcv->value.size());
-            response << de;
+            response.unpackFrom(tcv->value);
             if (response.meta.uuid == static_cast<protocol::Uuid>(-1))
             {
                 return ValueContainerPtr();
@@ -217,15 +207,14 @@ ValueContainerPtr PTreeClient::getValue(std::string path)
     {
         protocol::GetValueRequest request;
         request.uuid = uuid;
-        auto tid = transactionIdGenerator.get();
+        auto tid = getTransactionId();
         messageSender(tid, protocol::MessageType::GetValueRequest, request);
         auto tcv = addTransactionCV(tid);
 
         if (waitTransactionCV(tid))
         {
             protocol::GetValueResponse response;
-            protocol::Decoder de(tcv->value.data(),tcv->value.data()+tcv->value.size());
-            response << de;
+            response.unpackFrom(tcv->value);
             if (response.data.size())
             {
                 auto vc = std::make_shared<ValueContainer>(shared_from_this(), std::move(*response.data));
@@ -256,14 +245,13 @@ bool PTreeClient::createNode(std::string path)
     protocol::CreateRequest request;
     request.path = path;
     request.type = protocol::PropertyType::Node;
-    auto tid = transactionIdGenerator.get();
+    auto tid = getTransactionId();
     messageSender(tid, protocol::MessageType::CreateRequest, request);
     auto tcv = addTransactionCV(tid);
     if (waitTransactionCV(tid))
     {
         protocol::CreateResponse response;
-        protocol::Decoder de(tcv->value.data(),tcv->value.data()+tcv->value.size());
-        response << de;
+        response.unpackFrom(tcv->value);
         if ( *response.response  == protocol::CreateResponse::Response::OK)
         {
             log << logger::DEBUG << "NODE CREATED WITH UUID " << *response.uuid;
@@ -277,6 +265,76 @@ bool PTreeClient::createNode(std::string path)
     else
     {
         log << logger::ERROR << "NODE CREATE REQUEST TIMEOUT";
+    }
+    return false;
+}
+
+bool PTreeClient::enableAutoUpdate(std::string&& path)
+{
+    auto uuid = getUuid(path);
+    if (static_cast<protocol::Uuid>(-1) == uuid)
+    {
+        log << logger::ERROR << "PATH NOT IN META PLEASE FETCH FIRST!!";
+        return false;
+    }
+
+    protocol::SubscribePropertyUpdateRequest request;
+    request.uuid = uuid;
+    auto tid = getTransactionId();
+    messageSender(tid, protocol::MessageType::SubscribePropertyUpdateRequest, request);
+    auto tcv = addTransactionCV(tid);
+    if (waitTransactionCV(tid))
+    {
+        protocol::SubscribePropertyUpdateResponse response;
+        response.unpackFrom(tcv->value);
+        if ( *response.response  == protocol::SubscribePropertyUpdateResponse::Response::OK)
+        {
+            log << logger::DEBUG << "SUBSCRIBED!! " << uuid;
+            return true;
+        }
+        else
+        {
+            log << logger::ERROR << "PLEASE CHECK PATH IS CORRECT AND A VALUE.";
+        }
+    }
+    else
+    {
+        log << logger::ERROR << "SUBSCRIBE REQUEST TIMEOUT";
+    }
+    return false;
+}
+
+bool PTreeClient::disableAutoUpdate(std::string&& path)
+{
+    auto uuid = getUuid(path);
+    if (static_cast<protocol::Uuid>(-1) == uuid)
+    {
+        log << logger::ERROR << "PATH NOT IN META PLEASE FETCH FIRST!!";
+        return false;
+    }
+
+    protocol::UnsubscribePropertyUpdateRequest request;
+    request.uuid = uuid;
+    auto tid = getTransactionId();
+    messageSender(tid, protocol::MessageType::UnsubscribePropertyUpdateRequest, request);
+    auto tcv = addTransactionCV(tid);
+    if (waitTransactionCV(tid))
+    {
+        protocol::UnsubscribePropertyUpdateResponse response;
+        response.unpackFrom(tcv->value);
+        if ( *response.response  == protocol::UnsubscribePropertyUpdateResponse::Response::OK)
+        {
+            log << logger::DEBUG << "UNSUBSCRIBED!! " << uuid;
+            return true;
+        }
+        else
+        {
+            log << logger::ERROR << "PLEASE CHECK PATH IS CORRECT AND A VALUE.";
+        }
+    }
+    else
+    {
+        log << logger::ERROR << "UNSUBSCRIBE REQUEST TIMEOUT";
     }
     return false;
 }

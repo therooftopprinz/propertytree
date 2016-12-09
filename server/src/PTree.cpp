@@ -105,7 +105,6 @@ void Value::setValue(void* offset, uint32_t size)
     informValueWatcher();
 }
 
-
 ValueContainer& Value::getValue()
 {
     return value;

@@ -20,8 +20,7 @@ void GetSpecificMetaRequestMessageHandler::handle(protocol::MessageHeaderPtr hea
     logger::Logger log("GetSpecificMetaRequestMessageHandler");
 
     protocol::GetSpecificMetaRequest request;
-    protocol::Decoder de(message->data(),message->data()+message->size());
-    request << de;
+    request.unpackFrom(*message);
 
     protocol::GetSpecificMetaResponse response;
 
