@@ -12,21 +12,13 @@ PropertyUpdateNotificationMessageHandler::
 
 void PropertyUpdateNotificationMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
 {
-    logger::Logger log("PropertyUpdateNotificationMessageHandler");
-
     protocol::PropertyUpdateNotification notif;
     notif.unpackFrom(*message);
 
-    // Handle creates
-    // for (auto& i : *notif.creations)
-    // {
-    //     // if on path on watch list - call watcher
-    // }
-    // // Handle deletes
-    // for (auto& i : *notif.deletions)
-    // {
-
-    // }
+    for (auto& i : *notif.propertyUpdateNotifications)
+    {
+        ptreeClient.handleUpdaNotification(*i.uuid, std::move(*i.data));
+    }
 }
 
 } // namespace client

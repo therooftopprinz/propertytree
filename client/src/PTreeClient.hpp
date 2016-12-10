@@ -1,4 +1,4 @@
-#ifndef CLIENT_PTREECLIENT_HPP_
+    #ifndef CLIENT_PTREECLIENT_HPP_
 #define CLIENT_PTREECLIENT_HPP_
 
 #include <cassert>
@@ -20,11 +20,11 @@ namespace client
 {
 
 class ValueContainer;
+typedef std::shared_ptr<ValueContainer> ValueContainerPtr;
 class PTreeClient;
 typedef std::shared_ptr<PTreeClient> PTreeClientPtr;
 typedef std::vector<uint8_t> Buffer;
 typedef std::shared_ptr<Buffer> BufferPtr;
-typedef std::shared_ptr<ValueContainer> ValueContainerPtr;
 
 class TransactionIdGenerator
 {
@@ -41,40 +41,42 @@ private:
     std::atomic<uint32_t> id;
 };
 
+
 class ValueContainer : public std::enable_shared_from_this<ValueContainer>
 {
 public:
     ValueContainer() = delete;
-
-    struct ConditionVariable
-    {
-        std::condition_variable cv;
-        std::mutex m;
-        std::atomic<bool> condition;
-    };
 
     /** TODO: on destruction if meta uuid is not watched delete meta. **/
 
     template<typename T>
     T& get()
     {
-        assert(sizeof(T) == value.size());
+        std::lock_guard<std::mutex> lock(valueMutex);
+        if (sizeof(T) != value.size())
+        {
+            using namespace std::chrono_literals;
+            std::this_thread::sleep_for(100ms); // Wait all logs to flush
+            assert(true);
+        }
         return *(T*)(value.data());
     }
 
-    friend class PTreeClient;
 
     ValueContainer(PTreeClientPtr ptc, Buffer &value);
     ValueContainer(PTreeClientPtr ptc, Buffer &&value);
-    bool isAutoUpdate();
 private:
-    void setUpdate(bool autoUpdate);
+    bool isAutoUpdate();
+    void setAutoUpdate(bool autoUpdate);
+    void updateValue(Buffer&& value);
+
     bool autoUpdate;
     std::weak_ptr<PTreeClient> ptreeClient;
-    protocol::Uuid uuid;
     Buffer value;
-    std::shared_ptr<ConditionVariable> conditionVariable;
+    std::mutex valueMutex;
     logger::Logger log;
+
+    friend class PTreeClient;
 };
 
 class PTreeClient : public std::enable_shared_from_this<PTreeClient>
@@ -102,8 +104,9 @@ private:
     void signIn(bool enableMetaUpdate, uint32_t updateRate);
     bool createRpc(std::string path);
     bool deleteProperty(std::string path);
-    void subscribeUpdateNotification(std::string path);
-    void unSubscribeUpdateNotification(std::string path);
+
+    void handleUpdaNotification(protocol::Uuid uuid, Buffer&& value);
+
     void setValue(std::string path, BufferPtr value);
     BufferPtr rpcRequest(Buffer argument);
     void handleRpcResponse(BufferPtr returnType, uint64_t calee, uint32_t transactionId);
@@ -112,7 +115,10 @@ private:
 
     void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);
     void handleIncoming();
+
     void sendSignIn(int refreshRate, const std::list<protocol::SigninRequest::FeatureFlag> features);
+    ValueContainerPtr sendGetValue(protocol::Uuid uuid);
+    protocol::Uuid fetchMeta(std::string path);
 
     /*** TODO: Commonize these with message handler***/
     Buffer createHeader(protocol::MessageType type, uint32_t payloadSize, uint32_t transactionId);
@@ -126,6 +132,8 @@ private:
         endpoint->send(responseMessageBuffer.data(), responseMessageBuffer.size());
     }
 
+    ValueContainerPtr getLocalValue(protocol::Uuid uuid);
+    void insertLocalValue(protocol::Uuid uuid, ValueContainerPtr& value);
     std::mutex valuesMutex;
     std::map<protocol::Uuid, ValueContainerPtr> values;
 
@@ -191,6 +199,7 @@ private:
 
     friend class GenericResponseMessageHandler;
     friend class MetaUpdateNotificationMessageHandler;
+    friend class PropertyUpdateNotificationMessageHandler;
 };
 
 }

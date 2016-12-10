@@ -135,6 +135,38 @@ bool ValueContainer::isAutoUpdate()
     return autoUpdate;
 }
 
+void ValueContainer::setAutoUpdate(bool b)
+{
+    autoUpdate = b;
+}
+
+void ValueContainer::updateValue(Buffer&& value)
+{
+    std::lock_guard<std::mutex> lock(valueMutex);
+    this->value = std::move(value);
+    // TODO: notify handlers
+}
+
+ValueContainerPtr PTreeClient::getLocalValue(protocol::Uuid uuid)
+{
+    std::lock_guard<std::mutex> lock(valuesMutex);
+    auto i = values.find(uuid);
+    if (i == values.end())
+    {
+        return ValueContainerPtr();
+    }
+
+    return i->second;
+}
+
+void PTreeClient::insertLocalValue(protocol::Uuid uuid, ValueContainerPtr& value)
+{
+    std::lock_guard<std::mutex> lock(valuesMutex);
+    values[uuid] = value;
+}
+
+
+
 ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
 {
     protocol::CreateRequest request;
@@ -151,9 +183,8 @@ ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
         if ( *response.response  == protocol::CreateResponse::Response::OK)
         {
             log << logger::DEBUG << "VALUE CREATED WITH UUID " << *response.uuid;
-            std::lock_guard<std::mutex> lock(valuesMutex);
             auto vc = std::make_shared<ValueContainer>(shared_from_this(),  value);
-            values.emplace(std::make_pair(*response.uuid, vc));
+            insertLocalValue(*response.uuid, vc);
             return vc;
         }
         else
@@ -168,76 +199,79 @@ ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
     return ValueContainerPtr();
 }
 
+ValueContainerPtr PTreeClient::sendGetValue(protocol::Uuid uuid)
+{
+    protocol::GetValueRequest request;
+    request.uuid = uuid;
+    auto tid = getTransactionId();
+    messageSender(tid, protocol::MessageType::GetValueRequest, request);
+    auto tcv = addTransactionCV(tid);
+
+    if (waitTransactionCV(tid))
+    {
+        protocol::GetValueResponse response;
+        response.unpackFrom(tcv->value);
+        if (response.data.size())
+        {
+            auto vc = std::make_shared<ValueContainer>(shared_from_this(), std::move(*response.data));
+            insertLocalValue(uuid, vc);
+            return vc;
+        }
+        else
+        {
+            return ValueContainerPtr();
+        }
+    }
+    else
+    {
+        log << logger::ERROR << "GET VALUE REQUEST TIMEOUT";
+        return ValueContainerPtr();
+    }
+}
+
+protocol::Uuid PTreeClient::fetchMeta(std::string path)
+{
+    protocol::GetSpecificMetaRequest request;
+    request.path = path;
+    auto tid = getTransactionId();
+    messageSender(tid, protocol::MessageType::GetSpecificMetaRequest, request);
+    auto tcv = addTransactionCV(tid);
+    if (waitTransactionCV(tid))
+    {
+        protocol::GetSpecificMetaResponse response;
+        response.unpackFrom(tcv->value);
+        log << logger::DEBUG << "UUID FOR " << path << " IS " << (uint32_t)*response.meta.uuid;
+        if (response.meta.uuid != static_cast<protocol::Uuid>(-1))
+        {
+            addMeta(response.meta.uuid, response.meta.path, response.meta.propertyType);
+            return *response.meta.uuid;
+        }
+    }
+    else
+    {
+        log << logger::ERROR << "GET SPECIFIC META REQUEST TIMEOUT";
+    }
+    return static_cast<protocol::Uuid>(-1);
+}
+
 ValueContainerPtr PTreeClient::getValue(std::string path)
 {
     auto uuid = getUuid(path);
 
     log << logger::DEBUG << "GET VALUE (" << uuid << ")" << path;
 
-    if (uuid == static_cast<protocol::Uuid>(-1))
+    if (uuid == static_cast<protocol::Uuid>(-1) && (uuid = fetchMeta(path)) == static_cast<protocol::Uuid>(-1))
     {
-        protocol::GetSpecificMetaRequest request;
-        request.path = path;
-        auto tid = getTransactionId();
-        messageSender(tid, protocol::MessageType::GetSpecificMetaRequest, request);
-        auto tcv = addTransactionCV(tid);
-        if (waitTransactionCV(tid))
-        {
-            protocol::GetSpecificMetaResponse response;
-            response.unpackFrom(tcv->value);
-            if (response.meta.uuid == static_cast<protocol::Uuid>(-1))
-            {
-                return ValueContainerPtr();
-            }
-
-            uuid = response.meta.uuid;
-            addMeta(response.meta.uuid, response.meta.path, response.meta.propertyType);
-
-        }
-        else
-        {
-            log << logger::ERROR << "GET SPECIFIC META REQUEST TIMEOUT";
-            return ValueContainerPtr();
-        }
+        return ValueContainerPtr();
     }
 
-    std::lock_guard<std::mutex> lock(valuesMutex);
-    auto i = values.find(uuid);
-    if (i == values.end() || !i->second->isAutoUpdate())
+    auto vc = getLocalValue(uuid);
+    if (vc && vc->isAutoUpdate())
     {
-        protocol::GetValueRequest request;
-        request.uuid = uuid;
-        auto tid = getTransactionId();
-        messageSender(tid, protocol::MessageType::GetValueRequest, request);
-        auto tcv = addTransactionCV(tid);
+        return vc;
+    }
 
-        if (waitTransactionCV(tid))
-        {
-            protocol::GetValueResponse response;
-            response.unpackFrom(tcv->value);
-            if (response.data.size())
-            {
-                auto vc = std::make_shared<ValueContainer>(shared_from_this(), std::move(*response.data));
-                values[uuid] = vc;
-                return vc;
-            }
-            else
-            {
-                return ValueContainerPtr();
-            }
-        }
-        else
-        {
-            log << logger::ERROR << "GET VALUE REQUEST TIMEOUT";
-            return ValueContainerPtr();
-        }
-    }
-    else
-    {
-        // if not subscribed fetch value using GetValueRequest
-        // else return stored value
-    }
-    return ValueContainerPtr();
+    return sendGetValue(uuid);
 }
 
 bool PTreeClient::createNode(std::string path)
@@ -277,6 +311,12 @@ bool PTreeClient::enableAutoUpdate(std::string&& path)
         log << logger::ERROR << "PATH NOT IN META PLEASE FETCH FIRST!!";
         return false;
     }
+    auto vc = getLocalValue(uuid);
+    if (!vc)
+    {
+        log << logger::ERROR << "VALUE NOT YET FETCHED!!";
+        return false;
+    }
 
     protocol::SubscribePropertyUpdateRequest request;
     request.uuid = uuid;
@@ -289,6 +329,15 @@ bool PTreeClient::enableAutoUpdate(std::string&& path)
         response.unpackFrom(tcv->value);
         if ( *response.response  == protocol::SubscribePropertyUpdateResponse::Response::OK)
         {
+            if (!vc)
+            {
+                /** TODO: Actually possible when value is not fetched but subscribed for meta update. So, fetch the value if not found. **/
+                log << logger::ERROR << "SHOULDN'T HAPPEN!! Check why there's no local value for this uuid while uuid is on meta; " << uuid;
+                using namespace std::chrono_literals;
+                std::this_thread::sleep_for(100ms); // wait setup to finish
+            }
+
+            vc->setAutoUpdate(true);
             log << logger::DEBUG << "SUBSCRIBED!! " << uuid;
             return true;
         }
@@ -337,6 +386,20 @@ bool PTreeClient::disableAutoUpdate(std::string&& path)
         log << logger::ERROR << "UNSUBSCRIBE REQUEST TIMEOUT";
     }
     return false;
+}
+
+void PTreeClient::handleUpdaNotification(protocol::Uuid uuid, Buffer&& value)
+{
+    log << logger::DEBUG << "Handling update for " << (uint32_t)uuid;
+    std::lock_guard<std::mutex> lock(valuesMutex);
+    auto i = values.find(uuid);
+    if (i == values.end())
+    {
+        log << logger::WARNING << "Updated value not in local values. Not updating.";
+        return;
+    }
+
+    i->second->updateValue(std::move(value));
 }
 
 void PTreeClient::processMessage(protocol::MessageHeaderPtr header, BufferPtr message)
