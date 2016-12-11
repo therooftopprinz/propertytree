@@ -6,7 +6,7 @@ namespace ptree
 namespace client
 {
 
-class MessageHandler;
+struct MessageHandler;
 
 std::unique_ptr<MessageHandler>
     MessageHandlerFactory::
@@ -21,6 +21,7 @@ std::unique_ptr<MessageHandler>
         case (Enum) protocol::MessageType::GetSpecificMetaResponse:
         case (Enum) protocol::MessageType::GetValueResponse:
         case (Enum) protocol::MessageType::SubscribePropertyUpdateResponse:
+        case (Enum) protocol::MessageType::UnsubscribePropertyUpdateResponse:
             return std::make_unique<GenericResponseMessageHandler>(*pc.get(), *ep.get());
         case (Enum) protocol::MessageType::PropertyUpdateNotification:
             return std::make_unique<PropertyUpdateNotificationMessageHandler>(*pc.get(), *ep.get());

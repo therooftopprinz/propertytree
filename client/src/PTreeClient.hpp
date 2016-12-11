@@ -75,7 +75,7 @@ private:
     void handleIncoming();
 
     void sendSignIn(int refreshRate, const std::list<protocol::SigninRequest::FeatureFlag> features);
-    ValueContainerPtr sendGetValue(protocol::Uuid uuid);
+    ValueContainerPtr sendGetValue(protocol::Uuid uuid, ValueContainerPtr vc);
     protocol::Uuid fetchMeta(std::string path);
 
     /*** TODO: Commonize these with message handler***/

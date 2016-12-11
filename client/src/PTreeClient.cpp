@@ -172,7 +172,7 @@ ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
     return ValueContainerPtr();
 }
 
-ValueContainerPtr PTreeClient::sendGetValue(protocol::Uuid uuid)
+ValueContainerPtr PTreeClient::sendGetValue(protocol::Uuid uuid, ValueContainerPtr vc)
 {
     protocol::GetValueRequest request;
     request.uuid = uuid;
@@ -186,8 +186,16 @@ ValueContainerPtr PTreeClient::sendGetValue(protocol::Uuid uuid)
         response.unpackFrom(tcv->value);
         if (response.data.size())
         {
-            auto vc = std::make_shared<ValueContainer>(shared_from_this(), std::move(*response.data));
-            insertLocalValue(uuid, vc);
+            if (!vc)
+            {
+                vc = std::make_shared<ValueContainer>(shared_from_this(), std::move(*response.data));
+                insertLocalValue(uuid, vc);
+            }
+            else
+            {
+                vc->updateValue(std::move(*response.data), false);
+            }
+
             return vc;
         }
         else
@@ -244,7 +252,7 @@ ValueContainerPtr PTreeClient::getValue(std::string path)
         return vc;
     }
 
-    return sendGetValue(uuid);
+    return sendGetValue(uuid, vc);
 }
 
 bool PTreeClient::createNode(std::string path)
@@ -281,13 +289,13 @@ bool PTreeClient::enableAutoUpdate(std::string&& path)
     auto uuid = getUuid(path);
     if (static_cast<protocol::Uuid>(-1) == uuid)
     {
-        log << logger::ERROR << "PATH NOT IN META PLEASE FETCH FIRST!!";
+        log << logger::ERROR << "SUBSCRIBE: PATH NOT IN META PLEASE FETCH FIRST!!";
         return false;
     }
     auto vc = getLocalValue(uuid);
     if (!vc)
     {
-        log << logger::ERROR << "VALUE NOT YET FETCHED!!";
+        log << logger::ERROR << "SUBSCRIBE: VALUE NOT YET FETCHED!!";
         return false;
     }
 
@@ -302,14 +310,6 @@ bool PTreeClient::enableAutoUpdate(std::string&& path)
         response.unpackFrom(tcv->value);
         if ( *response.response  == protocol::SubscribePropertyUpdateResponse::Response::OK)
         {
-            if (!vc)
-            {
-                /** TODO: Actually possible when value is not fetched but subscribed for meta update. So, fetch the value if not found. **/
-                log << logger::ERROR << "SHOULDN'T HAPPEN!! Check why there's no local value for this uuid while uuid is on meta; " << uuid;
-                using namespace std::chrono_literals;
-                std::this_thread::sleep_for(100ms); // wait setup to finish
-            }
-
             vc->setAutoUpdate(true);
             log << logger::DEBUG << "SUBSCRIBED!! " << uuid;
             return true;
@@ -331,7 +331,13 @@ bool PTreeClient::disableAutoUpdate(std::string&& path)
     auto uuid = getUuid(path);
     if (static_cast<protocol::Uuid>(-1) == uuid)
     {
-        log << logger::ERROR << "PATH NOT IN META PLEASE FETCH FIRST!!";
+        log << logger::ERROR << "UNSUBSCRIBE: PATH NOT IN META PLEASE FETCH FIRST!!";
+        return false;
+    }
+    auto vc = getLocalValue(uuid);
+    if (!vc)
+    {
+        log << logger::ERROR << "UNSUBSCRIBE: VALUE NOT YET FETCHED!!";
         return false;
     }
 
@@ -346,6 +352,7 @@ bool PTreeClient::disableAutoUpdate(std::string&& path)
         response.unpackFrom(tcv->value);
         if ( *response.response  == protocol::UnsubscribePropertyUpdateResponse::Response::OK)
         {
+            vc->setAutoUpdate(false);
             log << logger::DEBUG << "UNSUBSCRIBED!! " << uuid;
             return true;
         }
@@ -372,7 +379,7 @@ void PTreeClient::handleUpdaNotification(protocol::Uuid uuid, Buffer&& value)
         return;
     }
 
-    i->second->updateValue(std::move(value));
+    i->second->updateValue(std::move(value), true);
 }
 
 void PTreeClient::processMessage(protocol::MessageHeaderPtr header, BufferPtr message)

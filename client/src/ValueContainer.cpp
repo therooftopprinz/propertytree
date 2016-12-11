@@ -31,11 +31,16 @@ void ValueContainer::setAutoUpdate(bool b)
     autoUpdate = b;
 }
 
-void ValueContainer::updateValue(Buffer&& value)
+void ValueContainer::updateValue(Buffer&& value, bool triggerHandler)
 {
     {
         std::lock_guard<std::mutex> lockValue(valueMutex);
         this->value = std::move(value);
+    }
+
+    if (!triggerHandler)
+    {
+        return;
     }
 
     std::lock_guard<std::mutex> lockWatcher(watcherMutex);
