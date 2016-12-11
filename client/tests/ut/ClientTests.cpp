@@ -20,14 +20,21 @@ typedef common::ActionFunctor ActionFunctor;
 typedef common::DefaultAction DefaultAction;
 typedef common::MessageMatcher MessageMatcher;
 
+struct HandlerMock : public IValueWatcher
+{
+    MOCK_METHOD1(handle, void(ValueContainerPtr));
+};
+
 struct ClientTests : public common::MessageCreationHelper, public ::testing::Test
 {
     ClientTests() :
         endpoint(std::make_shared<common::EndPointMock>()),
+        handlerMock(std::make_shared<HandlerMock>()),
         log("TEST")
     {}
 
     std::shared_ptr<common::EndPointMock> endpoint;
+    std::shared_ptr<HandlerMock> handlerMock;
     std::shared_ptr<PTreeClient> ptc;
     logger::Logger log;
 };
@@ -230,6 +237,65 @@ TEST_F(ClientTests, shouldReceiveUpdateNotification)
     endpoint->waitForAllSending(2500.0);
     logger::loggerServer.waitEmpty();
 }
+
+MATCHER_P(ValueContainerHas, value, "")
+{
+    return arg->getCopy() == value;
+}
+
+TEST_F(ClientTests, shouldReceiveUpdateNotificationAndRunHandler)
+{
+    std::string path = "/Value";
+    auto expectedVal = utils::buildBufferedValue<uint32_t>(42u);
+    auto newValue = utils::buildBufferedValue<uint32_t>(69u);
+
+    MessageMatcher getSpecificMetaRequestMessageMatcher(createGetSpecificMetaRequestMessage(0, path));
+    MessageMatcher getValueRequestMessageMatcher(createGetValueRequestMessage(1, protocol::Uuid(100)));
+    MessageMatcher subscribeUpdateNotificationRequestMessageMatcher(createSubscribePropertyUpdateRequestMessage(2, protocol::Uuid(100)));
+
+    std::function<void()> getSpecificMetaRequestAction = [this, &expectedVal, &path]()
+    {
+        this->endpoint->queueToReceive(createGetSpecificMetaResponseMessage(0, 100, protocol::PropertyType::Value, path));
+    };
+
+    std::function<void()> getValueRequestAction = [this, &expectedVal]()
+    {
+        this->endpoint->queueToReceive(createGetValueResponseMessage(1, expectedVal));
+    };
+
+    std::function<void()> subscribeUpdateNotificatioRequestAction = [this, &expectedVal]()
+    {
+        this->endpoint->queueToReceive(createCommonResponse<
+            protocol::SubscribePropertyUpdateResponse,
+            protocol::MessageType::SubscribePropertyUpdateResponse,
+            protocol::SubscribePropertyUpdateResponse::Response>
+            (2, protocol::SubscribePropertyUpdateResponse::Response::OK));
+    };
+
+    EXPECT_CALL(*handlerMock, handle(ValueContainerHas(newValue)));
+
+    endpoint->expectSend(1, 0, false, 1, getSpecificMetaRequestMessageMatcher.get(), getSpecificMetaRequestAction);
+    endpoint->expectSend(2, 1, false, 1, getValueRequestMessageMatcher.get(), getValueRequestAction);
+    endpoint->expectSend(2, 1, false, 1, subscribeUpdateNotificationRequestMessageMatcher.get(), subscribeUpdateNotificatioRequestAction);
+
+    using namespace std::chrono_literals;
+
+    ptc = std::make_shared<PTreeClient>(endpoint);
+
+    auto value = ptc->getValue(std::string("/Value"));
+    value->addWatcher(handlerMock);
+    EXPECT_EQ(value->get<uint32_t>(), 42u);
+    ptc->enableAutoUpdate(std::string("/Value"));
+
+    std::list<protocol::PropertyUpdateNotificationEntry> updates;
+    updates.emplace_back(100, newValue);
+    auto updateNotifMsg = createPropertyUpdateNotificationMessage(3, updates);
+    this->endpoint->queueToReceive(updateNotifMsg);
+    std::this_thread::sleep_for(100ms);
+    endpoint->waitForAllSending(2500.0);
+    logger::loggerServer.waitEmpty();
+}
+
 
 } // namespace client
 } // namespace ptree

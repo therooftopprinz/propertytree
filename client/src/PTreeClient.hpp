@@ -14,17 +14,12 @@
 #include <common/src/Logger.hpp>
 #include <common/src/IEndPoint.hpp>
 
+#include "ValueContainer.hpp"
+
 namespace ptree
 {
 namespace client
 {
-
-class ValueContainer;
-typedef std::shared_ptr<ValueContainer> ValueContainerPtr;
-class PTreeClient;
-typedef std::shared_ptr<PTreeClient> PTreeClientPtr;
-typedef std::vector<uint8_t> Buffer;
-typedef std::shared_ptr<Buffer> BufferPtr;
 
 class TransactionIdGenerator
 {
@@ -41,43 +36,6 @@ private:
     std::atomic<uint32_t> id;
 };
 
-
-class ValueContainer : public std::enable_shared_from_this<ValueContainer>
-{
-public:
-    ValueContainer() = delete;
-
-    /** TODO: on destruction if meta uuid is not watched delete meta. **/
-
-    template<typename T>
-    T& get()
-    {
-        std::lock_guard<std::mutex> lock(valueMutex);
-        if (sizeof(T) != value.size())
-        {
-            using namespace std::chrono_literals;
-            std::this_thread::sleep_for(100ms); // Wait all logs to flush
-            assert(true);
-        }
-        return *(T*)(value.data());
-    }
-
-
-    ValueContainer(PTreeClientPtr ptc, Buffer &value);
-    ValueContainer(PTreeClientPtr ptc, Buffer &&value);
-private:
-    bool isAutoUpdate();
-    void setAutoUpdate(bool autoUpdate);
-    void updateValue(Buffer&& value);
-
-    bool autoUpdate;
-    std::weak_ptr<PTreeClient> ptreeClient;
-    Buffer value;
-    std::mutex valueMutex;
-    logger::Logger log;
-
-    friend class PTreeClient;
-};
 
 class PTreeClient : public std::enable_shared_from_this<PTreeClient>
 {

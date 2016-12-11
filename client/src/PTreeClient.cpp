@@ -120,33 +120,6 @@ void PTreeClient::sendSignIn(int refreshRate, const std::list<protocol::SigninRe
     }
 }
 
-ValueContainer::ValueContainer(PTreeClientPtr ptc, Buffer &value) :
-    autoUpdate(false), ptreeClient(ptc), value(value), log("ValueContainer")
-{
-}
-
-ValueContainer::ValueContainer(PTreeClientPtr ptc, Buffer &&value) :
-    autoUpdate(false), ptreeClient(ptc), value(std::move(value)), log("ValueContainer")
-{
-}
-
-bool ValueContainer::isAutoUpdate()
-{
-    return autoUpdate;
-}
-
-void ValueContainer::setAutoUpdate(bool b)
-{
-    autoUpdate = b;
-}
-
-void ValueContainer::updateValue(Buffer&& value)
-{
-    std::lock_guard<std::mutex> lock(valueMutex);
-    this->value = std::move(value);
-    // TODO: notify handlers
-}
-
 ValueContainerPtr PTreeClient::getLocalValue(protocol::Uuid uuid)
 {
     std::lock_guard<std::mutex> lock(valuesMutex);
