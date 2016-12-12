@@ -2,7 +2,7 @@
 CC                 := g++
 AR                 := ar
 MAKE               := make
-CFLAGS             := -std=gnu++14 -Wall -Werror
+CFLAGS             := -std=gnu++14 -ggdb3 -O0 -Wall -Werror
 
 #Top level
 TLD                := ..

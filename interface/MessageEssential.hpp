@@ -29,7 +29,7 @@ struct BufferView
     uint8_t* limit;
 };
 
-template <typename T>
+template <typename T, typename S=uint16_t>
 class BlockArray
 {
 public:
@@ -53,10 +53,10 @@ public:
     void generate(BufferView& data)
     {
         // std::cout << __PRETTY_FUNCTION__ << std::endl;
-        if (data.start+sizeof(uint32_t)>data.limit)
+        if (data.start+sizeof(S)>data.limit)
             return;
-        *(uint32_t*)(data.start) = values.size();
-        data.start += sizeof(uint32_t);
+        *(S*)(data.start) = values.size();
+        data.start += sizeof(S);
 
         for (auto& i : values)
         {
@@ -66,13 +66,14 @@ public:
 
     inline uint8_t* parse(uint8_t *start, uint8_t *limit)
     {
-        uint32_t size = *(uint32_t*)(start);
-        if (start >= limit)
+        if (start+sizeof(S) >= limit)
         {
             return start;
         }
 
-        start+=sizeof(uint32_t);
+        uint32_t size = *(S*)(start);
+
+        start+=sizeof(S);
         values.resize(size);
         for (uint32_t i=0; i<size; i++)
         {
@@ -87,7 +88,7 @@ public:
 
     uint32_t size()
     {
-        uint32_t sz = sizeof(uint32_t);
+        uint32_t sz = sizeof(S);
         for (auto& i : values)
         {
             sz += i.size();
@@ -143,7 +144,6 @@ public:
     {
         return &value;
     }
-
 
     operator std::string& ()
     {
