@@ -233,7 +233,6 @@ TEST_F(ClientTests, shouldReceiveUpdateNotificationAndRunHandler)
     logger::loggerServer.waitEmpty();
 }
 
-
 TEST_F(ClientTests, shouldUnsubscribe)
 {
     auto newValue = utils::buildBufferedValue<uint32_t>(69u);

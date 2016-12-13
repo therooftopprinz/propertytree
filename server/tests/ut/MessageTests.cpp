@@ -89,40 +89,40 @@ struct PersonName
     MESSAGE_FIELDS(first,middle,last);
 };
 
-struct ContactMethod
-{
-    String email;
-    Simple<uint32_t> number;
-    Simple<uint8_t> letter;
+// struct ContactMethod
+// {
+//     String email;
+//     Simple<uint32_t> number;
+//     Simple<uint8_t> letter;
 
-    enum class Type : uint8_t {Email=42, Number, Letter};
+//     enum class Type : uint8_t {Email=42, Number, Letter};
 
-    TVUNIONBEGIN
-    UNION(42, email)
-    UNION(43, number)
-    UNION(44, letter)
-    TVUNIONEND
+//     TVUNIONBEGIN
+//     UNION(42, email)
+//     UNION(43, number)
+//     UNION(44, letter)
+//     TVUNIONEND
 
-    // TVENCODERBEGIN
-    // ENCODE_STEP(42, email)
-    // ENCODE_STEP(43, number)
-    // ENCODE_STEP(44, letter)
-    // TVENCODEREND
+//     TVENCODERBEGIN
+//     ENCODE_STEP(42, email)
+//     ENCODE_STEP(43, number)
+//     ENCODE_STEP(44, letter)
+//     TVENCODEREND
 
-    // TVDECODERBEGIN
-    // DECODE_STEP(42, email)
-    // DECODE_STEP(43, number)
-    // DECODE_STEP(44, letter)
-    // TVDECODEREND
-};
+//     TVDECODERBEGIN
+//     DECODE_STEP(42, email)
+//     DECODE_STEP(43, number)
+//     DECODE_STEP(44, letter)
+//     TVDECODEREND
+// };
 
-struct Contact
-{
-    String name;
-    BlockArray<ContactMethod> methods;
+// struct Contact
+// {
+//     String name;
+//     BlockArray<ContactMethod> methods;
 
-    MESSAGE_FIELDS(name, methods);
-};
+//     MESSAGE_FIELDS(name, methods);
+// };
 
 
 struct MessagingTests : public ::testing::Test
@@ -140,12 +140,9 @@ TEST_F(MessagingTests, shouldEncodeSimpleType)
     val.a = 1;
     val.b = 2;
     val.c = 3;
-    Buffer comval{01,00,00,00,02,03,00};
 
-    Buffer enbuff(val.size());
-    BufferView enbuffv(enbuff);
-    Encoder en(enbuffv);
-    val >> en;
+    Buffer comval{01,00,00,00,02,03,00};
+    Buffer enbuff = val.getPacked();
     EXPECT_EQ(comval, enbuff);
 }
 
@@ -155,11 +152,9 @@ TEST_F(MessagingTests, shouldEncodeSimpleTypeWithString)
     val.a = 42;
     val.b = std::string("wow!");
     val.c = 'D';
+
     Buffer comval{42,00,00,00,'w','o','w','!',0,'D'};
-    Buffer enbuff(val.size());
-    BufferView enbuffv(enbuff);
-    Encoder en(enbuffv);
-    val >> en;
+    Buffer enbuff = val.getPacked();
     EXPECT_EQ(comval, enbuff);
 }
 
@@ -179,10 +174,7 @@ TEST_F(MessagingTests, shouldEncodeNested)
     nes.b = val2;
 
     Buffer comval{01,00,00,00,02,03,00,42,00,00,00,'w','o','w','!',0,'D'};
-    Buffer enbuff(nes.size());
-    BufferView enbuffv(enbuff);
-    Encoder en(enbuffv);
-    nes >> en;
+    Buffer enbuff = nes.getPacked();
     EXPECT_EQ(comval, enbuff);
 }
 
@@ -204,12 +196,7 @@ TEST_F(MessagingTests, shouldEncodeArray)
     plist.persons->push_back(b);
     plist.persons->push_back(c);
 
-    Buffer buffer(plist.size());
-    BufferView buffv(buffer);
-    BufferView buffx(buffer);
-
-    Encoder en(buffv);
-    plist >> en;
+    Buffer buffer = plist.getPacked();
 
     Buffer tocomp {
         0x3, 0x0, 0x50, 0x72, 0x6f, 0x6b, 0x6f, 0x72, 0x70, 0x79, 0x6f, 0x0,
@@ -233,8 +220,7 @@ TEST_F(MessagingTests, shouldDecodeArray)
     utils::printRawAscii(en.data(),en.size());
 
     PersonArray deplist;
-    Decoder de(en.data(),en.data()+en.size());
-    deplist << de;
+    deplist.unpackFrom(en);
 
     for(auto& i : *(deplist.persons))
     {
@@ -255,10 +241,7 @@ TEST_F(MessagingTests, emptyBuffer)
     val.c = 4;
     Buffer comval{4,0,0,0,0,4};
 
-    Buffer enbuff(val.size());
-    BufferView enbuffv(enbuff);
-    Encoder en(enbuffv);
-    val >> en;
+    Buffer enbuff = val.getPacked();
     utils::printRaw(enbuff.data(),enbuff.size());
     utils::printRawAscii(enbuff.data(),enbuff.size());
     EXPECT_EQ(enbuff, comval);
@@ -272,17 +255,13 @@ TEST_F(MessagingTests, emptyString)
     val.middle = std::string("tickle");
     Buffer comval{0,'t','i','c','k','l','e',0,0};
 
-    Buffer enbuff(val.size());
-    BufferView enbuffv(enbuff);
-    Encoder en(enbuffv);
-    val >> en;
+    Buffer enbuff = val.getPacked();
     utils::printRaw(enbuff.data(),enbuff.size());
     utils::printRawAscii(enbuff.data(),enbuff.size());
     EXPECT_EQ(enbuff, comval);
 
     PersonName deva;;
-    Decoder de(enbuff.data(),enbuff.data()+enbuff.size());
-    deva << de;
+    deva.unpackFrom(enbuff);
 
     log << logger::DEBUG << "f "<< (std::string)deva.first;
     log << logger::DEBUG << "m "<< (std::string)deva.middle;
@@ -292,41 +271,41 @@ TEST_F(MessagingTests, emptyString)
     std::this_thread::sleep_for(1ms);
 }
 
-TEST_F(MessagingTests, encodeTVUnion)
-{
-    Contact con;
-    ContactMethod cm;
-    cm.email =std::string("look@it.go");
-    cm.setType((uint8_t)ContactMethod::Type::Email);
-    con.methods->push_back(cm);
-    cm.number = 42;
-    cm.setType((uint8_t)ContactMethod::Type::Number);
-    con.methods->push_back(cm);
-    con.name = std::string("Miller");
-    
+// TEST_F(MessagingTests, encodeTVUnion)
+// {
+//     Contact con;
+//     ContactMethod cm;
+//     cm.email =std::string("look@it.go");
+//     cm.setType((uint8_t)ContactMethod::Type::Email);
+//     con.methods->push_back(cm);
+//     cm.number = 42;
+//     cm.setType((uint8_t)ContactMethod::Type::Number);
+//     con.methods->push_back(cm);
+//     con.name = std::string("Miller");
 
-    Buffer comval{'M','i','l','l','e','r',0,2,0,42,'l','o','o','k','@','i','t','.','g','o',0,43,42,0,0,0};
 
-    Buffer enbuff(con.size());
-    BufferView enbuffv(enbuff);
-    Encoder en(enbuffv);
-    con >> en;
+//     Buffer comval{'M','i','l','l','e','r',0,2,0,42,'l','o','o','k','@','i','t','.','g','o',0,43,42,0,0,0};
 
-    utils::printRaw(enbuff.data(),enbuff.size());
-    utils::printRawAscii(enbuff.data(),enbuff.size());
-    EXPECT_EQ(enbuff, comval);
+//     Buffer enbuff(con.size());
+//     BufferView enbuffv(enbuff);
+//     Encoder en(enbuffv);
+//     con >> en;
 
-    Contact deva;;
-    Decoder de(enbuff.data(),enbuff.data()+enbuff.size());
-    deva << de;
+//     utils::printRaw(enbuff.data(),enbuff.size());
+//     utils::printRawAscii(enbuff.data(),enbuff.size());
+//     EXPECT_EQ(enbuff, comval);
 
-    log << logger::DEBUG << "name "<< (std::string)deva.name;
-    log << logger::DEBUG << "email "<< (std::string)deva.methods[0].email;
-    log << logger::DEBUG << "number "<< *deva.methods[1].number;
+//     Contact deva;;
+//     Decoder de(enbuff.data(),enbuff.data()+enbuff.size());
+//     deva << de;
 
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(1ms);
-}
+//     log << logger::DEBUG << "name "<< (std::string)deva.name;
+//     log << logger::DEBUG << "email "<< (std::string)deva.methods[0].email;
+//     log << logger::DEBUG << "number "<< *deva.methods[1].number;
+
+//     using namespace std::chrono_literals;
+//     std::this_thread::sleep_for(1ms);
+// }
 
 // TEST_F(MessagingTests, benchMarkingGeneration)
 // {

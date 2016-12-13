@@ -30,8 +30,8 @@ bool PropertyUpdateNotificationMatcher::match(const void *buffer, uint32_t size)
     }
 
     protocol::PropertyUpdateNotification  propUpdateNotif;
-    protocol::Decoder de(cursor, end);
-    propUpdateNotif << de;
+    protocol::BufferView bv(cursor, end);
+    propUpdateNotif.parse(bv);
 
     auto val = ptree->getPropertyByPath<core::Value>(path);
 

@@ -1,5 +1,8 @@
 #include "DeleteObjectMetaUpdateNotificationMatcher.hpp"
 
+#include <common/src/Utils.hpp>
+
+
 namespace ptree
 {
 namespace server
@@ -26,17 +29,21 @@ bool DeleteObjectMetaUpdateNotificationMatcher::match(const void *buffer, uint32
     }
 
 
-    // log << logger::WARNING << "Matching Create MetaUpdateNotification...";
+    log << logger::WARNING << "Matching (" << uuid << ") Delete MetaUpdateNotification...";
 
-    protocol::MetaUpdateNotification  createMetaNotif;
-    protocol::Decoder de(cursor, end);
-    createMetaNotif << de;
+    protocol::MetaUpdateNotification deleteMetaNotif;
+    protocol::BufferView bv(cursor, end);
+    deleteMetaNotif.parse(bv);
 
-    for(auto& i : *createMetaNotif.deletions)
+    utils::printRaw(cursor, size-sizeof(protocol::MessageHeader));
+    utils::printRawAscii(cursor, size-sizeof(protocol::MessageHeader));
+    log << logger::WARNING << "deletion len:" << deleteMetaNotif.deletions->size();
+
+    for(auto& i : *deleteMetaNotif.deletions)
     {
-        log << logger::WARNING << "created object with uuid:" << *i.uuid;
         if (uuid == *i.uuid)
         {
+            log << logger::WARNING << "deleted object with uuid:" << *i.uuid;
             return true;
         }
     }

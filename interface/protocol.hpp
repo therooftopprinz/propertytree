@@ -13,18 +13,6 @@ namespace ptree
 namespace protocol
 {
 
-
-#define GETTER_AND_PARSER \
-inline std::vector<uint8_t> getPacked(){\
-    Buffer enbuff(this->size());\
-    protocol::BufferView enbuffv(enbuff);\
-    protocol::Encoder en(enbuffv);\
-    *this >> en;\
-    return enbuff;}\
-inline void unpackFrom(std::vector<uint8_t>& message){\
-    protocol::Decoder de(message.data(), message.data()+message.size());\
-    *this << de;}
-
 typedef uint32_t Uuid;
 
 enum class PropertyType : uint8_t
@@ -102,7 +90,6 @@ struct SigninRequest
     }
 
     MESSAGE_FIELDS(version, refreshRate, featureFlag);
-    GETTER_AND_PARSER
 };
 
 struct MetaCreate;
@@ -110,7 +97,6 @@ struct SigninResponse
 {
     Simple<uint32_t> version;
     MESSAGE_FIELDS(version);
-    GETTER_AND_PARSER
 };
 
 
@@ -120,7 +106,6 @@ struct CreateRequest
     BufferBlock data;
     String path;
     MESSAGE_FIELDS(type, data, path);
-    GETTER_AND_PARSER
 };
 
 struct CreateResponse
@@ -129,7 +114,6 @@ struct CreateResponse
     Simple<Response> response;
     Simple<Uuid> uuid;
     MESSAGE_FIELDS(response, uuid);
-    GETTER_AND_PARSER
 };
 
 struct MetaCreate
@@ -145,7 +129,6 @@ struct MetaCreate
     Simple<PropertyType> propertyType;
     String path;
     MESSAGE_FIELDS(uuid, propertyType, path);
-    GETTER_AND_PARSER
 };
 
 struct MetaDelete
@@ -159,7 +142,6 @@ struct MetaDelete
 
     Simple<Uuid> uuid;
     MESSAGE_FIELDS(uuid);
-    GETTER_AND_PARSER
 };
 
 struct MetaUpdateNotification
@@ -167,7 +149,6 @@ struct MetaUpdateNotification
     BlockArray<MetaCreate> creations;
     BlockArray<MetaDelete> deletions;
     MESSAGE_FIELDS(creations, deletions);
-    GETTER_AND_PARSER
 };
 
 
@@ -175,7 +156,6 @@ struct DeleteRequest
 {
     String path;
     MESSAGE_FIELDS(path);
-    GETTER_AND_PARSER
 };
 
 struct DeleteResponse
@@ -183,7 +163,6 @@ struct DeleteResponse
     enum class Response : uint8_t {OK, OBJECT_NOT_FOUND, NOT_PERMITTED, NOT_EMPTY, MALFORMED_PATH};
     Simple<Response> response;
     MESSAGE_FIELDS(response);
-    GETTER_AND_PARSER
 };
 
 struct SetValueIndication
@@ -191,7 +170,6 @@ struct SetValueIndication
     Simple<Uuid> uuid;
     BufferBlock data;
     MESSAGE_FIELDS(uuid, data);
-    GETTER_AND_PARSER
 };
 
 
@@ -199,7 +177,6 @@ struct SubscribePropertyUpdateRequest
 {
     Simple<Uuid> uuid;
     MESSAGE_FIELDS(uuid);
-    GETTER_AND_PARSER
 };
 
 struct SubscribePropertyUpdateResponse
@@ -207,7 +184,6 @@ struct SubscribePropertyUpdateResponse
     enum class Response : uint8_t {OK, UUID_NOT_FOUND, NOT_A_VALUE};
     Simple<Response> response;
     MESSAGE_FIELDS(response);
-    GETTER_AND_PARSER
 };
 
 struct PropertyUpdateNotificationEntry
@@ -218,7 +194,6 @@ struct PropertyUpdateNotificationEntry
     Simple<Uuid> uuid;
     BufferBlock data;
     MESSAGE_FIELDS(uuid, data);
-    GETTER_AND_PARSER
 };
 
 
@@ -226,7 +201,6 @@ struct PropertyUpdateNotification
 {
     BlockArray<PropertyUpdateNotificationEntry> propertyUpdateNotifications;
     MESSAGE_FIELDS(propertyUpdateNotifications);
-    GETTER_AND_PARSER
 };
 
 
@@ -234,7 +208,6 @@ struct UnsubscribePropertyUpdateRequest
 {
     Simple<Uuid> uuid;
     MESSAGE_FIELDS(uuid);
-    GETTER_AND_PARSER
 };
 
 struct UnsubscribePropertyUpdateResponse
@@ -242,21 +215,18 @@ struct UnsubscribePropertyUpdateResponse
     enum class Response : uint8_t {OK, NOT_SUBSCRIBED, NOT_A_VALUE, UUID_NOT_FOUND};
     Simple<Response> response;
     MESSAGE_FIELDS(response);
-    GETTER_AND_PARSER
 };
 
 struct GetValueRequest
 {
     Simple<Uuid> uuid;
     MESSAGE_FIELDS(uuid);
-    GETTER_AND_PARSER
 };
 
 struct GetValueResponse
 {
     BufferBlock data;
     MESSAGE_FIELDS(data);
-    GETTER_AND_PARSER
 };
 
 
@@ -265,14 +235,12 @@ struct RpcRequest
     Simple<Uuid> uuid;
     BufferBlock parameter;
     MESSAGE_FIELDS(uuid, parameter);
-    GETTER_AND_PARSER
 };
 
 struct RpcResponse
 {
     BufferBlock returnValue;
     MESSAGE_FIELDS(returnValue);
-    GETTER_AND_PARSER
 };
 
 struct HandleRpcRequest
@@ -282,7 +250,6 @@ struct HandleRpcRequest
     Simple<Uuid> uuid;
     BufferBlock parameter;
     MESSAGE_FIELDS(callerId, callerTransactionId, uuid, parameter);
-    GETTER_AND_PARSER
 };
 
 struct HandleRpcResponse
@@ -291,7 +258,6 @@ struct HandleRpcResponse
     Simple<uint32_t> callerTransactionId;
     BufferBlock returnValue;
     MESSAGE_FIELDS(callerId, callerTransactionId, returnValue);
-    GETTER_AND_PARSER
 };
 
 
@@ -299,14 +265,12 @@ struct GetSpecificMetaRequest
 {
     String path;
     MESSAGE_FIELDS(path);
-    GETTER_AND_PARSER
 };
 
 struct GetSpecificMetaResponse
 {
     MetaCreate meta;
     MESSAGE_FIELDS(meta);
-    GETTER_AND_PARSER
 };
 
 //////////////////
