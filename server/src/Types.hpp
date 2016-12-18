@@ -56,9 +56,9 @@ namespace core
     typedef std::function<void(uint64_t, uint32_t, ValueContainer&& parameter)> RpcWatcher;
 
     class PTree;
-    class IdGenerator;
+    class IIdGenerator;
     typedef std::pair<void*, ValueWatcher> IdWatcherPair;
-    typedef std::shared_ptr<IdGenerator> IIdGeneratorPtr;
+    typedef std::shared_ptr<IIdGenerator> IIdGeneratorPtr;
     typedef std::map<std::string, IPropertyPtr> PropertyMap;
     typedef std::shared_ptr<PropertyMap> PropertyMapPtr;
     typedef std::shared_ptr<PTree> PTreePtr;

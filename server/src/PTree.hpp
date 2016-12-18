@@ -27,16 +27,18 @@ class NotEmpty {};
 class IIdGenerator
 {
 public:
-    virtual ~IIdGenerator();
-    virtual uint32_t getId();
-    virtual void returnId(uint32_t id);
+    IIdGenerator() = default;
+    virtual ~IIdGenerator() = default;
+    virtual uint32_t getId() = 0;
+    virtual void returnId(uint32_t id) = 0;
 };
 
 /*** TODO: mutex on list of ids ***/
-class IdGenerator
+class IdGenerator : public IIdGenerator
 {
 public:
     IdGenerator();
+    ~IdGenerator();
     uint32_t getId();
     void returnId(uint32_t id);
 private:
@@ -48,7 +50,7 @@ private:
 class IProperty
 {
 public:
-    virtual ~IProperty() = 0;
+    virtual ~IProperty() = default;
     void setOwner(void* ptr);
     void* getOwner();
     void setUuid(uint32_t uuid);

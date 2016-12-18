@@ -25,6 +25,8 @@ std::unique_ptr<MessageHandler>
             return std::make_unique<GenericResponseMessageHandler>(*pc.get(), *ep.get());
         case (Enum) protocol::MessageType::PropertyUpdateNotification:
             return std::make_unique<PropertyUpdateNotificationMessageHandler>(*pc.get(), *ep.get());
+        case (Enum) protocol::MessageType::MetaUpdateNotification:
+            return std::make_unique<MetaUpdateNotificationMessageHandler>(*pc.get(), *ep.get());
     }
 
     log << logger::ERROR << "Unregconize message type.";

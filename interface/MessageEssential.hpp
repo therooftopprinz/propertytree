@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <vector>
-#include <cstring>  
+#include <cstring>
 
 namespace ptree
 {
@@ -299,6 +299,13 @@ private:
     T value;
 };
 
+struct MessageBase
+{
+    virtual void generate(BufferView& data);
+    virtual void parse(BufferView& cur);
+    virtual uint32_t size();
+};
+
 class SizeReader
 {
 public:
@@ -336,6 +343,7 @@ public:
         // std::cout << __PRETTY_FUNCTION__ << std::endl;
         head.generate(encodeCursor);
     }
+
     template <typename T, typename... Tt>
     void translate(T& head, Tt&... tail)
     {

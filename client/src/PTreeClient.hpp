@@ -1,4 +1,4 @@
-    #ifndef CLIENT_PTREECLIENT_HPP_
+#ifndef CLIENT_PTREECLIENT_HPP_
 #define CLIENT_PTREECLIENT_HPP_
 
 #include <cassert>
@@ -9,6 +9,7 @@
 #include <thread>
 #include <memory>
 #include <atomic>
+#include <algorithm>
 #include <condition_variable>
 #include <interface/protocol.hpp>
 #include <common/src/Logger.hpp>
@@ -36,7 +37,7 @@ private:
     std::atomic<uint32_t> id;
 };
 
-
+struct IMetaUpdateHandler;
 class PTreeClient : public std::enable_shared_from_this<PTreeClient>
 {
 public:
@@ -48,6 +49,8 @@ public:
     bool createNode(std::string path);
     ValueContainerPtr getValue(std::string path);
 
+    void addMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
+    void deleteMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
 
     uint32_t getTransactionId()
     {
@@ -70,6 +73,9 @@ private:
     void handleRpcResponse(BufferPtr returnType, uint64_t calee, uint32_t transactionId);
     void installUpdateHandler(uint64_t id, std::function<void()> handler);
     void notifyTransactionCV(uint32_t transactionId, BufferPtr);
+
+    void triggerMetaUpdateWatchersCreate(std::string& path, protocol::PropertyType propertyType);
+    void triggerMetaUpdateWatchersDelete(protocol::Uuid path);
 
     void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);
     void handleIncoming();
@@ -135,6 +141,9 @@ private:
     TransactionIdGenerator transactionIdGenerator;
     std::mutex transactionIdGeneratorLock;
 
+    std::list<std::shared_ptr<IMetaUpdateHandler>> metaUpdateHandlers;
+    std::mutex metaUpdateHandlersMutex;
+
     bool handleIncomingIsRunning;
     bool handleOutgoingIsRunning;
     bool killHandleIncoming;
@@ -158,6 +167,14 @@ private:
     friend class GenericResponseMessageHandler;
     friend class MetaUpdateNotificationMessageHandler;
     friend class PropertyUpdateNotificationMessageHandler;
+};
+
+struct IMetaUpdateHandler
+{
+    IMetaUpdateHandler() = default;
+    virtual ~IMetaUpdateHandler() = default;
+    virtual void handleCreation(std::string path, protocol::PropertyType propertyType) = 0;
+    virtual void handleDeletion(std::string path) = 0;
 };
 
 }

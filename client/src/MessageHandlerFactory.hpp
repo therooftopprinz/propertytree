@@ -5,6 +5,7 @@
 #include <memory>
 #include "MessageHandlers/GenericResponseMessageHandler.hpp"
 #include "MessageHandlers/PropertyUpdateNotificationMessageHandler.hpp"
+#include "MessageHandlers/MetaUpdateNotificationMessageHandler.hpp"
 
 namespace ptree
 {

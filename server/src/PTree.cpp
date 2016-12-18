@@ -11,11 +11,6 @@ namespace ptree
 namespace core
 {
 
-IProperty::~IProperty()
-{
-    
-}
-
 void IProperty::setOwner(void* ptr)
 {
     owner = ptr;
@@ -192,7 +187,7 @@ NodePtr PTree::getNodeByPath(std::string path)
     char tname[path.length()];
     uint32_t cursor = 1;
     uint32_t curTname = 0;
-    uint32_t nAncestors = -1;
+    int32_t nAncestors = -1;
     NodePtr currentNode = root;
 
     for (auto c : path)
@@ -336,6 +331,11 @@ IdGenerator::IdGenerator():
     log("IdGenerator")
 {
 }
+
+IdGenerator::~IdGenerator()
+{
+}
+
 
 uint32_t IdGenerator::getId()
 {

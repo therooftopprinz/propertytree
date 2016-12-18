@@ -1,4 +1,5 @@
 #include <interface/protocol.hpp>
+#include <list>
 
 namespace ptree
 {
@@ -338,6 +339,36 @@ struct MessageCreationHelper
         uint32_t sz = notif.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::PropertyUpdateNotification, sz, transactionId);
+        Buffer enbuff(notif.size());
+        protocol::BufferView enbuffv(enbuff);
+        protocol::Encoder en(enbuffv);
+        notif >> en;
+
+        message.insert(message.end(), enbuff.begin(), enbuff.end());
+
+        return message;
+    }
+
+
+    inline Buffer createMetaUpdateNotificationMessage(uint32_t transactionId,
+        std::list<protocol::MetaCreate> creates, std::list<protocol::MetaDelete> deletes)
+    {
+        protocol::MetaUpdateNotification notif;
+
+        for (auto& i : creates)
+        {
+            notif.creations->emplace_back(i);
+        }
+
+        for (auto& i : deletes)
+        {
+            notif.deletions->emplace_back(i);
+        }
+
+
+        uint32_t sz = notif.size() + sizeof(protocol::MessageHeader);
+
+        Buffer message = createHeader(protocol::MessageType::MetaUpdateNotification, sz, transactionId);
         Buffer enbuff(notif.size());
         protocol::BufferView enbuffv(enbuff);
         protocol::Encoder en(enbuffv);

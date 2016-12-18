@@ -25,11 +25,19 @@ struct HandlerMock : public IValueWatcher
     MOCK_METHOD1(handle, void(ValueContainerPtr));
 };
 
+struct MetaUpdateHandlerMock : public IMetaUpdateHandler
+{
+    MOCK_METHOD2(handleCreation,void(std::string, protocol::PropertyType));
+    MOCK_METHOD1(handleDeletion,void(std::string));
+};
+
+
 struct ClientTests : public common::MessageCreationHelper, public ::testing::Test
 {
     ClientTests() :
         endpoint(std::make_shared<common::EndPointMock>()),
         handlerMock(std::make_shared<HandlerMock>()),
+        metaHandlerMock(std::make_shared<MetaUpdateHandlerMock>()),
         log("TEST")
     {}
 
@@ -64,6 +72,7 @@ struct ClientTests : public common::MessageCreationHelper, public ::testing::Tes
 
     std::shared_ptr<common::EndPointMock> endpoint;
     std::shared_ptr<HandlerMock> handlerMock;
+    std::shared_ptr<MetaUpdateHandlerMock> metaHandlerMock;
     std::shared_ptr<PTreeClient> ptc;
     logger::Logger log;
 };
@@ -279,6 +288,30 @@ TEST_F(ClientTests, shouldUnsubscribe)
     endpoint->waitForAllSending(2500.0);
     logger::loggerServer.waitEmpty();
 }
+
+TEST_F(ClientTests, shouldReceiveMetaUpdateNotificationCreationAndRunHandler)
+{
+    using namespace std::chrono_literals;
+
+    ptc = std::make_shared<PTreeClient>(endpoint);
+
+    ptc->addMetaWatcher(metaHandlerMock);
+
+    EXPECT_CALL(*metaHandlerMock, handleCreation("/Test", protocol::PropertyType::Node));
+    EXPECT_CALL(*metaHandlerMock, handleCreation("/Test/Value", protocol::PropertyType::Value));
+
+    std::list<protocol::MetaCreate> createUpdates;
+    std::list<protocol::MetaDelete> deleteUpdates;
+    createUpdates.emplace_back(101, protocol::PropertyType::Node,"/Test");
+    createUpdates.emplace_back(102, protocol::PropertyType::Value,"/Test/Value");
+
+    auto updateNotifMsg = createMetaUpdateNotificationMessage(3, createUpdates, deleteUpdates);
+    this->endpoint->queueToReceive(updateNotifMsg);
+    std::this_thread::sleep_for(100ms);
+    endpoint->waitForAllSending(2500.0);
+    logger::loggerServer.waitEmpty();
+}
+
 
 
 } // namespace client

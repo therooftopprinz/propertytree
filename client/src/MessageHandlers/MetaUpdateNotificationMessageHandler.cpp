@@ -10,7 +10,7 @@ MetaUpdateNotificationMessageHandler::
         MessageHandler(pc, ep)
 {}
 
-void MetaUpdateNotificationMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
+void MetaUpdateNotificationMessageHandler::handle(protocol::MessageHeaderPtr, BufferPtr message)
 {
     logger::Logger log("MetaUpdateNotificationMessageHandler");
 
@@ -18,15 +18,20 @@ void MetaUpdateNotificationMessageHandler::handle(protocol::MessageHeaderPtr hea
     notif.unpackFrom(*message);
 
     // Handle creates
-    // for (auto& i : *notif.creations)
-    // {
-    //     // if on path on watch list - call watcher
-    // }
-    // // Handle deletes
-    // for (auto& i : *notif.deletions)
-    // {
-
-    // }
+    for (auto& i : *notif.creations)
+    {
+        ptreeClient.triggerMetaUpdateWatchersCreate(*i.path, i.propertyType);
+    }
+    // Handle deletes
+    for (auto& i : *notif.deletions)
+    {
+        std::string path = ptreeClient.getPath(*i.uuid);
+        if (path == "")
+        {
+            continue;
+        }
+        ptreeClient.triggerMetaUpdateWatchersDelete(*i.uuid);
+    }
 }
 
 } // namespace client

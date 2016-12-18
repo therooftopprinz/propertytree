@@ -255,6 +255,51 @@ ValueContainerPtr PTreeClient::getValue(std::string path)
     return sendGetValue(uuid, vc);
 }
 
+void PTreeClient::addMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler)
+{
+    std::lock_guard<std::mutex> lock(metaUpdateHandlersMutex);
+    auto i = std::find(metaUpdateHandlers.begin(), metaUpdateHandlers.end(), handler);
+    if (i == metaUpdateHandlers.end())
+    {
+        metaUpdateHandlers.emplace_back(handler);
+    }
+}
+
+void PTreeClient::deleteMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler)
+{
+    std::lock_guard<std::mutex> lock(metaUpdateHandlersMutex);
+    auto i = std::find(metaUpdateHandlers.begin(), metaUpdateHandlers.end(), handler);
+    if (i == metaUpdateHandlers.end())
+    {
+        return;
+    }
+    metaUpdateHandlers.erase(i);
+}
+
+void PTreeClient::triggerMetaUpdateWatchersCreate(std::string& path, protocol::PropertyType propertyType)
+{
+    std::lock_guard<std::mutex> lock(metaUpdateHandlersMutex);
+    for (auto& i : metaUpdateHandlers)
+    {
+        i->handleCreation(path, propertyType);
+    }
+}
+
+void PTreeClient::triggerMetaUpdateWatchersDelete(protocol::Uuid uuid)
+{
+    std::lock_guard<std::mutex> lock(metaUpdateHandlersMutex);
+    for (auto& i : metaUpdateHandlers)
+    {
+        std::string path = getPath(uuid);
+        if (path == "")
+        {
+            continue;
+        }
+
+        i->handleDeletion(path);
+    }
+}
+
 bool PTreeClient::createNode(std::string path)
 {
     protocol::CreateRequest request;
