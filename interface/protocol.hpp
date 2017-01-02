@@ -172,7 +172,6 @@ struct SetValueIndication
     MESSAGE_FIELDS(uuid, data);
 };
 
-
 struct SubscribePropertyUpdateRequest
 {
     Simple<Uuid> uuid;

@@ -14,13 +14,16 @@
 #include <interface/protocol.hpp>
 #include <common/src/Logger.hpp>
 #include <common/src/IEndPoint.hpp>
-
-#include "ValueContainer.hpp"
+#include <client/src/Types.hpp>
+#include <client/src/ValueContainer.hpp>
 
 namespace ptree
 {
 namespace client
 {
+
+class ValueContainer;
+typedef std::shared_ptr<ValueContainer> ValueContainerPtr;
 
 class TransactionIdGenerator
 {
@@ -46,6 +49,7 @@ public:
 
     void signIn();
     ValueContainerPtr createValue(std::string path, Buffer value);
+    bool createRpc(std::string path);
     bool createNode(std::string path);
     ValueContainerPtr getValue(std::string path);
 
@@ -58,20 +62,29 @@ public:
         return transactionIdGenerator.get();
     }
 
-    bool enableAutoUpdate(std::string&& path);
-    bool disableAutoUpdate(std::string&& path);
+    bool enableAutoUpdate(ValueContainerPtr&);
+    bool disableAutoUpdate(ValueContainerPtr&);
+
+    void setValue(ValueContainerPtr&, Buffer&);
+    template<typename T>
+    void setValue(ValueContainerPtr& vc, T& val)
+    {
+        Buffer v(sizeof(T));
+        *(T*)(v.data()) = val;
+        vc->updateValue(std::move(v), true);
+        sendSetValue(vc);
+    }
+
+    BufferPtr rpcRequest(std::string rpcObject, Buffer argument);
 
 private:
     void signIn(bool enableMetaUpdate, uint32_t updateRate);
-    bool createRpc(std::string path);
     bool deleteProperty(std::string path);
 
     void handleUpdaNotification(protocol::Uuid uuid, Buffer&& value);
 
-    void setValue(std::string path, BufferPtr value);
-    BufferPtr rpcRequest(Buffer argument);
     void handleRpcResponse(BufferPtr returnType, uint64_t calee, uint32_t transactionId);
-    void installUpdateHandler(uint64_t id, std::function<void()> handler);
+    // void installUpdateHandler(uint64_t id, std::function<void()> handler);
     void notifyTransactionCV(uint32_t transactionId, BufferPtr);
 
     void triggerMetaUpdateWatchersCreate(std::string& path, protocol::PropertyType propertyType);
@@ -81,9 +94,10 @@ private:
     void handleIncoming();
 
     void sendSignIn(int refreshRate, const std::list<protocol::SigninRequest::FeatureFlag> features);
-    ValueContainerPtr sendGetValue(protocol::Uuid uuid, ValueContainerPtr vc);
-    protocol::Uuid fetchMeta(std::string path);
-
+    ValueContainerPtr sendGetValue(protocol::Uuid uuid, ValueContainerPtr& vc);
+    std::tuple<protocol::Uuid, protocol::PropertyType> fetchMeta(std::string& path);
+    protocol::Uuid fetchMetaAndAddToLocal(std::string& path);
+    void sendSetValue(ValueContainerPtr& vc);
     /*** TODO: Commonize these with message handler***/
     Buffer createHeader(protocol::MessageType type, uint32_t payloadSize, uint32_t transactionId);
     template<class T>
@@ -174,7 +188,7 @@ struct IMetaUpdateHandler
     IMetaUpdateHandler() = default;
     virtual ~IMetaUpdateHandler() = default;
     virtual void handleCreation(std::string path, protocol::PropertyType propertyType) = 0;
-    virtual void handleDeletion(std::string path) = 0;
+    virtual void handleDeletion(protocol::Uuid) = 0;
 };
 
 }

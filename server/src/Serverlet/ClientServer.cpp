@@ -142,6 +142,8 @@ void ClientServer::handleIncoming()
     log << logger::DEBUG << "handleIncoming: Spawned.";
     incomingState = EIncomingState::WAIT_FOR_HEADER_EMPTY;
 
+    using namespace std::chrono_literals;
+
     while (!killHandleIncoming)
     {
         // Header is a shared for the reason that I might not block processMessage
@@ -167,7 +169,7 @@ void ClientServer::handleIncoming()
                     break;
                 }
 
-                if (br == 0 && incomingState != EIncomingState::WAIT_FOR_HEADER_EMPTY)
+                if (incomingState != EIncomingState::WAIT_FOR_HEADER_EMPTY)
                 {
                     log << logger::DEBUG <<  "handleIncoming: Header receive timeout!";
                     retryCount++;
@@ -186,6 +188,9 @@ void ClientServer::handleIncoming()
                     // TODO: ERROR HANDLING
                     break;
                 }
+
+                std::this_thread::sleep_for(1ms);
+
             }
         }
         
@@ -214,7 +219,7 @@ void ClientServer::handleIncoming()
                     break;
                 }
 
-                if (br == 0 && incomingState != EIncomingState::WAIT_FOR_MESSAGE_EMPTY)
+                if (incomingState != EIncomingState::WAIT_FOR_MESSAGE_EMPTY)
                 {
                     log << logger::DEBUG <<
                         "handleIncoming: Message receive timeout!";
@@ -233,6 +238,9 @@ void ClientServer::handleIncoming()
                     incomingState = EIncomingState::ERROR_MESSAGE_TIMEOUT;
                     break;
                 }
+
+                std::this_thread::sleep_for(1ms);
+
             }
         }
     }

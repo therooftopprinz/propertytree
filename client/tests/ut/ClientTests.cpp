@@ -6,6 +6,7 @@
 #include <common/TestingFramework/EndPointMock.hpp>
 #include <common/TestingFramework/MessageMatcher.hpp>
 #include <common/TestingFramework/MessageCreationHelper.hpp>
+#include <client/src/ValueContainer.hpp>
 
 using namespace testing;
 
@@ -28,7 +29,7 @@ struct HandlerMock : public IValueWatcher
 struct MetaUpdateHandlerMock : public IMetaUpdateHandler
 {
     MOCK_METHOD2(handleCreation,void(std::string, protocol::PropertyType));
-    MOCK_METHOD1(handleDeletion,void(std::string));
+    MOCK_METHOD1(handleDeletion,void(protocol::Uuid));
 };
 
 
@@ -171,7 +172,7 @@ TEST_F(ClientTests, shouldSubscribeUpdateNotification)
 
     auto value = ptc->getValue(std::string("/Value"));
 
-    ptc->enableAutoUpdate(std::string("/Value"));
+    ptc->enableAutoUpdate(value);
 
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(1ms);
@@ -194,7 +195,7 @@ TEST_F(ClientTests, shouldReceiveUpdateNotification)
 
     auto value = ptc->getValue(std::string("/Value"));
     EXPECT_EQ(value->get<uint32_t>(), 42u);
-    ptc->enableAutoUpdate(std::string("/Value"));
+    ptc->enableAutoUpdate(value);
 
     std::list<protocol::PropertyUpdateNotificationEntry> updates;
     updates.emplace_back(100, newValue);
@@ -231,7 +232,7 @@ TEST_F(ClientTests, shouldReceiveUpdateNotificationAndRunHandler)
     auto value = ptc->getValue(std::string("/Value"));
     value->addWatcher(handlerMock);
     EXPECT_EQ(value->get<uint32_t>(), 42u);
-    ptc->enableAutoUpdate(std::string("/Value"));
+    ptc->enableAutoUpdate(value);
 
     std::list<protocol::PropertyUpdateNotificationEntry> updates;
     updates.emplace_back(100, newValue);
@@ -277,8 +278,8 @@ TEST_F(ClientTests, shouldUnsubscribe)
     auto value = ptc->getValue(std::string("/Value"));
     value->addWatcher(handlerMock);
 
-    ptc->enableAutoUpdate(std::string("/Value"));
-    ptc->disableAutoUpdate(std::string("/Value"));
+    ptc->enableAutoUpdate(value);
+    ptc->disableAutoUpdate(value);
 
     auto value2 = ptc->getValue(std::string("/Value"));
     EXPECT_EQ(value->get<uint32_t>(), 69u);
@@ -289,7 +290,7 @@ TEST_F(ClientTests, shouldUnsubscribe)
     logger::loggerServer.waitEmpty();
 }
 
-TEST_F(ClientTests, shouldReceiveMetaUpdateNotificationCreationAndRunHandler)
+TEST_F(ClientTests, shouldReceiveMetaUpdateNotificationAndRunHandler)
 {
     using namespace std::chrono_literals;
 
@@ -299,11 +300,13 @@ TEST_F(ClientTests, shouldReceiveMetaUpdateNotificationCreationAndRunHandler)
 
     EXPECT_CALL(*metaHandlerMock, handleCreation("/Test", protocol::PropertyType::Node));
     EXPECT_CALL(*metaHandlerMock, handleCreation("/Test/Value", protocol::PropertyType::Value));
+    EXPECT_CALL(*metaHandlerMock, handleDeletion(protocol::Uuid(100)));
 
     std::list<protocol::MetaCreate> createUpdates;
     std::list<protocol::MetaDelete> deleteUpdates;
     createUpdates.emplace_back(101, protocol::PropertyType::Node,"/Test");
     createUpdates.emplace_back(102, protocol::PropertyType::Value,"/Test/Value");
+    deleteUpdates.emplace_back(100);
 
     auto updateNotifMsg = createMetaUpdateNotificationMessage(3, createUpdates, deleteUpdates);
     this->endpoint->queueToReceive(updateNotifMsg);
@@ -312,6 +315,35 @@ TEST_F(ClientTests, shouldReceiveMetaUpdateNotificationCreationAndRunHandler)
     logger::loggerServer.waitEmpty();
 }
 
+TEST_F(ClientTests, shouldSendSetValueIndication)
+{
+    uint32_t newVal = 68;
+    auto newValBuff = utils::buildBufferedValue<uint32_t>(68u);
+    MessageMatcher createRequestMessageMatcher(createCreateRequestMessage(0, expectedVal, protocol::PropertyType::Value,
+        "/Value"));
+    MessageMatcher setValueIndicationMessageMatcher(
+        createSetValueIndicationMessage(1, 100, newValBuff));
+
+    std::function<void()> createValueRequestAction = [this]()
+    {
+        this->endpoint->queueToReceive(createCreateResponseMessage(0, protocol::CreateResponse::Response::OK,
+            protocol::Uuid(100)));
+    };
+
+    endpoint->expectSend(0, 0, false, 1, createRequestMessageMatcher.get(), createValueRequestAction);
+    endpoint->expectSend(1, 0, false, 1, setValueIndicationMessageMatcher.get(), DefaultAction::get());
+
+    ptc = std::make_shared<PTreeClient>(endpoint);
+
+    auto value = ptc->createValue("/Value", expectedVal);
+
+    ptc->setValue(value, newVal);
+
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1ms);
+    endpoint->waitForAllSending(2500.0);
+    logger::loggerServer.waitEmpty();
+}
 
 
 } // namespace client

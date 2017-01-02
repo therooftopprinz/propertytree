@@ -6,25 +6,19 @@
 #include <vector>
 #include <set>
 #include <string>
+#include <cstring>
 #include <mutex>
 #include <thread>
 #include <memory>
 
+#include <interface/protocol.hpp>
 #include <common/src/Logger.hpp>
+#include <client/src/Types.hpp>
 
 namespace ptree
 {
 namespace client
 {
-
-class PTreeClient;
-typedef std::shared_ptr<PTreeClient> PTreeClientPtr;
-
-class ValueContainer;
-typedef std::shared_ptr<ValueContainer> ValueContainerPtr;
-
-typedef std::vector<uint8_t> Buffer;
-typedef std::shared_ptr<Buffer> BufferPtr;
 
 struct IValueWatcher
 {
@@ -50,25 +44,44 @@ public:
         }
         return *(T*)(value.data());
     }
+    Buffer& get();
 
+    bool isOwned();
     Buffer getCopy();
+    template<typename T>
+    T getCopy()
+    {
+        std::lock_guard<std::mutex> lock(valueMutex);
+        if (sizeof(T) != value.size())
+        {
+            using namespace std::chrono_literals;
+            std::this_thread::sleep_for(100ms); // Wait all logs to flush
+            assert(true);
+        }
+        return *(T*)(value.data());
+    }
 
     void addWatcher(std::shared_ptr<IValueWatcher> watcher);
     void removeWatcher(std::shared_ptr<IValueWatcher> watcher);
 
-    ValueContainer(PTreeClientPtr ptc, Buffer &value);
-    ValueContainer(PTreeClientPtr ptc, Buffer &&value);
+    protocol::Uuid getUuid();
+
+    void operator = (ValueContainer&) = delete;
+
+    ValueContainer(protocol::Uuid uuid, Buffer &value, bool ownership);
+    ValueContainer(protocol::Uuid uuid, Buffer &&value, bool ownership);
 
 private:
     bool isAutoUpdate();
     void setAutoUpdate(bool autoUpdate);
     void updateValue(Buffer&& value, bool triggerHandler);
 
+    /** TODO: use std::function **/
     std::set<std::shared_ptr<IValueWatcher>> watchers;
     std::mutex watcherMutex;
-
+    protocol::Uuid uuid;
     bool autoUpdate;
-    std::weak_ptr<PTreeClient> ptreeClient;
+    bool ownership;
     Buffer value;
     std::mutex valueMutex;
     logger::Logger log;

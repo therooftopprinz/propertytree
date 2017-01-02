@@ -25,11 +25,6 @@ void MetaUpdateNotificationMessageHandler::handle(protocol::MessageHeaderPtr, Bu
     // Handle deletes
     for (auto& i : *notif.deletions)
     {
-        std::string path = ptreeClient.getPath(*i.uuid);
-        if (path == "")
-        {
-            continue;
-        }
         ptreeClient.triggerMetaUpdateWatchersDelete(*i.uuid);
     }
 }
