@@ -93,7 +93,7 @@ private:
     void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);
     void handleIncoming();
 
-    void sendSignIn(int refreshRate, const std::list<protocol::SigninRequest::FeatureFlag> features);
+    void sendSignIn(int refreshRate, const std::list<protocol_x::SigninRequest::FeatureFlag> features);
     ValueContainerPtr sendGetValue(protocol::Uuid uuid, ValueContainerPtr& vc);
     std::tuple<protocol::Uuid, protocol::PropertyType> fetchMeta(std::string& path);
     protocol::Uuid fetchMetaAndAddToLocal(std::string& path);

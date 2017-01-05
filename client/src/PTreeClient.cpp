@@ -90,14 +90,14 @@ PTreeClient::~PTreeClient()
 
 void PTreeClient::signIn()
 {
-    std::list<protocol::SigninRequest::FeatureFlag> features;
-    features.push_back(protocol::SigninRequest::FeatureFlag::ENABLE_METAUPDATE);
+    std::list<protocol_x::SigninRequest::FeatureFlag> features;
+    features.push_back(protocol_x::SigninRequest::FeatureFlag::ENABLE_METAUPDATE);
     sendSignIn(300, features);
 }
 
-void PTreeClient::sendSignIn(int refreshRate, const std::list<protocol::SigninRequest::FeatureFlag> features)
+void PTreeClient::sendSignIn(int refreshRate, const std::list<protocol_x::SigninRequest::FeatureFlag> features)
 {
-    protocol::SigninRequest signIn;
+    protocol_x::SigninRequest signIn;
     signIn.version = 1;
     signIn.refreshRate = refreshRate;
     for (const auto& i : features)
