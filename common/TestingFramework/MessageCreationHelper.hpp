@@ -39,17 +39,13 @@ struct MessageCreationHelper
 
     inline Buffer createSigninResponseMessage(uint32_t transactionId, uint32_t version)
     {
-        protocol::SigninResponse signin;
+        protocol_x::SigninResponse signin;
         signin.version = version;
 
         uint32_t sz = signin.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::SigninResponse, sz, transactionId);
-        Buffer enbuff(signin.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        signin >> en;
-
+        auto enbuff = signin.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;

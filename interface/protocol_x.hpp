@@ -60,14 +60,6 @@ struct PACKED MessageHeader
     uint32_t transactionId;
 };
 
-struct MetaCreate;
-struct SigninResponse
-{
-    Simple<uint32_t> version;
-    MESSAGE_FIELDS(version);
-};
-
-
 struct CreateRequest
 {
     Simple<PropertyType> type;

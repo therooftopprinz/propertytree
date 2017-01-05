@@ -30,7 +30,7 @@ inline void SigninRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
     clientServer.setUpdateInterval(request.refreshRate);
     clientServer.clientSigned();
 
-    protocol::SigninResponse response;
+    protocol_x::SigninResponse response;
     response.version = supported ? request.version : 0;
     // if (supported)
     // {

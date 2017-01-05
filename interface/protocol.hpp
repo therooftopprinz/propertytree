@@ -42,6 +42,13 @@ struct SigninRequest
     MESSAGE_FIELDS_PROTOX(version, refreshRate, featureFlag);
 };
 
+struct SigninResponse
+{
+    uint32_t version;
+    MESSAGE_FIELDS_PROTOX(version);
+};
+
+
 } // namespace protocol
 } // namespace ptree
 

@@ -111,7 +111,7 @@ void PTreeClient::sendSignIn(int refreshRate, const std::list<protocol_x::Signin
     {
         log << logger::DEBUG << "signin response received.";
 
-        protocol::SigninResponse response;
+        protocol_x::SigninResponse response;
         response.unpackFrom(tcv->value);
     }
     else
