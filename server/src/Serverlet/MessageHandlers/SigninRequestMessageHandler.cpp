@@ -16,7 +16,7 @@ inline void SigninRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
 {
     logger::Logger log("SigninRequestMessageHandler");
 
-    protocol::SigninRequest request;
+    protocol_x::SigninRequest request;
     request.unpackFrom(*message);
 
     bool supported = true;
@@ -31,7 +31,7 @@ inline void SigninRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
     clientServer.clientSigned();
 
     protocol::SigninResponse response;
-    response.version = supported ? *request.version : 0;
+    response.version = supported ? request.version : 0;
     // if (supported)
     // {
     //     auto meta = ptree.getPTreeInfo();

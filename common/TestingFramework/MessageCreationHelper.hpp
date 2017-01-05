@@ -23,18 +23,15 @@ struct MessageCreationHelper
 
     inline Buffer createSigninRequestMessage(uint32_t transactionId, uint32_t version, uint32_t refreshRate)
     {
-        protocol::SigninRequest signin;
+        protocol_x::SigninRequest signin;
         signin.version = version;
         signin.refreshRate = refreshRate;
-        signin.setFeature(protocol::SigninRequest::FeatureFlag::ENABLE_METAUPDATE);
+        signin.setFeature(protocol_x::SigninRequest::FeatureFlag::ENABLE_METAUPDATE);
 
         uint32_t sz = signin.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::SigninRequest, sz, transactionId);
-        Buffer enbuff(signin.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        signin >> en;
+        auto enbuff = signin.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;
