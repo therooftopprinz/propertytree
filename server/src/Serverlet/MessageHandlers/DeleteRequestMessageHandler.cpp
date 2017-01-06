@@ -16,47 +16,47 @@ inline void DeleteRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
 {
     logger::Logger log("DeleteRequestMessageHandler");
 
-    protocol::DeleteRequest request;
+    protocol_x::DeleteRequest request;
     request.unpackFrom(*message);
 
-    log << logger::DEBUG << "path: " << *request.path;
+    log << logger::DEBUG << "path: " << request.path;
     bool deleted = true;
 
     protocol::Uuid uuid = static_cast<uint32_t>(-1);
-    protocol::DeleteResponse response;
-    response.response = protocol::DeleteResponse::Response::OK;
+    protocol_x::DeleteResponse response;
+    response.response = protocol_x::DeleteResponse::Response::OK;
 
     try
     {
-        log << logger::DEBUG << "Deleting " << *request.path;
-        auto property = ptree.getPropertyByPath<core::IProperty>(*request.path);
+        log << logger::DEBUG << "Deleting " << request.path;
+        auto property = ptree.getPropertyByPath<core::IProperty>(request.path);
         if (property->getOwner() != &clientServer)
         {
-            response.response = protocol::DeleteResponse::Response::NOT_PERMITTED;
-            log << logger::ERROR << "Permission error: " << *request.path;
+            response.response = protocol_x::DeleteResponse::Response::NOT_PERMITTED;
+            log << logger::ERROR << "Permission error: " << request.path;
         }
         else
         {
-            uuid = ptree.deleteProperty(*request.path);
+            uuid = ptree.deleteProperty(request.path);
             deleted = true;
         }
     }
     catch (core::ObjectNotFound)
     {
         deleted = false;
-        response.response = protocol::DeleteResponse::Response::OBJECT_NOT_FOUND;
-        log << logger::ERROR << "Object not found: " << *request.path;
+        response.response = protocol_x::DeleteResponse::Response::OBJECT_NOT_FOUND;
+        log << logger::ERROR << "Object not found: " << request.path;
     }
     catch (core::NotEmpty)
     {
         deleted = false;
-        response.response = protocol::DeleteResponse::Response::NOT_EMPTY;
-        log << logger::ERROR << "Node not empty: " << *request.path;
+        response.response = protocol_x::DeleteResponse::Response::NOT_EMPTY;
+        log << logger::ERROR << "Node not empty: " << request.path;
     }
     catch (core::MalformedPath)
     {
         deleted = false;
-        response.response = protocol::DeleteResponse::Response::MALFORMED_PATH;
+        response.response = protocol_x::DeleteResponse::Response::MALFORMED_PATH;
         log << logger::ERROR << "Malformed path thrown!";
     }
     if (deleted)

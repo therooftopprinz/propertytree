@@ -32,19 +32,6 @@ struct MetaCreate
     MESSAGE_FIELDS(uuid, propertyType, path);
 };
 
-struct DeleteRequest
-{
-    String path;
-    MESSAGE_FIELDS(path);
-};
-
-struct DeleteResponse
-{
-    enum class Response : uint8_t {OK, OBJECT_NOT_FOUND, NOT_PERMITTED, NOT_EMPTY, MALFORMED_PATH};
-    Simple<Response> response;
-    MESSAGE_FIELDS(response);
-};
-
 struct SetValueIndication
 {
     Simple<Uuid> uuid;

@@ -147,6 +147,18 @@ struct MetaUpdateNotification
     MESSAGE_FIELDS_PROTOX(BLOCK creations, BLOCK deletions);
 };
 
+struct DeleteRequest
+{
+    std::string path;
+    MESSAGE_FIELDS_PROTOX(path);
+};
+
+struct DeleteResponse
+{
+    enum class Response : uint8_t {OK, OBJECT_NOT_FOUND, NOT_PERMITTED, NOT_EMPTY, MALFORMED_PATH};
+    Response response;
+    MESSAGE_FIELDS_PROTOX(response);
+};
 
 } // namespace protocol
 } // namespace ptree

@@ -70,16 +70,13 @@ struct MessageCreationHelper
 
     inline Buffer createDeleteRequestMessage(uint32_t transactionId, std::string path)
     {
-        protocol::DeleteRequest deleteReq;
+        protocol_x::DeleteRequest deleteReq;
         deleteReq.path = path;
 
         uint32_t sz = deleteReq.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::DeleteRequest, sz, transactionId);
-        Buffer enbuff(deleteReq.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        deleteReq >> en;
+        Buffer enbuff = deleteReq.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;
@@ -143,10 +140,7 @@ struct MessageCreationHelper
         uint32_t sz = responseMsg.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(TR, sz, transactionId);
-        Buffer enbuff(responseMsg.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        responseMsg >> en;
+        Buffer enbuff = responseMsg.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;
