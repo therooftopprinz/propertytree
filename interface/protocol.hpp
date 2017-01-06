@@ -180,6 +180,23 @@ struct SubscribePropertyUpdateResponse
     MESSAGE_FIELDS_PROTOX(response);
 };
 
+struct PropertyUpdateNotificationEntry
+{
+    PropertyUpdateNotificationEntry(){}
+    PropertyUpdateNotificationEntry(Uuid uuid, Buffer& buffer):
+        uuid(uuid), data(buffer) {}
+    Uuid uuid;
+    std::vector<uint8_t> data;
+    MESSAGE_FIELDS_PROTOX(uuid, data);
+};
+
+
+struct PropertyUpdateNotification
+{
+    BlockArray<PropertyUpdateNotificationEntry> propertyUpdateNotifications;
+    MESSAGE_FIELDS_PROTOX(propertyUpdateNotifications);
+};
+
 
 } // namespace protocol
 } // namespace ptree

@@ -197,7 +197,7 @@ TEST_F(ClientTests, shouldReceiveUpdateNotification)
     EXPECT_EQ(value->get<uint32_t>(), 42u);
     ptc->enableAutoUpdate(value);
 
-    std::list<protocol::PropertyUpdateNotificationEntry> updates;
+    std::list<protocol_x::PropertyUpdateNotificationEntry> updates;
     updates.emplace_back(100, newValue);
     auto updateNotifMsg = createPropertyUpdateNotificationMessage(3, updates);
     this->endpoint->queueToReceive(updateNotifMsg);
@@ -234,7 +234,7 @@ TEST_F(ClientTests, shouldReceiveUpdateNotificationAndRunHandler)
     EXPECT_EQ(value->get<uint32_t>(), 42u);
     ptc->enableAutoUpdate(value);
 
-    std::list<protocol::PropertyUpdateNotificationEntry> updates;
+    std::list<protocol_x::PropertyUpdateNotificationEntry> updates;
     updates.emplace_back(100, newValue);
     auto updateNotifMsg = createPropertyUpdateNotificationMessage(3, updates);
     this->endpoint->queueToReceive(updateNotifMsg);

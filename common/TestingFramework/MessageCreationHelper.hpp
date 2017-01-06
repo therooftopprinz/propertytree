@@ -302,23 +302,19 @@ struct MessageCreationHelper
     }
 
     inline Buffer createPropertyUpdateNotificationMessage(uint32_t transactionId,
-        std::list<protocol::PropertyUpdateNotificationEntry> updates)
+        std::list<protocol_x::PropertyUpdateNotificationEntry> updates)
     {
-        protocol::PropertyUpdateNotification notif;
+        protocol_x::PropertyUpdateNotification notif;
 
         for (auto& i : updates)
         {
-            notif.propertyUpdateNotifications->push_back(i);
+            notif.propertyUpdateNotifications.get().push_back(i);
         }
 
         uint32_t sz = notif.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::PropertyUpdateNotification, sz, transactionId);
-        Buffer enbuff(notif.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        notif >> en;
-
+        Buffer enbuff = notif.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;

@@ -29,8 +29,8 @@ bool PropertyUpdateNotificationMatcher::match(const void *buffer, uint32_t size)
         return false;
     }
 
-    protocol::PropertyUpdateNotification  propUpdateNotif;
-    protocol::BufferView bv(cursor, end);
+    protocol_x::PropertyUpdateNotification  propUpdateNotif;
+    protocol_x::BufferView bv(cursor, end);
     propUpdateNotif.parse(bv);
 
     auto val = ptree->getPropertyByPath<core::Value>(path);
@@ -42,10 +42,10 @@ bool PropertyUpdateNotificationMatcher::match(const void *buffer, uint32_t size)
 
     protocol::Uuid uuid = val->getUuid();
 
-    for(auto& i : *propUpdateNotif.propertyUpdateNotifications)
+    for(auto& i : propUpdateNotif.propertyUpdateNotifications.get())
     {
         // log << logger::WARNING << "created object: " << *i.path << " with uuid:" << *i.uuid;
-        auto val = ptree->getPropertyByUuid<core::Value>(*i.uuid);
+        auto val = ptree->getPropertyByUuid<core::Value>(i.uuid);
         uint32_t ptreeValueSize = 0;
 
         if (val)
@@ -59,7 +59,7 @@ bool PropertyUpdateNotificationMatcher::match(const void *buffer, uint32_t size)
             return false;
         }
 
-        if (*i.uuid == uuid)
+        if (i.uuid == uuid)
         {
             if (valueContainer->size() != ptreeValueSize)
             {
@@ -67,7 +67,7 @@ bool PropertyUpdateNotificationMatcher::match(const void *buffer, uint32_t size)
                 return false;
             }
 
-            return !std::memcmp(valueContainer->data(), i.data->data(), valueContainer->size());
+            return !std::memcmp(valueContainer->data(), i.data.data(), valueContainer->size());
         }
     }
 

@@ -406,11 +406,11 @@ void ClientServer::handleOutgoing()
             {
                 log << logger::DEBUG << "Property Update Notifaction available!";
 
-                protocol::PropertyUpdateNotification propertyUpdateNotifs;
+                protocol_x::PropertyUpdateNotification propertyUpdateNotifs;
                 for(const auto& i : valueUpdateNotification)
                 {
-                    propertyUpdateNotifs.propertyUpdateNotifications->push_back(
-                        protocol::PropertyUpdateNotificationEntry(i->getUuid(), i->getValue()));
+                    propertyUpdateNotifs.propertyUpdateNotifications.get().push_back(
+                        protocol_x::PropertyUpdateNotificationEntry(i->getUuid(), i->getValue()));
                     /** TODO: Optimize by only using the reference of value since value's lifetime is dependent to 
                         valueUpdateNotification which assures an instance of value.**/
                 }

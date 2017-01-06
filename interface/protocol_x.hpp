@@ -32,24 +32,6 @@ struct MetaCreate
     MESSAGE_FIELDS(uuid, propertyType, path);
 };
 
-struct PropertyUpdateNotificationEntry
-{
-    PropertyUpdateNotificationEntry(){}
-    PropertyUpdateNotificationEntry(Uuid uuid, Buffer& buffer):
-        uuid(uuid), data(buffer) {}
-    Simple<Uuid> uuid;
-    BufferBlock data;
-    MESSAGE_FIELDS(uuid, data);
-};
-
-
-struct PropertyUpdateNotification
-{
-    BlockArray<PropertyUpdateNotificationEntry> propertyUpdateNotifications;
-    MESSAGE_FIELDS(propertyUpdateNotifications);
-};
-
-
 struct UnsubscribePropertyUpdateRequest
 {
     Simple<Uuid> uuid;

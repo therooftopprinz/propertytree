@@ -12,12 +12,12 @@ PropertyUpdateNotificationMessageHandler::
 
 void PropertyUpdateNotificationMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
 {
-    protocol::PropertyUpdateNotification notif;
+    protocol_x::PropertyUpdateNotification notif;
     notif.unpackFrom(*message);
 
-    for (auto& i : *notif.propertyUpdateNotifications)
+    for (auto& i : notif.propertyUpdateNotifications.get())
     {
-        ptreeClient.handleUpdaNotification(*i.uuid, std::move(*i.data));
+        ptreeClient.handleUpdaNotification(i.uuid, std::move(i.data));
     }
 }
 
