@@ -142,7 +142,7 @@ void PTreeClient::insertLocalValue(protocol::Uuid uuid, ValueContainerPtr& value
 
 ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
 {
-    protocol::CreateRequest request;
+    protocol_x::CreateRequest request;
     request.path = path;
     request.data = value;
     request.type = protocol::PropertyType::Value;
@@ -151,13 +151,13 @@ ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
     auto tcv = addTransactionCV(tid);
     if (waitTransactionCV(tid))
     {
-        protocol::CreateResponse response;
+        protocol_x::CreateResponse response;
         response.unpackFrom(tcv->value);
-        if ( *response.response  == protocol::CreateResponse::Response::OK)
+        if ( response.response  == protocol_x::CreateResponse::Response::OK)
         {
-            log << logger::DEBUG << "VALUE CREATED WITH UUID " << *response.uuid;
-            auto vc = std::make_shared<ValueContainer>(*response.uuid, value, true);
-            insertLocalValue(*response.uuid, vc);
+            log << logger::DEBUG << "VALUE CREATED WITH UUID " << response.uuid;
+            auto vc = std::make_shared<ValueContainer>(response.uuid, value, true);
+            insertLocalValue(response.uuid, vc);
             return vc;
         }
         else
@@ -344,7 +344,7 @@ void PTreeClient::triggerMetaUpdateWatchersDelete(protocol::Uuid uuid)
 
 bool PTreeClient::createNode(std::string path)
 {
-    protocol::CreateRequest request;
+    protocol_x::CreateRequest request;
     request.path = path;
     request.type = protocol::PropertyType::Node;
     auto tid = getTransactionId();
@@ -352,11 +352,11 @@ bool PTreeClient::createNode(std::string path)
     auto tcv = addTransactionCV(tid);
     if (waitTransactionCV(tid))
     {
-        protocol::CreateResponse response;
+        protocol_x::CreateResponse response;
         response.unpackFrom(tcv->value);
-        if ( *response.response  == protocol::CreateResponse::Response::OK)
+        if (response.response  == protocol_x::CreateResponse::Response::OK)
         {
-            log << logger::DEBUG << "NODE CREATED WITH UUID " << *response.uuid;
+            log << logger::DEBUG << "NODE CREATED WITH UUID " << response.uuid;
             return true;
         }
         else

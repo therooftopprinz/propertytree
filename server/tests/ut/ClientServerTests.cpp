@@ -53,7 +53,7 @@ struct ClientServerTests : public common::MessageCreationHelper, public ::testin
         valueDeletionMatcher = std::make_shared<DeleteObjectMetaUpdateNotificationMatcher>();
         rpcCreationMatcher = std::make_shared<CreateObjectMetaUpdateNotificationMatcher>("/RpcTest");
 
-        using protocol::CreateResponse;
+        using protocol_x::CreateResponse;
         using protocol::DeleteResponse;
         using protocol::SubscribePropertyUpdateResponse;
         using protocol::UnsubscribePropertyUpdateResponse;

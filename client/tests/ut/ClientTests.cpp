@@ -106,7 +106,7 @@ TEST_F(ClientTests, shouldCreateNode)
 
     std::function<void()> createValueRequestAction = [this]()
     {
-        this->endpoint->queueToReceive(createCreateResponseMessage(0, protocol::CreateResponse::Response::OK,
+        this->endpoint->queueToReceive(createCreateResponseMessage(0, protocol_x::CreateResponse::Response::OK,
             protocol::Uuid(100)));
     };
 
@@ -129,7 +129,7 @@ TEST_F(ClientTests, shouldCreateValue)
 
     std::function<void()> createValueRequestAction = [this]()
     {
-        this->endpoint->queueToReceive(createCreateResponseMessage(0, protocol::CreateResponse::Response::OK,
+        this->endpoint->queueToReceive(createCreateResponseMessage(0, protocol_x::CreateResponse::Response::OK,
             protocol::Uuid(100)));
     };
 
@@ -326,7 +326,7 @@ TEST_F(ClientTests, shouldSendSetValueIndication)
 
     std::function<void()> createValueRequestAction = [this]()
     {
-        this->endpoint->queueToReceive(createCreateResponseMessage(0, protocol::CreateResponse::Response::OK,
+        this->endpoint->queueToReceive(createCreateResponseMessage(0, protocol_x::CreateResponse::Response::OK,
             protocol::Uuid(100)));
     };
 

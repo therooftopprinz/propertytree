@@ -39,41 +39,41 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Buff
 {
     logger::Logger log("CreateRequestMessageHandler");
 
-    protocol::CreateRequest request;
+    protocol_x::CreateRequest request;
     request.unpackFrom(*message);
 
-    log << logger::DEBUG << "value sz: " << (*request.data).size();
-    log << logger::DEBUG << "path: " << *request.path;
+    log << logger::DEBUG << "value sz: " << (request.data).size();
+    log << logger::DEBUG << "path: " << request.path;
     core::NodePtr parentNode;
     bool created = true;
     protocol::Uuid id = 0;
 
-    protocol::CreateResponse response;
-    response.response = protocol::CreateResponse::Response::OK;
+    protocol_x::CreateResponse response;
+    response.response = protocol_x::CreateResponse::Response::OK;
     response.uuid = id;
 
     try
     {
-        if (*request.type == protocol::PropertyType::Node)
+        if (request.type == protocol::PropertyType::Node)
         {
             log << logger::DEBUG << "Node to be created.";
-            auto node = ptree.createProperty<core::Node>(*request.path);
+            auto node = ptree.createProperty<core::Node>(request.path);
             node.second->setOwner(&clientServer);
             id = node.first;
         }
-        else if (*request.type == protocol::PropertyType::Value)
+        else if (request.type == protocol::PropertyType::Value)
         {
             log << logger::DEBUG << "Value to be created.";
-            auto val = ptree.createProperty<core::Value>(*request.path);
-            utils::printRaw((*request.data).data(), (*request.data).size());
-            val.second->setValue(*request.data);
+            auto val = ptree.createProperty<core::Value>(request.path);
+            utils::printRaw((request.data).data(), (request.data).size());
+            val.second->setValue(request.data);
             val.second->setOwner(&clientServer);
             id = val.first;
         }
-        else if (*request.type == protocol::PropertyType::Rpc)
+        else if (request.type == protocol::PropertyType::Rpc)
         {
             log << logger::DEBUG << "Rpc to be created.";
-            auto val = ptree.createProperty<core::Rpc>(*request.path);
+            auto val = ptree.createProperty<core::Rpc>(request.path);
             id = val.first;
             std::shared_ptr<RcpHandler> rcphandler = std::make_shared<RcpHandler>(cs, id);
             using std::placeholders::_1;
@@ -86,25 +86,25 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Buff
         else
         {
             log << logger::ERROR << "PropertyType Error! Rquested property type is inccorect!";
-            response.response = protocol::CreateResponse::Response::TYPE_ERROR;
+            response.response = protocol_x::CreateResponse::Response::TYPE_ERROR;
             created = false;
         }
     }
     catch (core::ObjectNotFound)
     {
-        response.response = protocol::CreateResponse::Response::PARENT_NOT_FOUND;
+        response.response = protocol_x::CreateResponse::Response::PARENT_NOT_FOUND;
         log << logger::ERROR << "Parent object not found!";;
         created = false;
     }
     catch (core::ObjectExisting)
     {
-        response.response = protocol::CreateResponse::Response::ALREADY_EXIST;
+        response.response = protocol_x::CreateResponse::Response::ALREADY_EXIST;
         log << logger::ERROR << "Already existing thrown!";
         created = false;
     }
     catch (core::MalformedPath)
     {
-        response.response = protocol::CreateResponse::Response::MALFORMED_PATH;
+        response.response = protocol_x::CreateResponse::Response::MALFORMED_PATH;
         log << logger::ERROR << "Malformed path thrown!";
         created = false;
     }
@@ -112,7 +112,7 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Buff
     if (created)
     {
         response.uuid = id;
-        monitor.notifyCreation(id, static_cast<protocol::PropertyType>(*request.type), *request.path);
+        monitor.notifyCreation(id, static_cast<protocol::PropertyType>(request.type), request.path);
     }
 
     log << logger::DEBUG << "is created: " << created;  

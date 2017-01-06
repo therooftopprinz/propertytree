@@ -54,7 +54,7 @@ struct MessageCreationHelper
     inline Buffer createCreateRequestMessage(uint32_t transactionId, Buffer valueContainer, protocol::PropertyType type,
         std::string path)
     {
-        protocol::CreateRequest createReq;
+        protocol_x::CreateRequest createReq;
         createReq.type = type;
         createReq.data = valueContainer;
         createReq.path = path;
@@ -62,10 +62,7 @@ struct MessageCreationHelper
         uint32_t sz = createReq.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::CreateRequest, sz, transactionId);
-        Buffer enbuff(createReq.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        createReq >> en;
+        Buffer enbuff = createReq.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;
@@ -155,20 +152,17 @@ struct MessageCreationHelper
         return message;
     }
 
-    inline Buffer createCreateResponseMessage(uint32_t transactionId, protocol::CreateResponse::Response response,
+    inline Buffer createCreateResponseMessage(uint32_t transactionId, protocol_x::CreateResponse::Response response,
         protocol::Uuid uuid)
     {
-        protocol::CreateResponse responseMsg;
+        protocol_x::CreateResponse responseMsg;
         responseMsg.response = response;
         responseMsg.uuid = uuid;
 
         uint32_t sz = responseMsg.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::CreateResponse , sz, transactionId);
-        Buffer enbuff(responseMsg.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        responseMsg >> en;
+        Buffer enbuff = responseMsg.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;
