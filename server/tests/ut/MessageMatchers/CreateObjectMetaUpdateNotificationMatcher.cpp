@@ -35,20 +35,20 @@ bool CreateObjectMetaUpdateNotificationMatcher::match(const void *buffer, uint32
 
     log << logger::WARNING << "Matching (" << path << ") Create MetaUpdateNotification...";
 
-    protocol::MetaUpdateNotification createMetaNotif;
-    protocol::BufferView bv(cursor, end);
+    protocol_x::MetaUpdateNotification createMetaNotif;
+    protocol_x::BufferView bv(cursor, end);
     createMetaNotif.parse(bv);
 
     utils::printRaw(cursor, size-sizeof(protocol::MessageHeader));
     utils::printRawAscii(cursor, size-sizeof(protocol::MessageHeader));
-    log << logger::WARNING << "creation len: " << createMetaNotif.creations->size();
+    log << logger::WARNING << "creation len: " << createMetaNotif.creations.get().size();
 
-    for(auto& i : *createMetaNotif.creations)
+    for(auto& i : createMetaNotif.creations.get())
     {
-        if (path == *i.path)
+        if (path == i.path)
         {
-            log << logger::WARNING << "created object: " << *i.path << " with uuid:" << *i.uuid;
-            lastMatched = *i.uuid;
+            log << logger::WARNING << "created object: " << i.path << " with uuid:" << i.uuid;
+            lastMatched = i.uuid;
             return true;
         }
     }

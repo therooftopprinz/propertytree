@@ -32,27 +32,6 @@ struct MetaCreate
     MESSAGE_FIELDS(uuid, propertyType, path);
 };
 
-struct MetaDelete
-{
-    MetaDelete()
-    {}
-
-    MetaDelete(Uuid uuid):
-        uuid(uuid)
-    {}
-
-    Simple<Uuid> uuid;
-    MESSAGE_FIELDS(uuid);
-};
-
-struct MetaUpdateNotification
-{
-    BlockArray<MetaCreate> creations;
-    BlockArray<MetaDelete> deletions;
-    MESSAGE_FIELDS(creations, deletions);
-};
-
-
 struct DeleteRequest
 {
     String path;

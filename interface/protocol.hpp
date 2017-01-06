@@ -112,6 +112,42 @@ struct CreateResponse
     MESSAGE_FIELDS_PROTOX(response, uuid);
 };
 
+struct MetaCreate
+{
+    MetaCreate()
+    {}
+
+    MetaCreate(Uuid uuid, PropertyType ptype, std::string path):
+        uuid(uuid), propertyType(ptype), path(path)
+    {}
+
+    Uuid uuid;
+    PropertyType propertyType;
+    std::string path;
+    MESSAGE_FIELDS_PROTOX(uuid, propertyType, path);
+};
+
+struct MetaDelete
+{
+    MetaDelete()
+    {}
+
+    MetaDelete(Uuid uuid):
+        uuid(uuid)
+    {}
+
+    Uuid uuid;
+    MESSAGE_FIELDS_PROTOX(uuid);
+};
+
+struct MetaUpdateNotification
+{
+    BlockArray<MetaCreate> creations;
+    BlockArray<MetaDelete> deletions;
+    MESSAGE_FIELDS_PROTOX(BLOCK creations, BLOCK deletions);
+};
+
+
 } // namespace protocol
 } // namespace ptree
 

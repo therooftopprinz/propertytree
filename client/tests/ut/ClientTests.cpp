@@ -302,8 +302,8 @@ TEST_F(ClientTests, shouldReceiveMetaUpdateNotificationAndRunHandler)
     EXPECT_CALL(*metaHandlerMock, handleCreation("/Test/Value", protocol::PropertyType::Value));
     EXPECT_CALL(*metaHandlerMock, handleDeletion(protocol::Uuid(100)));
 
-    std::list<protocol::MetaCreate> createUpdates;
-    std::list<protocol::MetaDelete> deleteUpdates;
+    std::list<protocol_x::MetaCreate> createUpdates;
+    std::list<protocol_x::MetaDelete> deleteUpdates;
     createUpdates.emplace_back(101, protocol::PropertyType::Node,"/Test");
     createUpdates.emplace_back(102, protocol::PropertyType::Value,"/Test/Value");
     deleteUpdates.emplace_back(100);

@@ -31,19 +31,19 @@ bool DeleteObjectMetaUpdateNotificationMatcher::match(const void *buffer, uint32
 
     log << logger::WARNING << "Matching (" << uuid << ") Delete MetaUpdateNotification...";
 
-    protocol::MetaUpdateNotification deleteMetaNotif;
-    protocol::BufferView bv(cursor, end);
+    protocol_x::MetaUpdateNotification deleteMetaNotif;
+    protocol_x::BufferView bv(cursor, end);
     deleteMetaNotif.parse(bv);
 
     utils::printRaw(cursor, size-sizeof(protocol::MessageHeader));
     utils::printRawAscii(cursor, size-sizeof(protocol::MessageHeader));
-    log << logger::WARNING << "deletion len:" << deleteMetaNotif.deletions->size();
+    log << logger::WARNING << "deletion len:" << deleteMetaNotif.deletions.get().size();
 
-    for(auto& i : *deleteMetaNotif.deletions)
+    for(auto& i : deleteMetaNotif.deletions.get())
     {
-        if (uuid == *i.uuid)
+        if (uuid == i.uuid)
         {
-            log << logger::WARNING << "deleted object with uuid:" << *i.uuid;
+            log << logger::WARNING << "deleted object with uuid:" << i.uuid;
             return true;
         }
     }

@@ -338,29 +338,25 @@ struct MessageCreationHelper
 
 
     inline Buffer createMetaUpdateNotificationMessage(uint32_t transactionId,
-        std::list<protocol::MetaCreate> creates, std::list<protocol::MetaDelete> deletes)
+        std::list<protocol_x::MetaCreate> creates, std::list<protocol_x::MetaDelete> deletes)
     {
-        protocol::MetaUpdateNotification notif;
+        protocol_x::MetaUpdateNotification notif;
 
         for (auto& i : creates)
         {
-            notif.creations->emplace_back(i);
+            notif.creations.get().emplace_back(i);
         }
 
         for (auto& i : deletes)
         {
-            notif.deletions->emplace_back(i);
+            notif.deletions.get().emplace_back(i);
         }
 
 
         uint32_t sz = notif.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::MetaUpdateNotification, sz, transactionId);
-        Buffer enbuff(notif.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        notif >> en;
-
+        Buffer enbuff = notif.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;

@@ -14,18 +14,18 @@ void MetaUpdateNotificationMessageHandler::handle(protocol::MessageHeaderPtr, Bu
 {
     logger::Logger log("MetaUpdateNotificationMessageHandler");
 
-    protocol::MetaUpdateNotification notif;
+    protocol_x::MetaUpdateNotification notif;
     notif.unpackFrom(*message);
 
     // Handle creates
-    for (auto& i : *notif.creations)
+    for (auto& i : notif.creations.get())
     {
-        ptreeClient.triggerMetaUpdateWatchersCreate(*i.path, i.propertyType);
+        ptreeClient.triggerMetaUpdateWatchersCreate(i.path, i.propertyType);
     }
     // Handle deletes
-    for (auto& i : *notif.deletions)
+    for (auto& i : notif.deletions.get())
     {
-        ptreeClient.triggerMetaUpdateWatchersDelete(*i.uuid);
+        ptreeClient.triggerMetaUpdateWatchersDelete(i.uuid);
     }
 }
 

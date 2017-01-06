@@ -375,16 +375,16 @@ void ClientServer::handleOutgoing()
                 log << logger::DEBUG << "Meta Notifaction available!";
                 std::lock_guard<std::mutex> sendGuard(sendLock);
 
-                protocol::MetaUpdateNotification metaUpdateNotif;
+                protocol_x::MetaUpdateNotification metaUpdateNotif;
                 for(const auto& i : metaUpdateNotification)
                 {
                     if (i.second.utype == ActionTypeAndPath::UpdateType::CREATE_OBJECT)
                     {
-                        metaUpdateNotif.creations->push_back(protocol::MetaCreate(i.first, i.second.ptype, i.second.path));
+                        metaUpdateNotif.creations.get().push_back(protocol_x::MetaCreate(i.first, i.second.ptype, i.second.path));
                     }
                     else
                     {
-                        metaUpdateNotif.deletions->push_back(protocol::MetaDelete(i.first));
+                        metaUpdateNotif.deletions.get().push_back(protocol_x::MetaDelete(i.first));
                     }
                 }
 
