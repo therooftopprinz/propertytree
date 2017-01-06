@@ -275,9 +275,9 @@ void PTreeClient::sendSetValue(ValueContainerPtr& vc)
     auto uuid = vc->getUuid();
     log << logger::DEBUG << "SEND VALUE (" << uuid << ")";
 
-    protocol::SetValueIndication indication;
+    protocol_x::SetValueIndication indication;
     indication.uuid = uuid;
-    *(indication.data) = vc->get();
+    indication.data = vc->get();
     auto tid = getTransactionId();
     messageSender(tid, protocol::MessageType::SetValueIndication, indication);
 }

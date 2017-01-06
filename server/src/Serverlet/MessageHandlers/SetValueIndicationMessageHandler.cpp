@@ -18,19 +18,19 @@ void SetValueIndicationMessageHandler::handle(protocol::MessageHeaderPtr header,
 {
     logger::Logger log("SetValueIndication");
 
-    protocol::SetValueIndication request;
+    protocol_x::SetValueIndication request;
     request.unpackFrom(*message);
 
-    log << logger::DEBUG << "Setting value of (" << *request.uuid << ") with size " << request.data->size();
-    utils::printRaw(request.data->data(), request.data->size());
+    log << logger::DEBUG << "Setting value of (" << request.uuid << ") with size " << request.data.size();
+    utils::printRaw(request.data.data(), request.data.size());
     try
     {
-        core::ValuePtr value = ptree.getPropertyByUuid<core::Value>(*request.uuid);
-        value->setValue(request.data->data(), request.data->size());        
+        core::ValuePtr value = ptree.getPropertyByUuid<core::Value>(request.uuid);
+        value->setValue(request.data.data(), request.data.size());        
     }
     catch (core::ObjectNotFound)
     {
-        log << logger::ERROR << "Object not found! Will not send any reply! Object uuid: " << *request.uuid;
+        log << logger::ERROR << "Object not found! Will not send any reply! Object uuid: " << request.uuid;
     }
 }
 

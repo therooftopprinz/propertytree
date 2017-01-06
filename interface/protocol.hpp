@@ -160,6 +160,13 @@ struct DeleteResponse
     MESSAGE_FIELDS_PROTOX(response);
 };
 
+struct SetValueIndication
+{
+    Uuid uuid;
+    std::vector<uint8_t> data;
+    MESSAGE_FIELDS_PROTOX(uuid, data);
+};
+
 } // namespace protocol
 } // namespace ptree
 

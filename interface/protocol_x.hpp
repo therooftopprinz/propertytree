@@ -32,13 +32,6 @@ struct MetaCreate
     MESSAGE_FIELDS(uuid, propertyType, path);
 };
 
-struct SetValueIndication
-{
-    Simple<Uuid> uuid;
-    BufferBlock data;
-    MESSAGE_FIELDS(uuid, data);
-};
-
 struct SubscribePropertyUpdateRequest
 {
     Simple<Uuid> uuid;

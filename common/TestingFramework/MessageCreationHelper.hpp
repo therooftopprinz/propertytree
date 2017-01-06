@@ -84,16 +84,13 @@ struct MessageCreationHelper
 
     inline Buffer createSetValueIndicationMessage(uint32_t transactionId, protocol::Uuid uuid, Buffer value)
     {
-        protocol::SetValueIndication setval;
+        protocol_x::SetValueIndication setval;
         setval.uuid = uuid;
         setval.data = value;
         uint32_t sz = setval.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::SetValueIndication, sz, transactionId);
-        Buffer enbuff(setval.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        setval >> en;
+        Buffer enbuff = setval.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;
