@@ -311,7 +311,7 @@ void ClientServer::notifyDeletion(uint32_t uuid)
 void ClientServer::notifyRpcResponse( uint32_t transactionId, Buffer&& returnValue)
 {
     log << logger::DEBUG << "notifyRpcResponse for transactionId: " << transactionId << " and cs: " << (void*)this;
-    protocol::RpcResponse response;
+    protocol_x::RpcResponse response;
     response.returnValue = std::move(returnValue);
 
     Buffer enbuff = response.getPacked();
@@ -328,7 +328,7 @@ void ClientServer::notifyRpcResponse( uint32_t transactionId, Buffer&& returnVal
 
 void ClientServer::notifyRpcRequest(protocol::Uuid uuid, uint64_t clientServerId, uint32_t transactionId, Buffer&& parameter)
 {
-    protocol::HandleRpcRequest request;
+    protocol_x::HandleRpcRequest request;
     request.callerId = clientServerId;
     request.callerTransactionId = transactionId;
     request.uuid = uuid;

@@ -49,7 +49,7 @@ protected:
     std::string msg_;
 };
 
-struct MessageBase
+struct BlockBase
 {
     virtual void generate(BufferView& data) = 0;
     virtual void parse(BufferView& data) = 0;
@@ -75,18 +75,18 @@ inline void errorOnLimit(BufferView &data, uint32_t size, std::string fn, std::s
     }
 }
 
-/***  MESSAGEBASE CODEC ***/
-inline void sizeRead(MessageBase& head, uint32_t& mCurrentSize)
+/***  BlockBase CODEC ***/
+inline void sizeRead(BlockBase& head, uint32_t& mCurrentSize)
 {
     mCurrentSize += head.size();
 }
 
-inline void encode(MessageBase& head, BufferView& mEncodeCursor)
+inline void encode(BlockBase& head, BufferView& mEncodeCursor)
 {
     head.generate(mEncodeCursor);
 }
 
-inline void decode(MessageBase& head, BufferView& mDecodeCursor)
+inline void decode(BlockBase& head, BufferView& mDecodeCursor)
 {
     head.parse(mDecodeCursor);
 }
@@ -205,7 +205,7 @@ inline void encode(std::vector<T>& values, BufferView& data)
 
 /***  BlockArray CODEC ***/
 template <typename T, typename IndexType = uint16_t>
-struct BlockArray : public MessageBase
+struct BlockArray : public BlockBase
 {
 public:
     void generate(BufferView& data)
@@ -257,7 +257,7 @@ private:
     std::vector<T> values;
 };
 
-#define BLOCK (MessageBase&)
+#define BLOCK (BlockBase&)
 
 } // namespace protocol
 } // namespace ptree

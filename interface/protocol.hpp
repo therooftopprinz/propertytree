@@ -112,7 +112,7 @@ struct CreateResponse
     MESSAGE_FIELDS_PROTOX(response, uuid);
 };
 
-struct MetaCreate
+struct MetaCreate : public BlockBase
 {
     MetaCreate()
     {}
@@ -127,7 +127,7 @@ struct MetaCreate
     MESSAGE_FIELDS_PROTOX(uuid, propertyType, path);
 };
 
-struct MetaDelete
+struct MetaDelete : public BlockBase
 {
     MetaDelete()
     {}
@@ -220,6 +220,49 @@ struct GetValueResponse
 {
     std::vector<uint8_t> data;
     MESSAGE_FIELDS_PROTOX(data);
+};
+
+struct RpcRequest
+{
+    Uuid uuid;
+    std::vector<uint8_t> parameter;
+    MESSAGE_FIELDS_PROTOX(uuid, parameter);
+};
+
+struct RpcResponse
+{
+    std::vector<uint8_t> returnValue;
+    MESSAGE_FIELDS_PROTOX(returnValue);
+};
+
+struct HandleRpcRequest
+{
+    uint64_t callerId;
+    uint32_t callerTransactionId;
+    Uuid uuid;
+    std::vector<uint8_t> parameter;
+    MESSAGE_FIELDS_PROTOX(callerId, callerTransactionId, uuid, parameter);
+};
+
+struct HandleRpcResponse
+{
+    uint64_t callerId;
+    uint32_t callerTransactionId;
+    std::vector<uint8_t> returnValue;
+    MESSAGE_FIELDS_PROTOX(callerId, callerTransactionId, returnValue);
+};
+
+
+struct GetSpecificMetaRequest
+{
+    std::string path;
+    MESSAGE_FIELDS_PROTOX(path);
+};
+
+struct GetSpecificMetaResponse
+{
+    MetaCreate meta;
+    MESSAGE_FIELDS_PROTOX(BLOCK meta);
 };
 
 

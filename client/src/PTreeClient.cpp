@@ -212,20 +212,20 @@ ValueContainerPtr PTreeClient::sendGetValue(protocol::Uuid uuid, ValueContainerP
 
 protocol::Uuid PTreeClient::fetchMetaAndAddToLocal(std::string& path)
 {
-    protocol::GetSpecificMetaRequest request;
+    protocol_x::GetSpecificMetaRequest request;
     request.path = path;
     auto tid = getTransactionId();
     messageSender(tid, protocol::MessageType::GetSpecificMetaRequest, request);
     auto tcv = addTransactionCV(tid);
     if (waitTransactionCV(tid))
     {
-        protocol::GetSpecificMetaResponse response;
+        protocol_x::GetSpecificMetaResponse response;
         response.unpackFrom(tcv->value);
-        log << logger::DEBUG << "UUID FOR " << path << " IS " << (uint32_t)*response.meta.uuid;
+        log << logger::DEBUG << "UUID FOR " << path << " IS " << (uint32_t)response.meta.uuid;
         if (response.meta.uuid != static_cast<protocol::Uuid>(-1))
         {
             addMeta(response.meta.uuid, response.meta.path, response.meta.propertyType);
-            return *response.meta.uuid;
+            return response.meta.uuid;
         }
     }
     else
@@ -237,16 +237,16 @@ protocol::Uuid PTreeClient::fetchMetaAndAddToLocal(std::string& path)
 
 std::tuple<protocol::Uuid, protocol::PropertyType> PTreeClient::fetchMeta(std::string& path)
 {
-    protocol::GetSpecificMetaRequest request;
+    protocol_x::GetSpecificMetaRequest request;
     request.path = path;
     auto tid = getTransactionId();
     messageSender(tid, protocol::MessageType::GetSpecificMetaRequest, request);
     auto tcv = addTransactionCV(tid);
     if (waitTransactionCV(tid))
     {
-        protocol::GetSpecificMetaResponse response;
+        protocol_x::GetSpecificMetaResponse response;
         response.unpackFrom(tcv->value);
-        log << logger::DEBUG << "UUID FOR " << path << " IS " << (uint32_t)*response.meta.uuid;
+        log << logger::DEBUG << "UUID FOR " << path << " IS " << (uint32_t)response.meta.uuid;
         if (response.meta.uuid != static_cast<protocol::Uuid>(-1))
         {
             return std::make_tuple(response.meta.uuid, response.meta.propertyType);

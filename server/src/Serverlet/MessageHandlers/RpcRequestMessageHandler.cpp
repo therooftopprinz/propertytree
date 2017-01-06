@@ -21,10 +21,10 @@ void RpcRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferP
 {
     logger::Logger log("RcpRequestMessageHandler");
 
-    protocol::RpcRequest request;
+    protocol_x::RpcRequest request;
     request.unpackFrom(*message);
 
-    log << logger::DEBUG << "requesting rpc for: " << *request.uuid;
+    log << logger::DEBUG << "requesting rpc for: " << request.uuid;
     try
     {
         /***
@@ -46,11 +46,11 @@ void RpcRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferP
         
         ***/
 
-        auto rpc = ptree.getPropertyByUuid<core::Rpc>(*request.uuid);
+        auto rpc = ptree.getPropertyByUuid<core::Rpc>(request.uuid);
         if (rpc)
         {
             log << logger::DEBUG << "Calling RPC object ";
-            (*rpc)((uintptr_t) cs.get(), header->transactionId, std::move(*request.parameter));
+            (*rpc)((uintptr_t) cs.get(), header->transactionId, std::move(request.parameter));
         }
         else
         {

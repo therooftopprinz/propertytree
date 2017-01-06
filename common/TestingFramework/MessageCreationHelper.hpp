@@ -184,17 +184,14 @@ struct MessageCreationHelper
 
     inline Buffer createRpcRequestMessage(uint32_t transactionId, protocol::Uuid uuid, Buffer parameter)
     {
-        protocol::RpcRequest request;
+        protocol_x::RpcRequest request;
         request.uuid = uuid;
         request.parameter = parameter;
 
         uint32_t sz = request.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::RpcRequest, sz, transactionId);
-        Buffer enbuff(request.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        request >> en;
+        Buffer enbuff = request.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;
@@ -202,7 +199,7 @@ struct MessageCreationHelper
 
     inline Buffer createHandleRpcRequestMessage(uint32_t transactionId, uint64_t callerId, uint32_t callerTransactionId, protocol::Uuid uuid, Buffer parameter)
     {
-        protocol::HandleRpcRequest request;
+        protocol_x::HandleRpcRequest request;
         request.callerId = callerId;
         request.callerTransactionId = callerTransactionId;
         request.uuid = uuid;
@@ -211,10 +208,7 @@ struct MessageCreationHelper
         uint32_t sz = request.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::HandleRpcRequest, sz, transactionId);
-        Buffer enbuff(request.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        request >> en;
+        Buffer enbuff = request.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;
@@ -222,7 +216,7 @@ struct MessageCreationHelper
 
     inline Buffer createHandleRpcResponseMessage(uint32_t transactionId, uint64_t callerId, uint32_t callerTransactionId, Buffer returnValue)
     {
-        protocol::HandleRpcResponse response;
+        protocol_x::HandleRpcResponse response;
         response.returnValue = returnValue;
         response.callerId = callerId;
         response.callerTransactionId = callerTransactionId;
@@ -230,10 +224,7 @@ struct MessageCreationHelper
         uint32_t sz = response.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::HandleRpcResponse, sz, transactionId);
-        Buffer enbuff(response.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        response >> en;
+        Buffer enbuff = response.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;
@@ -241,16 +232,13 @@ struct MessageCreationHelper
 
     inline Buffer createRpcResponseMessage(uint32_t transactionId, Buffer returnValue)
     {
-        protocol::RpcResponse response;
+        protocol_x::RpcResponse response;
         response.returnValue = returnValue;
 
         uint32_t sz = response.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::RpcResponse, sz, transactionId);
-        Buffer enbuff(response.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        response >> en;
+        Buffer enbuff =response.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;
@@ -258,35 +246,28 @@ struct MessageCreationHelper
 
     inline Buffer createGetSpecificMetaRequestMessage(uint32_t transactionId, std::string path)
     {
-        protocol::GetSpecificMetaRequest request;
+        protocol_x::GetSpecificMetaRequest request;
         request.path = path;
 
         uint32_t sz = request.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::GetSpecificMetaRequest, sz, transactionId);
-        Buffer enbuff(request.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        request >> en;
+        Buffer enbuff =request.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;
     }
 
     inline Buffer createGetSpecificMetaResponseMessage(uint32_t transactionId, protocol::Uuid uuid,
-        protocol::PropertyType ptype, std::string path)
+        protocol_x::PropertyType ptype, std::string path)
     {
-        protocol::GetSpecificMetaResponse response;
-        response.meta = protocol::MetaCreate(uuid, ptype, path);
+        protocol_x::GetSpecificMetaResponse response;
+        response.meta = protocol_x::MetaCreate(uuid, ptype, path);
 
         uint32_t sz = response.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::GetSpecificMetaResponse, sz, transactionId);
-        Buffer enbuff(response.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        response >> en;
-
+        Buffer enbuff = response.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;

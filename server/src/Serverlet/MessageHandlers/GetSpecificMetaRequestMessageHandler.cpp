@@ -19,19 +19,19 @@ void GetSpecificMetaRequestMessageHandler::handle(protocol::MessageHeaderPtr hea
 {
     logger::Logger log("GetSpecificMetaRequestMessageHandler");
 
-    protocol::GetSpecificMetaRequest request;
+    protocol_x::GetSpecificMetaRequest request;
     request.unpackFrom(*message);
 
-    protocol::GetSpecificMetaResponse response;
+    protocol_x::GetSpecificMetaResponse response;
 
-    log << logger::DEBUG << "Requesting for: " << *request.path;
+    log << logger::DEBUG << "Requesting for: " << request.path;
 
     protocol::Uuid uuid = static_cast<protocol::Uuid>(-1);
     protocol::PropertyType ptype = static_cast<protocol::PropertyType>(-1);
 
     try
     {
-        auto prop = ptree.getPropertyByPath<core::IProperty>(*request.path);
+        auto prop = ptree.getPropertyByPath<core::IProperty>(request.path);
 
         if (prop)
         {
@@ -53,14 +53,14 @@ void GetSpecificMetaRequestMessageHandler::handle(protocol::MessageHeaderPtr hea
     }
     catch (core::ObjectNotFound)
     {
-        log << logger::ERROR << "Object " << *request.path << " not found.";
+        log << logger::ERROR << "Object " << request.path << " not found.";
     }
     catch (core::MalformedPath)
     {
-        log << logger::ERROR << "Malformed path " << *request.path << " !";
+        log << logger::ERROR << "Malformed path " << request.path << " !";
     }
 
-    response.meta = protocol::MetaCreate(uuid, ptype, *request.path);
+    response.meta = protocol_x::MetaCreate(uuid, ptype, request.path);
 
     messageSender(header->transactionId, protocol::MessageType::GetSpecificMetaResponse, response);
 }

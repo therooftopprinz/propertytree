@@ -299,7 +299,7 @@ private:
     T value;
 };
 
-struct MessageBase
+struct BlockBase
 {
     virtual void generate(BufferView& data);
     virtual void parse(BufferView& cur);
