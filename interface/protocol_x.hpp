@@ -32,19 +32,6 @@ struct MetaCreate
     MESSAGE_FIELDS(uuid, propertyType, path);
 };
 
-struct SubscribePropertyUpdateRequest
-{
-    Simple<Uuid> uuid;
-    MESSAGE_FIELDS(uuid);
-};
-
-struct SubscribePropertyUpdateResponse
-{
-    enum class Response : uint8_t {OK, UUID_NOT_FOUND, NOT_A_VALUE};
-    Simple<Response> response;
-    MESSAGE_FIELDS(response);
-};
-
 struct PropertyUpdateNotificationEntry
 {
     PropertyUpdateNotificationEntry(){}

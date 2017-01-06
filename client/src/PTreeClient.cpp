@@ -374,16 +374,16 @@ bool PTreeClient::createNode(std::string path)
 bool PTreeClient::enableAutoUpdate(ValueContainerPtr& vc)
 {
     auto uuid = vc->getUuid();
-    protocol::SubscribePropertyUpdateRequest request;
+    protocol_x::SubscribePropertyUpdateRequest request;
     request.uuid = uuid;
     auto tid = getTransactionId();
     messageSender(tid, protocol::MessageType::SubscribePropertyUpdateRequest, request);
     auto tcv = addTransactionCV(tid);
     if (waitTransactionCV(tid))
     {
-        protocol::SubscribePropertyUpdateResponse response;
+        protocol_x::SubscribePropertyUpdateResponse response;
         response.unpackFrom(tcv->value);
-        if ( *response.response  == protocol::SubscribePropertyUpdateResponse::Response::OK)
+        if (response.response  == protocol_x::SubscribePropertyUpdateResponse::Response::OK)
         {
             vc->setAutoUpdate(true);
             log << logger::DEBUG << "SUBSCRIBED!! " << uuid;

@@ -55,7 +55,7 @@ struct ClientServerTests : public common::MessageCreationHelper, public ::testin
 
         using protocol_x::CreateResponse;
         using protocol_x::DeleteResponse;
-        using protocol::SubscribePropertyUpdateResponse;
+        using protocol_x::SubscribePropertyUpdateResponse;
         using protocol::UnsubscribePropertyUpdateResponse;
         using protocol::MessageType;
 

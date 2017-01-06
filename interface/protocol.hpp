@@ -167,6 +167,20 @@ struct SetValueIndication
     MESSAGE_FIELDS_PROTOX(uuid, data);
 };
 
+struct SubscribePropertyUpdateRequest
+{
+    Uuid uuid;
+    MESSAGE_FIELDS_PROTOX(uuid);
+};
+
+struct SubscribePropertyUpdateResponse
+{
+    enum class Response : uint8_t {OK, UUID_NOT_FOUND, NOT_A_VALUE};
+    Response response;
+    MESSAGE_FIELDS_PROTOX(response);
+};
+
+
 } // namespace protocol
 } // namespace ptree
 

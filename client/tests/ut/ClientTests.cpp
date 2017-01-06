@@ -61,10 +61,10 @@ struct ClientTests : public common::MessageCreationHelper, public ::testing::Tes
     void subscribeUpdateNotificatioRequestActionFn()
     {
         this->endpoint->queueToReceive(createCommonResponse<
-            protocol::SubscribePropertyUpdateResponse,
+            protocol_x::SubscribePropertyUpdateResponse,
             protocol::MessageType::SubscribePropertyUpdateResponse,
-            protocol::SubscribePropertyUpdateResponse::Response>
-            (2, protocol::SubscribePropertyUpdateResponse::Response::OK));
+            protocol_x::SubscribePropertyUpdateResponse::Response>
+            (2, protocol_x::SubscribePropertyUpdateResponse::Response::OK));
     };
 
     std::function<void()> getSpecificMetaRequestAction = std::bind(&ClientTests::getSpecificMetaRequestActionFn, this);

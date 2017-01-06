@@ -98,15 +98,12 @@ struct MessageCreationHelper
 
     inline Buffer createSubscribePropertyUpdateRequestMessage(uint32_t transactionId, protocol::Uuid uuid)
     {
-        protocol::SubscribePropertyUpdateRequest request;
+        protocol_x::SubscribePropertyUpdateRequest request;
         request.uuid = uuid;
         uint32_t sz = request.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::SubscribePropertyUpdateRequest, sz, transactionId);
-        Buffer enbuff(request.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        request >> en;
+        Buffer enbuff = request.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;
