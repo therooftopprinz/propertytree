@@ -111,15 +111,12 @@ struct MessageCreationHelper
 
     inline Buffer createUnsubscribePropertyUpdateRequestMessage(uint32_t transactionId, protocol::Uuid uuid)
     {
-        protocol::UnsubscribePropertyUpdateRequest request;
+        protocol_x::UnsubscribePropertyUpdateRequest request;
         request.uuid = uuid;
         uint32_t sz = request.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::UnsubscribePropertyUpdateRequest, sz, transactionId);
-        Buffer enbuff(request.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        request >> en;
+        Buffer enbuff = request.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;
@@ -159,16 +156,13 @@ struct MessageCreationHelper
 
     inline Buffer createGetValueRequestMessage(uint32_t transactionId, protocol::Uuid uuid)
     {
-        protocol::GetValueRequest request;
+        protocol_x::GetValueRequest request;
         request.uuid = uuid;
 
         uint32_t sz = request.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::GetValueRequest, sz, transactionId);
-        Buffer enbuff(request.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        request >> en;
+        Buffer enbuff = request.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;
@@ -176,16 +170,13 @@ struct MessageCreationHelper
 
     inline Buffer createGetValueResponseMessage(uint32_t transactionId, Buffer value)
     {
-        protocol::GetValueResponse response;
+        protocol_x::GetValueResponse response;
         response.data = value;
 
         uint32_t sz = response.size() + sizeof(protocol::MessageHeader);
 
         Buffer message = createHeader(protocol::MessageType::GetValueResponse, sz, transactionId);
-        Buffer enbuff(response.size());
-        protocol::BufferView enbuffv(enbuff);
-        protocol::Encoder en(enbuffv);
-        response >> en;
+        Buffer enbuff = response.getPacked();
         message.insert(message.end(), enbuff.begin(), enbuff.end());
 
         return message;

@@ -190,11 +190,36 @@ struct PropertyUpdateNotificationEntry
     MESSAGE_FIELDS_PROTOX(uuid, data);
 };
 
-
 struct PropertyUpdateNotification
 {
     BlockArray<PropertyUpdateNotificationEntry> propertyUpdateNotifications;
     MESSAGE_FIELDS_PROTOX(propertyUpdateNotifications);
+};
+
+
+struct UnsubscribePropertyUpdateRequest
+{
+    Uuid uuid;
+    MESSAGE_FIELDS_PROTOX(uuid);
+};
+
+struct UnsubscribePropertyUpdateResponse
+{
+    enum class Response : uint8_t {OK, NOT_SUBSCRIBED, NOT_A_VALUE, UUID_NOT_FOUND};
+    Response response;
+    MESSAGE_FIELDS_PROTOX(response);
+};
+
+struct GetValueRequest
+{
+    Uuid uuid;
+    MESSAGE_FIELDS_PROTOX(uuid);
+};
+
+struct GetValueResponse
+{
+    std::vector<uint8_t> data;
+    MESSAGE_FIELDS_PROTOX(data);
 };
 
 

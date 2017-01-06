@@ -252,10 +252,10 @@ TEST_F(ClientTests, shouldUnsubscribe)
     std::function<void()> unsubscribeUpdateNotificatioRequestAction = [this]()
     {
         this->endpoint->queueToReceive(createCommonResponse<
-            protocol::UnsubscribePropertyUpdateResponse,
+            protocol_x::UnsubscribePropertyUpdateResponse,
             protocol::MessageType::UnsubscribePropertyUpdateResponse,
-            protocol::UnsubscribePropertyUpdateResponse::Response>
-            (3, protocol::UnsubscribePropertyUpdateResponse::Response::OK));
+            protocol_x::UnsubscribePropertyUpdateResponse::Response>
+            (3, protocol_x::UnsubscribePropertyUpdateResponse::Response::OK));
     };
 
     std::function<void()> getValueRequestAction2 = [this, &newValue]()

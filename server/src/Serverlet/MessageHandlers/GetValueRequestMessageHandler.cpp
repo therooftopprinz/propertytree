@@ -19,15 +19,15 @@ void GetValueRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Bu
 {
     logger::Logger log("GetValueRequestMessageHandler");
 
-    protocol::GetValueRequest request;
+    protocol_x::GetValueRequest request;
     request.unpackFrom(*message);
 
-    protocol::GetValueResponse response;
+    protocol_x::GetValueResponse response;
 
-    log << logger::DEBUG << "Requesting value for: " << *request.uuid;
+    log << logger::DEBUG << "Requesting value for: " << request.uuid;
     try
     {
-        auto value = ptree.getPropertyByUuid<core::Value>(*request.uuid);
+        auto value = ptree.getPropertyByUuid<core::Value>(request.uuid);
         if (value)
         {
             response.data = value->getValue();
@@ -39,7 +39,7 @@ void GetValueRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Bu
     }
     catch (core::ObjectNotFound)
     {
-        log << logger::ERROR << "Object(uuid)" << *request.uuid << " not found.";
+        log << logger::ERROR << "Object(uuid)" << request.uuid << " not found.";
     }
 
     messageSender(header->transactionId, protocol::MessageType::GetValueResponse, response);

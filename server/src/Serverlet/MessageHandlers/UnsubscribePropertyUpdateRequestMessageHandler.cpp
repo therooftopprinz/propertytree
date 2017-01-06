@@ -19,35 +19,35 @@ void UnsubscribePropertyUpdateRequestMessageHandler::handle(protocol::MessageHea
 {
     logger::Logger log("UnsubscribePropertyUpdateRequestHandler");
 
-    protocol::UnsubscribePropertyUpdateRequest request;
+    protocol_x::UnsubscribePropertyUpdateRequest request;
     request.unpackFrom(*message);
 
-    protocol::UnsubscribePropertyUpdateResponse response;
-    response.response = protocol::UnsubscribePropertyUpdateResponse::Response::OK;
+    protocol_x::UnsubscribePropertyUpdateResponse response;
+    response.response = protocol_x::UnsubscribePropertyUpdateResponse::Response::OK;
 
-    log << logger::DEBUG << "Unsubscribing for: " << *request.uuid;
+    log << logger::DEBUG << "Unsubscribing for: " << request.uuid;
     try
     {
-        auto value = ptree.getPropertyByUuid<core::Value>(*request.uuid);
+        auto value = ptree.getPropertyByUuid<core::Value>(request.uuid);
         if (value)
         {
             auto dr = value->removeWatcher(&clientServer);
             if (!dr)
             {
-                response.response = protocol::UnsubscribePropertyUpdateResponse::Response::NOT_SUBSCRIBED;
+                response.response = protocol_x::UnsubscribePropertyUpdateResponse::Response::NOT_SUBSCRIBED;
             }
         }
         else
         {
             log << logger::ERROR << "Uuid not a value!";
-            response.response = protocol::UnsubscribePropertyUpdateResponse::Response::UUID_NOT_FOUND;
+            response.response = protocol_x::UnsubscribePropertyUpdateResponse::Response::UUID_NOT_FOUND;
         }
 
     }
     catch (core::ObjectNotFound)
     {
         log << logger::ERROR << "Uuid not found!";
-        response.response = protocol::UnsubscribePropertyUpdateResponse::Response::UUID_NOT_FOUND;
+        response.response = protocol_x::UnsubscribePropertyUpdateResponse::Response::UUID_NOT_FOUND;
     }
     messageSender(header->transactionId, protocol::MessageType::UnsubscribePropertyUpdateResponse, response);
 }

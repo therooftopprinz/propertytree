@@ -32,32 +32,6 @@ struct MetaCreate
     MESSAGE_FIELDS(uuid, propertyType, path);
 };
 
-struct UnsubscribePropertyUpdateRequest
-{
-    Simple<Uuid> uuid;
-    MESSAGE_FIELDS(uuid);
-};
-
-struct UnsubscribePropertyUpdateResponse
-{
-    enum class Response : uint8_t {OK, NOT_SUBSCRIBED, NOT_A_VALUE, UUID_NOT_FOUND};
-    Simple<Response> response;
-    MESSAGE_FIELDS(response);
-};
-
-struct GetValueRequest
-{
-    Simple<Uuid> uuid;
-    MESSAGE_FIELDS(uuid);
-};
-
-struct GetValueResponse
-{
-    BufferBlock data;
-    MESSAGE_FIELDS(data);
-};
-
-
 struct RpcRequest
 {
     Simple<Uuid> uuid;

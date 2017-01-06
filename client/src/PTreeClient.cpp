@@ -174,7 +174,7 @@ ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
 
 ValueContainerPtr PTreeClient::sendGetValue(protocol::Uuid uuid, ValueContainerPtr& vc)
 {
-    protocol::GetValueRequest request;
+    protocol_x::GetValueRequest request;
     request.uuid = uuid;
     auto tid = getTransactionId();
     messageSender(tid, protocol::MessageType::GetValueRequest, request);
@@ -182,18 +182,18 @@ ValueContainerPtr PTreeClient::sendGetValue(protocol::Uuid uuid, ValueContainerP
 
     if (waitTransactionCV(tid))
     {
-        protocol::GetValueResponse response;
+        protocol_x::GetValueResponse response;
         response.unpackFrom(tcv->value);
         if (response.data.size())
         {
             if (!vc)
             {
-                vc = std::make_shared<ValueContainer>(uuid, std::move(*response.data), false);
+                vc = std::make_shared<ValueContainer>(uuid, std::move(response.data), false);
                 insertLocalValue(uuid, vc);
             }
             else
             {
-                vc->updateValue(std::move(*response.data), false);
+                vc->updateValue(std::move(response.data), false);
             }
 
             return vc;
@@ -404,16 +404,16 @@ bool PTreeClient::enableAutoUpdate(ValueContainerPtr& vc)
 bool PTreeClient::disableAutoUpdate(ValueContainerPtr& vc)
 {
     auto uuid = vc->getUuid();
-    protocol::UnsubscribePropertyUpdateRequest request;
+    protocol_x::UnsubscribePropertyUpdateRequest request;
     request.uuid = uuid;
     auto tid = getTransactionId();
     messageSender(tid, protocol::MessageType::UnsubscribePropertyUpdateRequest, request);
     auto tcv = addTransactionCV(tid);
     if (waitTransactionCV(tid))
     {
-        protocol::UnsubscribePropertyUpdateResponse response;
+        protocol_x::UnsubscribePropertyUpdateResponse response;
         response.unpackFrom(tcv->value);
-        if ( *response.response  == protocol::UnsubscribePropertyUpdateResponse::Response::OK)
+        if (response.response  == protocol_x::UnsubscribePropertyUpdateResponse::Response::OK)
         {
             vc->setAutoUpdate(false);
             log << logger::DEBUG << "UNSUBSCRIBED!! " << uuid;
