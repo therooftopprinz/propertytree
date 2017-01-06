@@ -8,7 +8,7 @@
 
 namespace ptree
 {
-namespace protocol_x
+namespace protocol
 {
 
 using Buffer = std::vector<uint8_t>;

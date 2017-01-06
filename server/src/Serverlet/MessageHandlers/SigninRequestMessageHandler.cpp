@@ -16,7 +16,7 @@ inline void SigninRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
 {
     logger::Logger log("SigninRequestMessageHandler");
 
-    protocol_x::SigninRequest request;
+    protocol::SigninRequest request;
     request.unpackFrom(*message);
 
     bool supported = true;
@@ -30,7 +30,7 @@ inline void SigninRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
     clientServer.setUpdateInterval(request.refreshRate);
     clientServer.clientSigned();
 
-    protocol_x::SigninResponse response;
+    protocol::SigninResponse response;
     response.version = supported ? request.version : 0;
     // if (supported)
     // {

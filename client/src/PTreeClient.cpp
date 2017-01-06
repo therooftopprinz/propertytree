@@ -90,14 +90,14 @@ PTreeClient::~PTreeClient()
 
 void PTreeClient::signIn()
 {
-    std::list<protocol_x::SigninRequest::FeatureFlag> features;
-    features.push_back(protocol_x::SigninRequest::FeatureFlag::ENABLE_METAUPDATE);
+    std::list<protocol::SigninRequest::FeatureFlag> features;
+    features.push_back(protocol::SigninRequest::FeatureFlag::ENABLE_METAUPDATE);
     sendSignIn(300, features);
 }
 
-void PTreeClient::sendSignIn(int refreshRate, const std::list<protocol_x::SigninRequest::FeatureFlag> features)
+void PTreeClient::sendSignIn(int refreshRate, const std::list<protocol::SigninRequest::FeatureFlag> features)
 {
-    protocol_x::SigninRequest signIn;
+    protocol::SigninRequest signIn;
     signIn.version = 1;
     signIn.refreshRate = refreshRate;
     for (const auto& i : features)
@@ -111,7 +111,7 @@ void PTreeClient::sendSignIn(int refreshRate, const std::list<protocol_x::Signin
     {
         log << logger::DEBUG << "signin response received.";
 
-        protocol_x::SigninResponse response;
+        protocol::SigninResponse response;
         response.unpackFrom(tcv->value);
     }
     else
@@ -142,7 +142,7 @@ void PTreeClient::insertLocalValue(protocol::Uuid uuid, ValueContainerPtr& value
 
 ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
 {
-    protocol_x::CreateRequest request;
+    protocol::CreateRequest request;
     request.path = path;
     request.data = value;
     request.type = protocol::PropertyType::Value;
@@ -151,9 +151,9 @@ ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
     auto tcv = addTransactionCV(tid);
     if (waitTransactionCV(tid))
     {
-        protocol_x::CreateResponse response;
+        protocol::CreateResponse response;
         response.unpackFrom(tcv->value);
-        if ( response.response  == protocol_x::CreateResponse::Response::OK)
+        if ( response.response  == protocol::CreateResponse::Response::OK)
         {
             log << logger::DEBUG << "VALUE CREATED WITH UUID " << response.uuid;
             auto vc = std::make_shared<ValueContainer>(response.uuid, value, true);
@@ -174,7 +174,7 @@ ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
 
 ValueContainerPtr PTreeClient::sendGetValue(protocol::Uuid uuid, ValueContainerPtr& vc)
 {
-    protocol_x::GetValueRequest request;
+    protocol::GetValueRequest request;
     request.uuid = uuid;
     auto tid = getTransactionId();
     messageSender(tid, protocol::MessageType::GetValueRequest, request);
@@ -182,7 +182,7 @@ ValueContainerPtr PTreeClient::sendGetValue(protocol::Uuid uuid, ValueContainerP
 
     if (waitTransactionCV(tid))
     {
-        protocol_x::GetValueResponse response;
+        protocol::GetValueResponse response;
         response.unpackFrom(tcv->value);
         if (response.data.size())
         {
@@ -212,14 +212,14 @@ ValueContainerPtr PTreeClient::sendGetValue(protocol::Uuid uuid, ValueContainerP
 
 protocol::Uuid PTreeClient::fetchMetaAndAddToLocal(std::string& path)
 {
-    protocol_x::GetSpecificMetaRequest request;
+    protocol::GetSpecificMetaRequest request;
     request.path = path;
     auto tid = getTransactionId();
     messageSender(tid, protocol::MessageType::GetSpecificMetaRequest, request);
     auto tcv = addTransactionCV(tid);
     if (waitTransactionCV(tid))
     {
-        protocol_x::GetSpecificMetaResponse response;
+        protocol::GetSpecificMetaResponse response;
         response.unpackFrom(tcv->value);
         log << logger::DEBUG << "UUID FOR " << path << " IS " << (uint32_t)response.meta.uuid;
         if (response.meta.uuid != static_cast<protocol::Uuid>(-1))
@@ -237,14 +237,14 @@ protocol::Uuid PTreeClient::fetchMetaAndAddToLocal(std::string& path)
 
 std::tuple<protocol::Uuid, protocol::PropertyType> PTreeClient::fetchMeta(std::string& path)
 {
-    protocol_x::GetSpecificMetaRequest request;
+    protocol::GetSpecificMetaRequest request;
     request.path = path;
     auto tid = getTransactionId();
     messageSender(tid, protocol::MessageType::GetSpecificMetaRequest, request);
     auto tcv = addTransactionCV(tid);
     if (waitTransactionCV(tid))
     {
-        protocol_x::GetSpecificMetaResponse response;
+        protocol::GetSpecificMetaResponse response;
         response.unpackFrom(tcv->value);
         log << logger::DEBUG << "UUID FOR " << path << " IS " << (uint32_t)response.meta.uuid;
         if (response.meta.uuid != static_cast<protocol::Uuid>(-1))
@@ -275,7 +275,7 @@ void PTreeClient::sendSetValue(ValueContainerPtr& vc)
     auto uuid = vc->getUuid();
     log << logger::DEBUG << "SEND VALUE (" << uuid << ")";
 
-    protocol_x::SetValueIndication indication;
+    protocol::SetValueIndication indication;
     indication.uuid = uuid;
     indication.data = vc->get();
     auto tid = getTransactionId();
@@ -344,7 +344,7 @@ void PTreeClient::triggerMetaUpdateWatchersDelete(protocol::Uuid uuid)
 
 bool PTreeClient::createNode(std::string path)
 {
-    protocol_x::CreateRequest request;
+    protocol::CreateRequest request;
     request.path = path;
     request.type = protocol::PropertyType::Node;
     auto tid = getTransactionId();
@@ -352,9 +352,9 @@ bool PTreeClient::createNode(std::string path)
     auto tcv = addTransactionCV(tid);
     if (waitTransactionCV(tid))
     {
-        protocol_x::CreateResponse response;
+        protocol::CreateResponse response;
         response.unpackFrom(tcv->value);
-        if (response.response  == protocol_x::CreateResponse::Response::OK)
+        if (response.response  == protocol::CreateResponse::Response::OK)
         {
             log << logger::DEBUG << "NODE CREATED WITH UUID " << response.uuid;
             return true;
@@ -374,16 +374,16 @@ bool PTreeClient::createNode(std::string path)
 bool PTreeClient::enableAutoUpdate(ValueContainerPtr& vc)
 {
     auto uuid = vc->getUuid();
-    protocol_x::SubscribePropertyUpdateRequest request;
+    protocol::SubscribePropertyUpdateRequest request;
     request.uuid = uuid;
     auto tid = getTransactionId();
     messageSender(tid, protocol::MessageType::SubscribePropertyUpdateRequest, request);
     auto tcv = addTransactionCV(tid);
     if (waitTransactionCV(tid))
     {
-        protocol_x::SubscribePropertyUpdateResponse response;
+        protocol::SubscribePropertyUpdateResponse response;
         response.unpackFrom(tcv->value);
-        if (response.response  == protocol_x::SubscribePropertyUpdateResponse::Response::OK)
+        if (response.response  == protocol::SubscribePropertyUpdateResponse::Response::OK)
         {
             vc->setAutoUpdate(true);
             log << logger::DEBUG << "SUBSCRIBED!! " << uuid;
@@ -404,16 +404,16 @@ bool PTreeClient::enableAutoUpdate(ValueContainerPtr& vc)
 bool PTreeClient::disableAutoUpdate(ValueContainerPtr& vc)
 {
     auto uuid = vc->getUuid();
-    protocol_x::UnsubscribePropertyUpdateRequest request;
+    protocol::UnsubscribePropertyUpdateRequest request;
     request.uuid = uuid;
     auto tid = getTransactionId();
     messageSender(tid, protocol::MessageType::UnsubscribePropertyUpdateRequest, request);
     auto tcv = addTransactionCV(tid);
     if (waitTransactionCV(tid))
     {
-        protocol_x::UnsubscribePropertyUpdateResponse response;
+        protocol::UnsubscribePropertyUpdateResponse response;
         response.unpackFrom(tcv->value);
-        if (response.response  == protocol_x::UnsubscribePropertyUpdateResponse::Response::OK)
+        if (response.response  == protocol::UnsubscribePropertyUpdateResponse::Response::OK)
         {
             vc->setAutoUpdate(false);
             log << logger::DEBUG << "UNSUBSCRIBED!! " << uuid;

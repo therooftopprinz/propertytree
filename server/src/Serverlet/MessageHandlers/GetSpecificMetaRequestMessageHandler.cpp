@@ -19,10 +19,10 @@ void GetSpecificMetaRequestMessageHandler::handle(protocol::MessageHeaderPtr hea
 {
     logger::Logger log("GetSpecificMetaRequestMessageHandler");
 
-    protocol_x::GetSpecificMetaRequest request;
+    protocol::GetSpecificMetaRequest request;
     request.unpackFrom(*message);
 
-    protocol_x::GetSpecificMetaResponse response;
+    protocol::GetSpecificMetaResponse response;
 
     log << logger::DEBUG << "Requesting for: " << request.path;
 
@@ -60,7 +60,7 @@ void GetSpecificMetaRequestMessageHandler::handle(protocol::MessageHeaderPtr hea
         log << logger::ERROR << "Malformed path " << request.path << " !";
     }
 
-    response.meta = protocol_x::MetaCreate(uuid, ptype, request.path);
+    response.meta = protocol::MetaCreate(uuid, ptype, request.path);
 
     messageSender(header->transactionId, protocol::MessageType::GetSpecificMetaResponse, response);
 }

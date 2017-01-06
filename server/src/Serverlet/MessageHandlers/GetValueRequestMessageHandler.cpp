@@ -19,10 +19,10 @@ void GetValueRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Bu
 {
     logger::Logger log("GetValueRequestMessageHandler");
 
-    protocol_x::GetValueRequest request;
+    protocol::GetValueRequest request;
     request.unpackFrom(*message);
 
-    protocol_x::GetValueResponse response;
+    protocol::GetValueResponse response;
 
     log << logger::DEBUG << "Requesting value for: " << request.uuid;
     try

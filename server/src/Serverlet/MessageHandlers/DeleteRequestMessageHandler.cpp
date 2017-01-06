@@ -16,15 +16,15 @@ inline void DeleteRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
 {
     logger::Logger log("DeleteRequestMessageHandler");
 
-    protocol_x::DeleteRequest request;
+    protocol::DeleteRequest request;
     request.unpackFrom(*message);
 
     log << logger::DEBUG << "path: " << request.path;
     bool deleted = true;
 
     protocol::Uuid uuid = static_cast<uint32_t>(-1);
-    protocol_x::DeleteResponse response;
-    response.response = protocol_x::DeleteResponse::Response::OK;
+    protocol::DeleteResponse response;
+    response.response = protocol::DeleteResponse::Response::OK;
 
     try
     {
@@ -32,7 +32,7 @@ inline void DeleteRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
         auto property = ptree.getPropertyByPath<core::IProperty>(request.path);
         if (property->getOwner() != &clientServer)
         {
-            response.response = protocol_x::DeleteResponse::Response::NOT_PERMITTED;
+            response.response = protocol::DeleteResponse::Response::NOT_PERMITTED;
             log << logger::ERROR << "Permission error: " << request.path;
         }
         else
@@ -44,19 +44,19 @@ inline void DeleteRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
     catch (core::ObjectNotFound)
     {
         deleted = false;
-        response.response = protocol_x::DeleteResponse::Response::OBJECT_NOT_FOUND;
+        response.response = protocol::DeleteResponse::Response::OBJECT_NOT_FOUND;
         log << logger::ERROR << "Object not found: " << request.path;
     }
     catch (core::NotEmpty)
     {
         deleted = false;
-        response.response = protocol_x::DeleteResponse::Response::NOT_EMPTY;
+        response.response = protocol::DeleteResponse::Response::NOT_EMPTY;
         log << logger::ERROR << "Node not empty: " << request.path;
     }
     catch (core::MalformedPath)
     {
         deleted = false;
-        response.response = protocol_x::DeleteResponse::Response::MALFORMED_PATH;
+        response.response = protocol::DeleteResponse::Response::MALFORMED_PATH;
         log << logger::ERROR << "Malformed path thrown!";
     }
     if (deleted)

@@ -61,10 +61,10 @@ struct ClientTests : public common::MessageCreationHelper, public ::testing::Tes
     void subscribeUpdateNotificatioRequestActionFn()
     {
         this->endpoint->queueToReceive(createCommonResponse<
-            protocol_x::SubscribePropertyUpdateResponse,
+            protocol::SubscribePropertyUpdateResponse,
             protocol::MessageType::SubscribePropertyUpdateResponse,
-            protocol_x::SubscribePropertyUpdateResponse::Response>
-            (2, protocol_x::SubscribePropertyUpdateResponse::Response::OK));
+            protocol::SubscribePropertyUpdateResponse::Response>
+            (2, protocol::SubscribePropertyUpdateResponse::Response::OK));
     };
 
     std::function<void()> getSpecificMetaRequestAction = std::bind(&ClientTests::getSpecificMetaRequestActionFn, this);
@@ -106,7 +106,7 @@ TEST_F(ClientTests, shouldCreateNode)
 
     std::function<void()> createValueRequestAction = [this]()
     {
-        this->endpoint->queueToReceive(createCreateResponseMessage(0, protocol_x::CreateResponse::Response::OK,
+        this->endpoint->queueToReceive(createCreateResponseMessage(0, protocol::CreateResponse::Response::OK,
             protocol::Uuid(100)));
     };
 
@@ -129,7 +129,7 @@ TEST_F(ClientTests, shouldCreateValue)
 
     std::function<void()> createValueRequestAction = [this]()
     {
-        this->endpoint->queueToReceive(createCreateResponseMessage(0, protocol_x::CreateResponse::Response::OK,
+        this->endpoint->queueToReceive(createCreateResponseMessage(0, protocol::CreateResponse::Response::OK,
             protocol::Uuid(100)));
     };
 
@@ -197,7 +197,7 @@ TEST_F(ClientTests, shouldReceiveUpdateNotification)
     EXPECT_EQ(value->get<uint32_t>(), 42u);
     ptc->enableAutoUpdate(value);
 
-    std::list<protocol_x::PropertyUpdateNotificationEntry> updates;
+    std::list<protocol::PropertyUpdateNotificationEntry> updates;
     updates.emplace_back(100, newValue);
     auto updateNotifMsg = createPropertyUpdateNotificationMessage(3, updates);
     this->endpoint->queueToReceive(updateNotifMsg);
@@ -234,7 +234,7 @@ TEST_F(ClientTests, shouldReceiveUpdateNotificationAndRunHandler)
     EXPECT_EQ(value->get<uint32_t>(), 42u);
     ptc->enableAutoUpdate(value);
 
-    std::list<protocol_x::PropertyUpdateNotificationEntry> updates;
+    std::list<protocol::PropertyUpdateNotificationEntry> updates;
     updates.emplace_back(100, newValue);
     auto updateNotifMsg = createPropertyUpdateNotificationMessage(3, updates);
     this->endpoint->queueToReceive(updateNotifMsg);
@@ -252,10 +252,10 @@ TEST_F(ClientTests, shouldUnsubscribe)
     std::function<void()> unsubscribeUpdateNotificatioRequestAction = [this]()
     {
         this->endpoint->queueToReceive(createCommonResponse<
-            protocol_x::UnsubscribePropertyUpdateResponse,
+            protocol::UnsubscribePropertyUpdateResponse,
             protocol::MessageType::UnsubscribePropertyUpdateResponse,
-            protocol_x::UnsubscribePropertyUpdateResponse::Response>
-            (3, protocol_x::UnsubscribePropertyUpdateResponse::Response::OK));
+            protocol::UnsubscribePropertyUpdateResponse::Response>
+            (3, protocol::UnsubscribePropertyUpdateResponse::Response::OK));
     };
 
     std::function<void()> getValueRequestAction2 = [this, &newValue]()
@@ -302,8 +302,8 @@ TEST_F(ClientTests, shouldReceiveMetaUpdateNotificationAndRunHandler)
     EXPECT_CALL(*metaHandlerMock, handleCreation("/Test/Value", protocol::PropertyType::Value));
     EXPECT_CALL(*metaHandlerMock, handleDeletion(protocol::Uuid(100)));
 
-    std::list<protocol_x::MetaCreate> createUpdates;
-    std::list<protocol_x::MetaDelete> deleteUpdates;
+    std::list<protocol::MetaCreate> createUpdates;
+    std::list<protocol::MetaDelete> deleteUpdates;
     createUpdates.emplace_back(101, protocol::PropertyType::Node,"/Test");
     createUpdates.emplace_back(102, protocol::PropertyType::Value,"/Test/Value");
     deleteUpdates.emplace_back(100);
@@ -326,7 +326,7 @@ TEST_F(ClientTests, shouldSendSetValueIndication)
 
     std::function<void()> createValueRequestAction = [this]()
     {
-        this->endpoint->queueToReceive(createCreateResponseMessage(0, protocol_x::CreateResponse::Response::OK,
+        this->endpoint->queueToReceive(createCreateResponseMessage(0, protocol::CreateResponse::Response::OK,
             protocol::Uuid(100)));
     };
 

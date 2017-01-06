@@ -1,13 +1,15 @@
 #ifndef INTERFACE_PROTOOCOL_HPP_
 #define INTERFACE_PROTOOCOL_HPP_
 
+#include <cstdint>
+#include <memory>
 #include "MessageCoDec.hpp"
 #include "MessageCoDecHelpers.hpp"
 
 namespace ptree
 {
 
-namespace protocol_x
+namespace protocol
 {
 
 #define PACKED __attribute__ ((packed))
@@ -87,13 +89,13 @@ struct SigninRequest
         return featureFlag & uint64_t(1) << (uint8_t)flag;
     }
 
-    MESSAGE_FIELDS_PROTOX(version, refreshRate, featureFlag);
+    MESSAGE_FIELDS(version, refreshRate, featureFlag);
 };
 
 struct SigninResponse
 {
     uint32_t version;
-    MESSAGE_FIELDS_PROTOX(version);
+    MESSAGE_FIELDS(version);
 };
 
 struct CreateRequest
@@ -101,7 +103,7 @@ struct CreateRequest
     PropertyType type;
     std::vector<uint8_t> data;
     std::string path;
-    MESSAGE_FIELDS_PROTOX(type, data, path);
+    MESSAGE_FIELDS(type, data, path);
 };
 
 struct CreateResponse
@@ -109,7 +111,7 @@ struct CreateResponse
     enum class Response : uint8_t {OK, PARENT_NOT_FOUND, MALFORMED_PATH, ALREADY_EXIST, TYPE_ERROR};
     Response response;
     Uuid uuid;
-    MESSAGE_FIELDS_PROTOX(response, uuid);
+    MESSAGE_FIELDS(response, uuid);
 };
 
 struct MetaCreate : public BlockBase
@@ -124,7 +126,7 @@ struct MetaCreate : public BlockBase
     Uuid uuid;
     PropertyType propertyType;
     std::string path;
-    MESSAGE_FIELDS_PROTOX(uuid, propertyType, path);
+    MESSAGE_FIELDS(uuid, propertyType, path);
 };
 
 struct MetaDelete : public BlockBase
@@ -137,47 +139,47 @@ struct MetaDelete : public BlockBase
     {}
 
     Uuid uuid;
-    MESSAGE_FIELDS_PROTOX(uuid);
+    MESSAGE_FIELDS(uuid);
 };
 
 struct MetaUpdateNotification
 {
     BlockArray<MetaCreate> creations;
     BlockArray<MetaDelete> deletions;
-    MESSAGE_FIELDS_PROTOX(BLOCK creations, BLOCK deletions);
+    MESSAGE_FIELDS(BLOCK creations, BLOCK deletions);
 };
 
 struct DeleteRequest
 {
     std::string path;
-    MESSAGE_FIELDS_PROTOX(path);
+    MESSAGE_FIELDS(path);
 };
 
 struct DeleteResponse
 {
     enum class Response : uint8_t {OK, OBJECT_NOT_FOUND, NOT_PERMITTED, NOT_EMPTY, MALFORMED_PATH};
     Response response;
-    MESSAGE_FIELDS_PROTOX(response);
+    MESSAGE_FIELDS(response);
 };
 
 struct SetValueIndication
 {
     Uuid uuid;
     std::vector<uint8_t> data;
-    MESSAGE_FIELDS_PROTOX(uuid, data);
+    MESSAGE_FIELDS(uuid, data);
 };
 
 struct SubscribePropertyUpdateRequest
 {
     Uuid uuid;
-    MESSAGE_FIELDS_PROTOX(uuid);
+    MESSAGE_FIELDS(uuid);
 };
 
 struct SubscribePropertyUpdateResponse
 {
     enum class Response : uint8_t {OK, UUID_NOT_FOUND, NOT_A_VALUE};
     Response response;
-    MESSAGE_FIELDS_PROTOX(response);
+    MESSAGE_FIELDS(response);
 };
 
 struct PropertyUpdateNotificationEntry
@@ -187,52 +189,52 @@ struct PropertyUpdateNotificationEntry
         uuid(uuid), data(buffer) {}
     Uuid uuid;
     std::vector<uint8_t> data;
-    MESSAGE_FIELDS_PROTOX(uuid, data);
+    MESSAGE_FIELDS(uuid, data);
 };
 
 struct PropertyUpdateNotification
 {
     BlockArray<PropertyUpdateNotificationEntry> propertyUpdateNotifications;
-    MESSAGE_FIELDS_PROTOX(propertyUpdateNotifications);
+    MESSAGE_FIELDS(BLOCK propertyUpdateNotifications);
 };
 
 
 struct UnsubscribePropertyUpdateRequest
 {
     Uuid uuid;
-    MESSAGE_FIELDS_PROTOX(uuid);
+    MESSAGE_FIELDS(uuid);
 };
 
 struct UnsubscribePropertyUpdateResponse
 {
     enum class Response : uint8_t {OK, NOT_SUBSCRIBED, NOT_A_VALUE, UUID_NOT_FOUND};
     Response response;
-    MESSAGE_FIELDS_PROTOX(response);
+    MESSAGE_FIELDS(response);
 };
 
 struct GetValueRequest
 {
     Uuid uuid;
-    MESSAGE_FIELDS_PROTOX(uuid);
+    MESSAGE_FIELDS(uuid);
 };
 
 struct GetValueResponse
 {
     std::vector<uint8_t> data;
-    MESSAGE_FIELDS_PROTOX(data);
+    MESSAGE_FIELDS(data);
 };
 
 struct RpcRequest
 {
     Uuid uuid;
     std::vector<uint8_t> parameter;
-    MESSAGE_FIELDS_PROTOX(uuid, parameter);
+    MESSAGE_FIELDS(uuid, parameter);
 };
 
 struct RpcResponse
 {
     std::vector<uint8_t> returnValue;
-    MESSAGE_FIELDS_PROTOX(returnValue);
+    MESSAGE_FIELDS(returnValue);
 };
 
 struct HandleRpcRequest
@@ -241,7 +243,7 @@ struct HandleRpcRequest
     uint32_t callerTransactionId;
     Uuid uuid;
     std::vector<uint8_t> parameter;
-    MESSAGE_FIELDS_PROTOX(callerId, callerTransactionId, uuid, parameter);
+    MESSAGE_FIELDS(callerId, callerTransactionId, uuid, parameter);
 };
 
 struct HandleRpcResponse
@@ -249,26 +251,25 @@ struct HandleRpcResponse
     uint64_t callerId;
     uint32_t callerTransactionId;
     std::vector<uint8_t> returnValue;
-    MESSAGE_FIELDS_PROTOX(callerId, callerTransactionId, returnValue);
+    MESSAGE_FIELDS(callerId, callerTransactionId, returnValue);
 };
 
 
 struct GetSpecificMetaRequest
 {
     std::string path;
-    MESSAGE_FIELDS_PROTOX(path);
+    MESSAGE_FIELDS(path);
 };
 
 struct GetSpecificMetaResponse
 {
     MetaCreate meta;
-    MESSAGE_FIELDS_PROTOX(BLOCK meta);
+    MESSAGE_FIELDS(BLOCK meta);
 };
 
+typedef std::shared_ptr<MessageHeader> MessageHeaderPtr;
 
 } // namespace protocol
 } // namespace ptree
-
-#include "protocol_x.hpp"
 
 #endif  // INTERFACE_PROTOOCOL_HPP_

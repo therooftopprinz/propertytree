@@ -9,7 +9,7 @@
 
 namespace ptree
 {
-namespace protocol_x
+namespace protocol
 {
 
 class SizeReader
@@ -81,7 +81,7 @@ private:
 };
 
 // THUG CPP
-#define MESSAGE_FIELDS_PROTOX(...)\
+#define MESSAGE_FIELDS(...)\
 template<typename T>\
 void serialize(T& codec)\
 {\

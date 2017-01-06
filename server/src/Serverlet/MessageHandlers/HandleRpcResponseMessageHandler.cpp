@@ -20,7 +20,7 @@ void HandleRpcResponseMessageHandler::handle(protocol::MessageHeaderPtr header, 
 {
     logger::Logger log("HandleRcpResponseMessageHandler");
 
-    protocol_x::HandleRpcResponse response;
+    protocol::HandleRpcResponse response;
     response.unpackFrom(*message);
 
     log << logger::DEBUG << "requesting handle rpc for: " << response.callerId << " at: "

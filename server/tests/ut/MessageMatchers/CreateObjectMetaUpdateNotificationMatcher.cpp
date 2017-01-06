@@ -35,8 +35,8 @@ bool CreateObjectMetaUpdateNotificationMatcher::match(const void *buffer, uint32
 
     log << logger::WARNING << "Matching (" << path << ") Create MetaUpdateNotification...";
 
-    protocol_x::MetaUpdateNotification createMetaNotif;
-    protocol_x::BufferView bv(cursor, end);
+    protocol::MetaUpdateNotification createMetaNotif;
+    protocol::BufferView bv(cursor, end);
     createMetaNotif.parse(bv);
 
     utils::printRaw(cursor, size-sizeof(protocol::MessageHeader));

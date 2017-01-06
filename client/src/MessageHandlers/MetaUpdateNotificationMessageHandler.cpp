@@ -14,7 +14,7 @@ void MetaUpdateNotificationMessageHandler::handle(protocol::MessageHeaderPtr, Bu
 {
     logger::Logger log("MetaUpdateNotificationMessageHandler");
 
-    protocol_x::MetaUpdateNotification notif;
+    protocol::MetaUpdateNotification notif;
     notif.unpackFrom(*message);
 
     // Handle creates

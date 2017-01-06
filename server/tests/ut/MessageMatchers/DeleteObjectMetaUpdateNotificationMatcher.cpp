@@ -31,8 +31,8 @@ bool DeleteObjectMetaUpdateNotificationMatcher::match(const void *buffer, uint32
 
     log << logger::WARNING << "Matching (" << uuid << ") Delete MetaUpdateNotification...";
 
-    protocol_x::MetaUpdateNotification deleteMetaNotif;
-    protocol_x::BufferView bv(cursor, end);
+    protocol::MetaUpdateNotification deleteMetaNotif;
+    protocol::BufferView bv(cursor, end);
     deleteMetaNotif.parse(bv);
 
     utils::printRaw(cursor, size-sizeof(protocol::MessageHeader));

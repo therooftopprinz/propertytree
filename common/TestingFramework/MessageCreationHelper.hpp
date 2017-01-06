@@ -23,10 +23,10 @@ struct MessageCreationHelper
 
     inline Buffer createSigninRequestMessage(uint32_t transactionId, uint32_t version, uint32_t refreshRate)
     {
-        protocol_x::SigninRequest signin;
+        protocol::SigninRequest signin;
         signin.version = version;
         signin.refreshRate = refreshRate;
-        signin.setFeature(protocol_x::SigninRequest::FeatureFlag::ENABLE_METAUPDATE);
+        signin.setFeature(protocol::SigninRequest::FeatureFlag::ENABLE_METAUPDATE);
 
         uint32_t sz = signin.size() + sizeof(protocol::MessageHeader);
 
@@ -39,7 +39,7 @@ struct MessageCreationHelper
 
     inline Buffer createSigninResponseMessage(uint32_t transactionId, uint32_t version)
     {
-        protocol_x::SigninResponse signin;
+        protocol::SigninResponse signin;
         signin.version = version;
 
         uint32_t sz = signin.size() + sizeof(protocol::MessageHeader);
@@ -54,7 +54,7 @@ struct MessageCreationHelper
     inline Buffer createCreateRequestMessage(uint32_t transactionId, Buffer valueContainer, protocol::PropertyType type,
         std::string path)
     {
-        protocol_x::CreateRequest createReq;
+        protocol::CreateRequest createReq;
         createReq.type = type;
         createReq.data = valueContainer;
         createReq.path = path;
@@ -70,7 +70,7 @@ struct MessageCreationHelper
 
     inline Buffer createDeleteRequestMessage(uint32_t transactionId, std::string path)
     {
-        protocol_x::DeleteRequest deleteReq;
+        protocol::DeleteRequest deleteReq;
         deleteReq.path = path;
 
         uint32_t sz = deleteReq.size() + sizeof(protocol::MessageHeader);
@@ -84,7 +84,7 @@ struct MessageCreationHelper
 
     inline Buffer createSetValueIndicationMessage(uint32_t transactionId, protocol::Uuid uuid, Buffer value)
     {
-        protocol_x::SetValueIndication setval;
+        protocol::SetValueIndication setval;
         setval.uuid = uuid;
         setval.data = value;
         uint32_t sz = setval.size() + sizeof(protocol::MessageHeader);
@@ -98,7 +98,7 @@ struct MessageCreationHelper
 
     inline Buffer createSubscribePropertyUpdateRequestMessage(uint32_t transactionId, protocol::Uuid uuid)
     {
-        protocol_x::SubscribePropertyUpdateRequest request;
+        protocol::SubscribePropertyUpdateRequest request;
         request.uuid = uuid;
         uint32_t sz = request.size() + sizeof(protocol::MessageHeader);
 
@@ -111,7 +111,7 @@ struct MessageCreationHelper
 
     inline Buffer createUnsubscribePropertyUpdateRequestMessage(uint32_t transactionId, protocol::Uuid uuid)
     {
-        protocol_x::UnsubscribePropertyUpdateRequest request;
+        protocol::UnsubscribePropertyUpdateRequest request;
         request.uuid = uuid;
         uint32_t sz = request.size() + sizeof(protocol::MessageHeader);
 
@@ -137,10 +137,10 @@ struct MessageCreationHelper
         return message;
     }
 
-    inline Buffer createCreateResponseMessage(uint32_t transactionId, protocol_x::CreateResponse::Response response,
+    inline Buffer createCreateResponseMessage(uint32_t transactionId, protocol::CreateResponse::Response response,
         protocol::Uuid uuid)
     {
-        protocol_x::CreateResponse responseMsg;
+        protocol::CreateResponse responseMsg;
         responseMsg.response = response;
         responseMsg.uuid = uuid;
 
@@ -156,7 +156,7 @@ struct MessageCreationHelper
 
     inline Buffer createGetValueRequestMessage(uint32_t transactionId, protocol::Uuid uuid)
     {
-        protocol_x::GetValueRequest request;
+        protocol::GetValueRequest request;
         request.uuid = uuid;
 
         uint32_t sz = request.size() + sizeof(protocol::MessageHeader);
@@ -170,7 +170,7 @@ struct MessageCreationHelper
 
     inline Buffer createGetValueResponseMessage(uint32_t transactionId, Buffer value)
     {
-        protocol_x::GetValueResponse response;
+        protocol::GetValueResponse response;
         response.data = value;
 
         uint32_t sz = response.size() + sizeof(protocol::MessageHeader);
@@ -184,7 +184,7 @@ struct MessageCreationHelper
 
     inline Buffer createRpcRequestMessage(uint32_t transactionId, protocol::Uuid uuid, Buffer parameter)
     {
-        protocol_x::RpcRequest request;
+        protocol::RpcRequest request;
         request.uuid = uuid;
         request.parameter = parameter;
 
@@ -199,7 +199,7 @@ struct MessageCreationHelper
 
     inline Buffer createHandleRpcRequestMessage(uint32_t transactionId, uint64_t callerId, uint32_t callerTransactionId, protocol::Uuid uuid, Buffer parameter)
     {
-        protocol_x::HandleRpcRequest request;
+        protocol::HandleRpcRequest request;
         request.callerId = callerId;
         request.callerTransactionId = callerTransactionId;
         request.uuid = uuid;
@@ -216,7 +216,7 @@ struct MessageCreationHelper
 
     inline Buffer createHandleRpcResponseMessage(uint32_t transactionId, uint64_t callerId, uint32_t callerTransactionId, Buffer returnValue)
     {
-        protocol_x::HandleRpcResponse response;
+        protocol::HandleRpcResponse response;
         response.returnValue = returnValue;
         response.callerId = callerId;
         response.callerTransactionId = callerTransactionId;
@@ -232,7 +232,7 @@ struct MessageCreationHelper
 
     inline Buffer createRpcResponseMessage(uint32_t transactionId, Buffer returnValue)
     {
-        protocol_x::RpcResponse response;
+        protocol::RpcResponse response;
         response.returnValue = returnValue;
 
         uint32_t sz = response.size() + sizeof(protocol::MessageHeader);
@@ -246,7 +246,7 @@ struct MessageCreationHelper
 
     inline Buffer createGetSpecificMetaRequestMessage(uint32_t transactionId, std::string path)
     {
-        protocol_x::GetSpecificMetaRequest request;
+        protocol::GetSpecificMetaRequest request;
         request.path = path;
 
         uint32_t sz = request.size() + sizeof(protocol::MessageHeader);
@@ -259,10 +259,10 @@ struct MessageCreationHelper
     }
 
     inline Buffer createGetSpecificMetaResponseMessage(uint32_t transactionId, protocol::Uuid uuid,
-        protocol_x::PropertyType ptype, std::string path)
+        protocol::PropertyType ptype, std::string path)
     {
-        protocol_x::GetSpecificMetaResponse response;
-        response.meta = protocol_x::MetaCreate(uuid, ptype, path);
+        protocol::GetSpecificMetaResponse response;
+        response.meta = protocol::MetaCreate(uuid, ptype, path);
 
         uint32_t sz = response.size() + sizeof(protocol::MessageHeader);
 
@@ -274,9 +274,9 @@ struct MessageCreationHelper
     }
 
     inline Buffer createPropertyUpdateNotificationMessage(uint32_t transactionId,
-        std::list<protocol_x::PropertyUpdateNotificationEntry> updates)
+        std::list<protocol::PropertyUpdateNotificationEntry> updates)
     {
-        protocol_x::PropertyUpdateNotification notif;
+        protocol::PropertyUpdateNotification notif;
 
         for (auto& i : updates)
         {
@@ -294,9 +294,9 @@ struct MessageCreationHelper
 
 
     inline Buffer createMetaUpdateNotificationMessage(uint32_t transactionId,
-        std::list<protocol_x::MetaCreate> creates, std::list<protocol_x::MetaDelete> deletes)
+        std::list<protocol::MetaCreate> creates, std::list<protocol::MetaDelete> deletes)
     {
-        protocol_x::MetaUpdateNotification notif;
+        protocol::MetaUpdateNotification notif;
 
         for (auto& i : creates)
         {

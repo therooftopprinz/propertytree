@@ -39,7 +39,7 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Buff
 {
     logger::Logger log("CreateRequestMessageHandler");
 
-    protocol_x::CreateRequest request;
+    protocol::CreateRequest request;
     request.unpackFrom(*message);
 
     log << logger::DEBUG << "value sz: " << (request.data).size();
@@ -48,8 +48,8 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Buff
     bool created = true;
     protocol::Uuid id = 0;
 
-    protocol_x::CreateResponse response;
-    response.response = protocol_x::CreateResponse::Response::OK;
+    protocol::CreateResponse response;
+    response.response = protocol::CreateResponse::Response::OK;
     response.uuid = id;
 
     try
@@ -86,25 +86,25 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Buff
         else
         {
             log << logger::ERROR << "PropertyType Error! Rquested property type is inccorect!";
-            response.response = protocol_x::CreateResponse::Response::TYPE_ERROR;
+            response.response = protocol::CreateResponse::Response::TYPE_ERROR;
             created = false;
         }
     }
     catch (core::ObjectNotFound)
     {
-        response.response = protocol_x::CreateResponse::Response::PARENT_NOT_FOUND;
+        response.response = protocol::CreateResponse::Response::PARENT_NOT_FOUND;
         log << logger::ERROR << "Parent object not found!";;
         created = false;
     }
     catch (core::ObjectExisting)
     {
-        response.response = protocol_x::CreateResponse::Response::ALREADY_EXIST;
+        response.response = protocol::CreateResponse::Response::ALREADY_EXIST;
         log << logger::ERROR << "Already existing thrown!";
         created = false;
     }
     catch (core::MalformedPath)
     {
-        response.response = protocol_x::CreateResponse::Response::MALFORMED_PATH;
+        response.response = protocol::CreateResponse::Response::MALFORMED_PATH;
         log << logger::ERROR << "Malformed path thrown!";
         created = false;
     }

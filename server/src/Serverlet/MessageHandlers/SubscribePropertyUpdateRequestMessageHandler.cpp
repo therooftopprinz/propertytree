@@ -38,11 +38,11 @@ void SubscribePropertyUpdateRequestMessageHandler::handle(protocol::MessageHeade
 {
     logger::Logger log("SubscribePropertyUpdateRequest");
 
-    protocol_x::SubscribePropertyUpdateRequest request;
+    protocol::SubscribePropertyUpdateRequest request;
     request.unpackFrom(*message);
 
-    protocol_x::SubscribePropertyUpdateResponse response;
-    response.response = protocol_x::SubscribePropertyUpdateResponse::Response::OK;
+    protocol::SubscribePropertyUpdateResponse response;
+    response.response = protocol::SubscribePropertyUpdateResponse::Response::OK;
 
     log << logger::DEBUG << "subscribing for: " << request.uuid;
     try
@@ -62,14 +62,14 @@ void SubscribePropertyUpdateRequestMessageHandler::handle(protocol::MessageHeade
         else
         {
             log << logger::ERROR << "Uuid not a value!";
-            response.response = protocol_x::SubscribePropertyUpdateResponse::Response::NOT_A_VALUE;
+            response.response = protocol::SubscribePropertyUpdateResponse::Response::NOT_A_VALUE;
         }
 
     }
     catch (core::ObjectNotFound)
     {
         log << logger::ERROR << "Uuid not found!";
-        response.response = protocol_x::SubscribePropertyUpdateResponse::Response::UUID_NOT_FOUND;
+        response.response = protocol::SubscribePropertyUpdateResponse::Response::UUID_NOT_FOUND;
     }
 
     messageSender(header->transactionId, protocol::MessageType::SubscribePropertyUpdateResponse, response);

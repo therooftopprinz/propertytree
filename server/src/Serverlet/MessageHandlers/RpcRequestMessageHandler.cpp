@@ -21,7 +21,7 @@ void RpcRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferP
 {
     logger::Logger log("RcpRequestMessageHandler");
 
-    protocol_x::RpcRequest request;
+    protocol::RpcRequest request;
     request.unpackFrom(*message);
 
     log << logger::DEBUG << "requesting rpc for: " << request.uuid;

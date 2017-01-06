@@ -12,7 +12,7 @@ PropertyUpdateNotificationMessageHandler::
 
 void PropertyUpdateNotificationMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
 {
-    protocol_x::PropertyUpdateNotification notif;
+    protocol::PropertyUpdateNotification notif;
     notif.unpackFrom(*message);
 
     for (auto& i : notif.propertyUpdateNotifications.get())

@@ -311,7 +311,7 @@ void ClientServer::notifyDeletion(uint32_t uuid)
 void ClientServer::notifyRpcResponse( uint32_t transactionId, Buffer&& returnValue)
 {
     log << logger::DEBUG << "notifyRpcResponse for transactionId: " << transactionId << " and cs: " << (void*)this;
-    protocol_x::RpcResponse response;
+    protocol::RpcResponse response;
     response.returnValue = std::move(returnValue);
 
     Buffer enbuff = response.getPacked();
@@ -328,7 +328,7 @@ void ClientServer::notifyRpcResponse( uint32_t transactionId, Buffer&& returnVal
 
 void ClientServer::notifyRpcRequest(protocol::Uuid uuid, uint64_t clientServerId, uint32_t transactionId, Buffer&& parameter)
 {
-    protocol_x::HandleRpcRequest request;
+    protocol::HandleRpcRequest request;
     request.callerId = clientServerId;
     request.callerTransactionId = transactionId;
     request.uuid = uuid;
@@ -375,16 +375,16 @@ void ClientServer::handleOutgoing()
                 log << logger::DEBUG << "Meta Notifaction available!";
                 std::lock_guard<std::mutex> sendGuard(sendLock);
 
-                protocol_x::MetaUpdateNotification metaUpdateNotif;
+                protocol::MetaUpdateNotification metaUpdateNotif;
                 for(const auto& i : metaUpdateNotification)
                 {
                     if (i.second.utype == ActionTypeAndPath::UpdateType::CREATE_OBJECT)
                     {
-                        metaUpdateNotif.creations.get().push_back(protocol_x::MetaCreate(i.first, i.second.ptype, i.second.path));
+                        metaUpdateNotif.creations.get().push_back(protocol::MetaCreate(i.first, i.second.ptype, i.second.path));
                     }
                     else
                     {
-                        metaUpdateNotif.deletions.get().push_back(protocol_x::MetaDelete(i.first));
+                        metaUpdateNotif.deletions.get().push_back(protocol::MetaDelete(i.first));
                     }
                 }
 
@@ -406,11 +406,11 @@ void ClientServer::handleOutgoing()
             {
                 log << logger::DEBUG << "Property Update Notifaction available!";
 
-                protocol_x::PropertyUpdateNotification propertyUpdateNotifs;
+                protocol::PropertyUpdateNotification propertyUpdateNotifs;
                 for(const auto& i : valueUpdateNotification)
                 {
                     propertyUpdateNotifs.propertyUpdateNotifications.get().push_back(
-                        protocol_x::PropertyUpdateNotificationEntry(i->getUuid(), i->getValue()));
+                        protocol::PropertyUpdateNotificationEntry(i->getUuid(), i->getValue()));
                     /** TODO: Optimize by only using the reference of value since value's lifetime is dependent to 
                         valueUpdateNotification which assures an instance of value.**/
                 }

@@ -12,10 +12,10 @@ namespace ptree
 namespace protocol
 {
 
-using protocol_x::Uuid;
-using protocol_x::PropertyType;
-using protocol_x::MessageType;
-using protocol_x::MessageHeader;
+using protocol::Uuid;
+using protocol::PropertyType;
+using protocol::MessageType;
+using protocol::MessageHeader;
 
 //////////////////
 
