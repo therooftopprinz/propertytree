@@ -345,6 +345,31 @@ TEST_F(ClientTests, shouldSendSetValueIndication)
     logger::loggerServer.waitEmpty();
 }
 
+TEST_F(ClientTests, shouldCreateRpc)
+{
+    MessageMatcher createRequestMessageMatcher(createCreateRequestMessage(0, Buffer(), protocol::PropertyType::Rpc,
+        "/Rpc"));
+
+    std::function<void()> createRpcRequestAction = [this]()
+    {
+        this->endpoint->queueToReceive(createCreateResponseMessage(0, protocol::CreateResponse::Response::OK,
+            protocol::Uuid(100)));
+    };
+
+    endpoint->expectSend(0, 0, false, 1, createRequestMessageMatcher.get(), createRpcRequestAction);
+
+    ptc = std::make_shared<PTreeClient>(endpoint);
+
+    std::function<Buffer(Buffer&)> handler;
+    std::function<void(Buffer&)> voidHandler;
+  
+    auto rpc = ptc->createRpc("/Rpc", handler, voidHandler);
+
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1ms);
+    endpoint->waitForAllSending(2500.0);
+    logger::loggerServer.waitEmpty();
+}
 
 } // namespace client
 } // namespace ptree

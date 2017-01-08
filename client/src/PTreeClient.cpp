@@ -138,7 +138,11 @@ void PTreeClient::insertLocalValue(protocol::Uuid uuid, ValueContainerPtr& value
     values.object[uuid] = value;
 }
 
-
+void PTreeClient::insertLocalRpc(protocol::Uuid uuid, RpcContainerPtr& rpc)
+{
+    std::lock_guard<std::mutex> lock(rpcs.mutex);
+    rpcs.object[uuid] = rpc;
+}
 
 ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
 {
@@ -157,7 +161,7 @@ ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
         {
             log << logger::DEBUG << "VALUE CREATED WITH UUID " << response.uuid;
             auto vc = std::make_shared<ValueContainer>(response.uuid, value, true);
-            insertLocalValue(response.uuid, vc);
+            // insertLocalValue(response.uuid, vc);
             return vc;
         }
         else
@@ -170,6 +174,37 @@ ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
         log << logger::ERROR << "VALUE CREATE REQUEST TIMEOUT";
     }
     return ValueContainerPtr();
+}
+
+RpcContainerPtr PTreeClient::createRpc(std::string path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler)
+{
+    protocol::CreateRequest request;
+    request.path = path;
+    request.type = protocol::PropertyType::Rpc;
+    auto tid = getTransactionId();
+    messageSender(tid, protocol::MessageType::CreateRequest, request);
+    auto tcv = addTransactionCV(tid);
+    if (waitTransactionCV(tid))
+    {
+        protocol::CreateResponse response;
+        response.unpackFrom(tcv->value);
+        if ( response.response  == protocol::CreateResponse::Response::OK)
+        {
+            log << logger::DEBUG << "RPC CREATED WITH UUID " << response.uuid;
+            auto rc = std::make_shared<RpcContainer>(response.uuid, handler, voidHandler, true);
+            insertLocalRpc(response.uuid, rc);
+            return rc;
+        }
+        else
+        {
+            log << logger::ERROR << "VALUE CREATE RPC NOT OK";
+        }
+    }
+    else
+    {
+        log << logger::ERROR << "VALUE CREATE RPC TIMEOUT";
+    }
+    return RpcContainerPtr();
 }
 
 ValueContainerPtr PTreeClient::sendGetValue(protocol::Uuid uuid, ValueContainerPtr& vc)
@@ -295,7 +330,7 @@ ValueContainerPtr PTreeClient::getValue(std::string path)
     }
 
     auto vc = getLocalValue(uuid);
-    if ((vc && vc->isAutoUpdate()) || (vc && vc->isOwned()))
+    if (vc && ((vc->isAutoUpdate()) || vc->isOwned()))
     {
         return vc;
     }

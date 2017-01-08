@@ -21,25 +21,22 @@ namespace ptree
 namespace client
 {
 
-struct IValueWatcher
-{
-    virtual void handle(ValueContainerPtr vc) = 0;
-};
-
 class RpcContainer : public std::enable_shared_from_this<RpcContainer>
 {
 public:
     RpcContainer() = delete;
 
     /** TODO: on destruction if meta uuid is not watched delete meta. **/
+    void setHandler(std::function<Buffer(Buffer&)>);
+    void setVoidHandler(std::function<void(Buffer&)>);
 
-    RpcContainer(protocol::Uuid uuid, bool ownership);
-    Buffer operator()(Buffer args);
-
+    RpcContainer(protocol::Uuid uuid, bool owned);
+    RpcContainer(protocol::Uuid uuid, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler, bool owned);
 private:
     std::function<Buffer(Buffer&)> handler;
+    std::function<void(Buffer&)> voidHandler;
     protocol::Uuid uuid;
-    bool ownership;
+    bool owned;
     logger::Logger log;
 
     friend class PTreeClient;

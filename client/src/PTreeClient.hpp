@@ -16,6 +16,7 @@
 #include <common/src/IEndPoint.hpp>
 #include <client/src/Types.hpp>
 #include <client/src/ValueContainer.hpp>
+#include <client/src/RpcContainer.hpp>
 
 namespace ptree
 {
@@ -24,6 +25,8 @@ namespace client
 
 class ValueContainer;
 typedef std::shared_ptr<ValueContainer> ValueContainerPtr;
+class RpcContainer;
+typedef std::shared_ptr<RpcContainer> RpcContainerPtr;
 
 class TransactionIdGenerator
 {
@@ -49,7 +52,7 @@ public:
 
     void signIn();
     ValueContainerPtr createValue(std::string path, Buffer value);
-    bool createRpc(std::string path);
+    RpcContainerPtr createRpc(std::string path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler);
     bool createNode(std::string path);
     ValueContainerPtr getValue(std::string path);
 
@@ -120,6 +123,11 @@ private:
     void insertLocalValue(protocol::Uuid uuid, ValueContainerPtr& value);
     MutexedObject<std::map<protocol::Uuid, ValueContainerPtr>> values;
 
+
+    RpcContainerPtr getLocalRpc(protocol::Uuid uuid);
+    void insertLocalRpc(protocol::Uuid uuid, RpcContainerPtr& rpc);
+    MutexedObject<std::map<protocol::Uuid, RpcContainerPtr>> rpcs;
+
     void addMeta(protocol::Uuid, std::string path, protocol::PropertyType type);
     void removeMeta(protocol::Uuid);
     std::string getPath(protocol::Uuid uuid);
@@ -134,8 +142,8 @@ private:
         protocol::PropertyType type;
     };
     PTreeMeta getMeta(protocol::Uuid uuid);
-    /** TODO: common memory for string key and meta path **/
 
+    /** TODO: common memory for string key and meta path **/
     struct MetaObjects
     {
         std::map<protocol::Uuid, PTreeMeta> uuidMetaMap;

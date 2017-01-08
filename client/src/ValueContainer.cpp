@@ -5,18 +5,18 @@ namespace ptree
 namespace client
 {
 
-ValueContainer::ValueContainer(protocol::Uuid uuid, Buffer &value, bool ownership) :
-    uuid(uuid), autoUpdate(false), ownership(ownership), value(value), log("ValueContainer")
+ValueContainer::ValueContainer(protocol::Uuid uuid, Buffer &value, bool owned) :
+    uuid(uuid), autoUpdate(false), owned(owned), value(value), log("ValueContainer")
 {
 }
-ValueContainer::ValueContainer(protocol::Uuid uuid, Buffer &&value, bool ownership) :
-    uuid(uuid), autoUpdate(false), ownership(ownership), value(std::move(value)), log("ValueContainer")
+ValueContainer::ValueContainer(protocol::Uuid uuid, Buffer &&value, bool owned) :
+    uuid(uuid), autoUpdate(false), owned(owned), value(std::move(value)), log("ValueContainer")
 {
 }
 
 bool ValueContainer::isOwned()
 {
-    return ownership;
+    return owned;
 }
 
 protocol::Uuid ValueContainer::getUuid()

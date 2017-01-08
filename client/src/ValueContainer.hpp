@@ -68,8 +68,8 @@ public:
 
     void operator = (ValueContainer&) = delete;
 
-    ValueContainer(protocol::Uuid uuid, Buffer &value, bool ownership);
-    ValueContainer(protocol::Uuid uuid, Buffer &&value, bool ownership);
+    ValueContainer(protocol::Uuid uuid, Buffer &value, bool owned);
+    ValueContainer(protocol::Uuid uuid, Buffer &&value, bool owned);
 
 private:
     bool isAutoUpdate();
@@ -81,7 +81,7 @@ private:
     std::mutex watcherMutex;
     protocol::Uuid uuid;
     bool autoUpdate;
-    bool ownership;
+    bool owned;
     Buffer value;
     std::mutex valueMutex;
     logger::Logger log;
