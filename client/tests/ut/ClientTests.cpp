@@ -390,11 +390,10 @@ TEST_F(ClientTests, shouldCallRpcHandler)
     MessageMatcher createRequestMessageMatcher(createCreateRequestMessage(0, Buffer(), protocol::PropertyType::Rpc, "/Rpc"));
     MessageMatcher handleRpcRequestMessage(createHandleRpcResponseMessage(static_cast<uint32_t>(-1), 1234, 8, retVal));
 
-    std::function<void()> createRpcRequestAction = [this, &param]()
+    std::function<void()> createRpcRequestAction = [this]()
     {
         this->endpoint->queueToReceive(createCreateResponseMessage(0, protocol::CreateResponse::Response::OK,
             protocol::Uuid(100)));
-        this->endpoint->queueToReceive(createHandleRpcRequestMessage(static_cast<uint32_t>(-1), 1234, 8, protocol::Uuid(100), param));
     };
 
     RpcHandlerMock handlerMock;
@@ -409,6 +408,7 @@ TEST_F(ClientTests, shouldCallRpcHandler)
     ptc = std::make_shared<PTreeClient>(endpoint);
   
     auto rpc = ptc->createRpc("/Rpc", handler, voidHandler);
+    endpoint->queueToReceive(createHandleRpcRequestMessage(static_cast<uint32_t>(-1), 1234, 8, protocol::Uuid(100), param));
 
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(100ms);
