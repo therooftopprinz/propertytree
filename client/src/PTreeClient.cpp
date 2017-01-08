@@ -22,29 +22,29 @@ PTreeClient::PTreeClient(common::IEndPointPtr endpoint):
 
 void PTreeClient::addMeta(protocol::Uuid uuid, std::string path, protocol::PropertyType type)
 {
-    std::lock_guard<std::mutex> lock(uuidMetaMapMutex);
-    uuidMetaMap[uuid] = PTreeMeta(path,type);  
-    pathUuidMap[path] = uuid;
+    std::lock_guard<std::mutex> lock(metaMap.mutex);
+    metaMap.object.uuidMetaMap[uuid] = PTreeMeta(path,type);  
+    metaMap.object.pathUuidMap[path] = uuid;
 }
 
 void PTreeClient::removeMeta(protocol::Uuid uuid)
 {
-    std::lock_guard<std::mutex> lock(uuidMetaMapMutex);
-    auto i = uuidMetaMap.find(uuid);
-    if (i == uuidMetaMap.end())
+    std::lock_guard<std::mutex> lock(metaMap.mutex);
+    auto i = metaMap.object.uuidMetaMap.find(uuid);
+    if (i == metaMap.object.uuidMetaMap.end())
     {
        return;
     }
-    auto j = pathUuidMap.find(i->second.path);
-    uuidMetaMap.erase(i);
-    pathUuidMap.erase(j);
+    auto j = metaMap.object.pathUuidMap.find(i->second.path);
+    metaMap.object.uuidMetaMap.erase(i);
+    metaMap.object.pathUuidMap.erase(j);
 }
 
 protocol::Uuid PTreeClient::getUuid(std::string path)
 {
-    std::lock_guard<std::mutex> lock(uuidMetaMapMutex);
-    auto i = pathUuidMap.find(path);
-    if (i == pathUuidMap.end())
+    std::lock_guard<std::mutex> lock(metaMap.mutex);
+    auto i = metaMap.object.pathUuidMap.find(path);
+    if (i == metaMap.object.pathUuidMap.end())
     {
         return static_cast<protocol::Uuid>(-1);
     }
@@ -53,9 +53,9 @@ protocol::Uuid PTreeClient::getUuid(std::string path)
 
 std::string PTreeClient::getPath(protocol::Uuid uuid)
 {
-    std::lock_guard<std::mutex> lock(uuidMetaMapMutex);
-    auto i = uuidMetaMap.find(uuid);
-    if (i == uuidMetaMap.end())
+    std::lock_guard<std::mutex> lock(metaMap.mutex);
+    auto i = metaMap.object.uuidMetaMap.find(uuid);
+    if (i == metaMap.object.uuidMetaMap.end())
     {
         return std::string();
     }
@@ -64,9 +64,9 @@ std::string PTreeClient::getPath(protocol::Uuid uuid)
  
 PTreeClient::PTreeMeta PTreeClient::getMeta(protocol::Uuid uuid)
 {
-    std::lock_guard<std::mutex> lock(uuidMetaMapMutex);
-    auto i = uuidMetaMap.find(uuid);
-    if (i == uuidMetaMap.end())
+    std::lock_guard<std::mutex> lock(metaMap.mutex);
+    auto i = metaMap.object.uuidMetaMap.find(uuid);
+    if (i == metaMap.object.uuidMetaMap.end())
     {
         return PTreeMeta();
     }
@@ -122,9 +122,9 @@ void PTreeClient::sendSignIn(int refreshRate, const std::list<protocol::SigninRe
 
 ValueContainerPtr PTreeClient::getLocalValue(protocol::Uuid uuid)
 {
-    std::lock_guard<std::mutex> lock(valuesMutex);
-    auto i = values.find(uuid);
-    if (i == values.end())
+    std::lock_guard<std::mutex> lock(values.mutex);
+    auto i = values.object.find(uuid);
+    if (i == values.object.end())
     {
         return ValueContainerPtr();
     }
@@ -134,8 +134,8 @@ ValueContainerPtr PTreeClient::getLocalValue(protocol::Uuid uuid)
 
 void PTreeClient::insertLocalValue(protocol::Uuid uuid, ValueContainerPtr& value)
 {
-    std::lock_guard<std::mutex> lock(valuesMutex);
-    values[uuid] = value;
+    std::lock_guard<std::mutex> lock(values.mutex);
+    values.object[uuid] = value;
 }
 
 
@@ -305,29 +305,29 @@ ValueContainerPtr PTreeClient::getValue(std::string path)
 
 void PTreeClient::addMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler)
 {
-    std::lock_guard<std::mutex> lock(metaUpdateHandlersMutex);
-    auto i = std::find(metaUpdateHandlers.begin(), metaUpdateHandlers.end(), handler);
-    if (i == metaUpdateHandlers.end())
+    std::lock_guard<std::mutex> lock(metaUpdateHandlers.mutex);
+    auto i = std::find(metaUpdateHandlers.object.begin(), metaUpdateHandlers.object.end(), handler);
+    if (i == metaUpdateHandlers.object.end())
     {
-        metaUpdateHandlers.emplace_back(handler);
+        metaUpdateHandlers.object.emplace_back(handler);
     }
 }
 
 void PTreeClient::deleteMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler)
 {
-    std::lock_guard<std::mutex> lock(metaUpdateHandlersMutex);
-    auto i = std::find(metaUpdateHandlers.begin(), metaUpdateHandlers.end(), handler);
-    if (i == metaUpdateHandlers.end())
+    std::lock_guard<std::mutex> lock(metaUpdateHandlers.mutex);
+    auto i = std::find(metaUpdateHandlers.object.begin(), metaUpdateHandlers.object.end(), handler);
+    if (i == metaUpdateHandlers.object.end())
     {
         return;
     }
-    metaUpdateHandlers.erase(i);
+    metaUpdateHandlers.object.erase(i);
 }
 
 void PTreeClient::triggerMetaUpdateWatchersCreate(std::string& path, protocol::PropertyType propertyType)
 {
-    std::lock_guard<std::mutex> lock(metaUpdateHandlersMutex);
-    for (auto& i : metaUpdateHandlers)
+    std::lock_guard<std::mutex> lock(metaUpdateHandlers.mutex);
+    for (auto& i : metaUpdateHandlers.object)
     {
         i->handleCreation(path, propertyType);
     }
@@ -335,8 +335,8 @@ void PTreeClient::triggerMetaUpdateWatchersCreate(std::string& path, protocol::P
 
 void PTreeClient::triggerMetaUpdateWatchersDelete(protocol::Uuid uuid)
 {
-    std::lock_guard<std::mutex> lock(metaUpdateHandlersMutex);
-    for (auto& i : metaUpdateHandlers)
+    std::lock_guard<std::mutex> lock(metaUpdateHandlers.mutex);
+    for (auto& i : metaUpdateHandlers.object)
     {
         i->handleDeletion(uuid);
     }
@@ -434,9 +434,9 @@ bool PTreeClient::disableAutoUpdate(ValueContainerPtr& vc)
 void PTreeClient::handleUpdaNotification(protocol::Uuid uuid, Buffer&& value)
 {
     log << logger::DEBUG << "Handling update for " << (uint32_t)uuid;
-    std::lock_guard<std::mutex> lock(valuesMutex);
-    auto i = values.find(uuid);
-    if (i == values.end())
+    std::lock_guard<std::mutex> lock(values.mutex);
+    auto i = values.object.find(uuid);
+    if (i == values.object.end())
     {
         log << logger::WARNING << "Updated value not in local values. Not updating.";
         return;
@@ -468,19 +468,19 @@ Buffer PTreeClient::createHeader(protocol::MessageType type, uint32_t payloadSiz
 
 std::shared_ptr<PTreeClient::TransactionCV> PTreeClient::addTransactionCV(uint32_t transactionId)
 {
-    std::lock_guard<std::mutex> guard(transactionIdCVLock);
+    std::lock_guard<std::mutex> guard(transactionIdCV.mutex);
     // TODO: emplace
-    transactionIdCV[transactionId] = std::make_shared<PTreeClient::TransactionCV>();
-    return transactionIdCV[transactionId];
+    transactionIdCV.object[transactionId] = std::make_shared<PTreeClient::TransactionCV>();
+    return transactionIdCV.object[transactionId];
 }
 
 void PTreeClient::notifyTransactionCV(uint32_t transactionId, BufferPtr value)
 {
     std::shared_ptr<TransactionCV> tcv;
     {
-        std::lock_guard<std::mutex> guard(transactionIdCVLock);
-        auto it = transactionIdCV.find(transactionId);
-        if (it == transactionIdCV.end())
+        std::lock_guard<std::mutex> guard(transactionIdCV.mutex);
+        auto it = transactionIdCV.object.find(transactionId);
+        if (it == transactionIdCV.object.end())
         {
             log << logger::ERROR << "transactionId not found in CV list.";
             return;
@@ -497,14 +497,14 @@ void PTreeClient::notifyTransactionCV(uint32_t transactionId, BufferPtr value)
     }
 
     {
-        std::lock_guard<std::mutex> guard(transactionIdCVLock);
-        auto it = transactionIdCV.find(transactionId);
-        if (it == transactionIdCV.end())
+        std::lock_guard<std::mutex> guard(transactionIdCV.mutex);
+        auto it = transactionIdCV.object.find(transactionId);
+        if (it == transactionIdCV.object.end())
         {
             log << logger::ERROR << "transactionId not found in CV list.";
             return;
         }
-        transactionIdCV.erase(it);
+        transactionIdCV.object.erase(it);
     }
 }
 
@@ -512,9 +512,9 @@ bool PTreeClient::waitTransactionCV(uint32_t transactionId)
 {
     std::shared_ptr<TransactionCV> tcv;
     {
-        std::lock_guard<std::mutex> guard(transactionIdCVLock);
-        auto it = transactionIdCV.find(transactionId);
-        if (it == transactionIdCV.end())
+        std::lock_guard<std::mutex> guard(transactionIdCV.mutex);
+        auto it = transactionIdCV.object.find(transactionId);
+        if (it == transactionIdCV.object.end())
         {
             log << logger::ERROR << "transactionId not found in CV list.";
             return false;

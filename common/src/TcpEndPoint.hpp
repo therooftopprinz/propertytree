@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/socket.h>
-#include <bits/time.h>
+#include <sys/time.h>
 #include <server/src/Types.hpp>
 #include <common/src/IEndPoint.hpp>
 

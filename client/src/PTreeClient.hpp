@@ -56,9 +56,8 @@ public:
     void addMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
     void deleteMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
 
-    uint32_t getTransactionId()
+    inline uint32_t getTransactionId()
     {
-        std::lock_guard<std::mutex> lock(transactionIdGeneratorLock);
         return transactionIdGenerator.get();
     }
 
@@ -110,10 +109,16 @@ private:
         endpoint->send(responseMessageBuffer.data(), responseMessageBuffer.size());
     }
 
+    template<typename T, typename M = std::mutex>
+    struct MutexedObject
+    {
+        T object;
+        M mutex;
+    };
+
     ValueContainerPtr getLocalValue(protocol::Uuid uuid);
     void insertLocalValue(protocol::Uuid uuid, ValueContainerPtr& value);
-    std::mutex valuesMutex;
-    std::map<protocol::Uuid, ValueContainerPtr> values;
+    MutexedObject<std::map<protocol::Uuid, ValueContainerPtr>> values;
 
     void addMeta(protocol::Uuid, std::string path, protocol::PropertyType type);
     void removeMeta(protocol::Uuid);
@@ -130,10 +135,13 @@ private:
     };
     PTreeMeta getMeta(protocol::Uuid uuid);
     /** TODO: common memory for string key and meta path **/
-    std::map<protocol::Uuid, PTreeMeta> uuidMetaMap;
-    std::map<std::string, protocol::Uuid> pathUuidMap;
-    std::mutex uuidMetaMapMutex;
 
+    struct MetaObjects
+    {
+        std::map<protocol::Uuid, PTreeMeta> uuidMetaMap;
+        std::map<std::string, protocol::Uuid> pathUuidMap;
+    };
+    MutexedObject<MetaObjects> metaMap;
     struct TransactionCV
     {
         TransactionCV():
@@ -148,15 +156,10 @@ private:
     std::shared_ptr<TransactionCV> addTransactionCV(uint32_t transactionId);
     bool waitTransactionCV(uint32_t transactionId);
 
-    std::mutex transactionIdCVLock;
     typedef std::map<uint32_t, std::shared_ptr<TransactionCV>> TrCVMap;
-    TrCVMap transactionIdCV;
-
+    MutexedObject<TrCVMap> transactionIdCV;
     TransactionIdGenerator transactionIdGenerator;
-    std::mutex transactionIdGeneratorLock;
-
-    std::list<std::shared_ptr<IMetaUpdateHandler>> metaUpdateHandlers;
-    std::mutex metaUpdateHandlersMutex;
+    MutexedObject<std::list<std::shared_ptr<IMetaUpdateHandler>>> metaUpdateHandlers;
 
     bool handleIncomingIsRunning;
     bool handleOutgoingIsRunning;
