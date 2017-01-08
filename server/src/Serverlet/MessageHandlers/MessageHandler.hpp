@@ -32,6 +32,7 @@ struct MessageHandler
 
     virtual void handle(protocol::MessageHeaderPtr header, BufferPtr message);
     static Buffer createHeader(protocol::MessageType type, uint32_t payloadSize, uint32_t transactionId);
+    /**TODO: This assumes that send is locked before calling. Move message sending to server**/
     template<class T>
     void messageSender(uint32_t tid, protocol::MessageType mtype, T& msg)
     {

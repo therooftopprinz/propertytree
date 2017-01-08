@@ -112,6 +112,9 @@ private:
         endpoint->send(responseMessageBuffer.data(), responseMessageBuffer.size());
     }
 
+
+    Buffer callRpc(protocol::Uuid uuid, Buffer& parameter);
+
     template<typename T, typename M = std::mutex>
     struct MutexedObject
     {
@@ -192,6 +195,7 @@ private:
     friend class GenericResponseMessageHandler;
     friend class MetaUpdateNotificationMessageHandler;
     friend class PropertyUpdateNotificationMessageHandler;
+    friend class HandleRpcRequestMessageHandler;
 };
 
 struct IMetaUpdateHandler

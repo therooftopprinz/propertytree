@@ -33,6 +33,17 @@ struct MetaUpdateHandlerMock : public IMetaUpdateHandler
 };
 
 
+struct RpcHandler
+{
+    virtual Buffer handle(Buffer&) = 0;
+};
+
+struct RpcHandlerMock : public RpcHandler
+{
+    MOCK_METHOD1(handle, Buffer(Buffer&));
+};
+
+
 struct ClientTests : public common::MessageCreationHelper, public ::testing::Test
 {
     ClientTests() :
@@ -368,6 +379,40 @@ TEST_F(ClientTests, shouldCreateRpc)
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(1ms);
     endpoint->waitForAllSending(2500.0);
+    logger::loggerServer.waitEmpty();
+}
+
+TEST_F(ClientTests, shouldCallRpcHandler)
+{
+    Buffer param = {69,0,0,0};
+    Buffer retVal = {0};
+
+    MessageMatcher createRequestMessageMatcher(createCreateRequestMessage(0, Buffer(), protocol::PropertyType::Rpc, "/Rpc"));
+    MessageMatcher handleRpcRequestMessage(createHandleRpcResponseMessage(static_cast<uint32_t>(-1), 1234, 8, retVal));
+
+    std::function<void()> createRpcRequestAction = [this, &param]()
+    {
+        this->endpoint->queueToReceive(createCreateResponseMessage(0, protocol::CreateResponse::Response::OK,
+            protocol::Uuid(100)));
+        this->endpoint->queueToReceive(createHandleRpcRequestMessage(static_cast<uint32_t>(-1), 1234, 8, protocol::Uuid(100), param));
+    };
+
+    RpcHandlerMock handlerMock;
+    using std::placeholders::_1;
+    std::function<Buffer(Buffer&)> handler = std::bind(&RpcHandlerMock::handle, &handlerMock, _1);
+    std::function<void(Buffer&)> voidHandler;
+
+    EXPECT_CALL(handlerMock, handle(param)).WillOnce(Return(retVal));
+    endpoint->expectSend(0, 0, false, 1, createRequestMessageMatcher.get(), createRpcRequestAction);
+    endpoint->expectSend(1, 0, false, 1, handleRpcRequestMessage.get(), DefaultAction::get());
+
+    ptc = std::make_shared<PTreeClient>(endpoint);
+  
+    auto rpc = ptc->createRpc("/Rpc", handler, voidHandler);
+
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(100ms);
+    endpoint->waitForAllSending(10000.0);
     logger::loggerServer.waitEmpty();
 }
 

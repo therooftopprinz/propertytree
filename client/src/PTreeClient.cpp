@@ -138,6 +138,18 @@ void PTreeClient::insertLocalValue(protocol::Uuid uuid, ValueContainerPtr& value
     values.object[uuid] = value;
 }
 
+RpcContainerPtr PTreeClient::getLocalRpc(protocol::Uuid uuid)
+{
+    std::lock_guard<std::mutex> lock(rpcs.mutex);
+    auto i = rpcs.object.find(uuid);
+    if (i == rpcs.object.end())
+    {
+        return RpcContainerPtr();
+    }
+
+    return i->second;
+}
+
 void PTreeClient::insertLocalRpc(protocol::Uuid uuid, RpcContainerPtr& rpc)
 {
     std::lock_guard<std::mutex> lock(rpcs.mutex);
@@ -499,6 +511,16 @@ Buffer PTreeClient::createHeader(protocol::MessageType type, uint32_t payloadSiz
     headerRaw.size = payloadSize+sizeof(protocol::MessageHeader);
     headerRaw.transactionId = transactionId;
     return header;
+}
+
+Buffer PTreeClient::callRpc(protocol::Uuid uuid, Buffer& parameter)
+{
+    auto rpc = getLocalRpc(uuid);
+    if (rpc && rpc->handler)
+    {
+        return rpc->handler(parameter);
+    }
+    return Buffer();
 }
 
 std::shared_ptr<PTreeClient::TransactionCV> PTreeClient::addTransactionCV(uint32_t transactionId)
