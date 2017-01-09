@@ -257,6 +257,8 @@ ValueContainerPtr PTreeClient::sendGetValue(protocol::Uuid uuid, ValueContainerP
     }
 }
 
+
+/** TODO: reuse fetchMeta **/
 protocol::Uuid PTreeClient::fetchMetaAndAddToLocal(std::string& path)
 {
     protocol::GetSpecificMetaRequest request;
@@ -330,7 +332,7 @@ void PTreeClient::sendSetValue(ValueContainerPtr& vc)
 }
 
 
-ValueContainerPtr PTreeClient::getValue(std::string path)
+ValueContainerPtr PTreeClient::getValue(std::string& path)
 {
     auto uuid = getUuid(path);
 
@@ -349,6 +351,30 @@ ValueContainerPtr PTreeClient::getValue(std::string path)
 
     return sendGetValue(uuid, vc);
 }
+
+RpcContainerPtr PTreeClient::getRpc(std::string& path)
+{
+    auto uuid = getUuid(path);
+
+    log << logger::DEBUG << "GET RPC (" << uuid << ")" << path;
+
+    if (uuid == static_cast<protocol::Uuid>(-1))
+    {
+        auto meta = fetchMeta(path);
+        uuid = std::get<0>(meta);
+        auto ptype = std::get<1>(meta);
+        if (uuid == static_cast<protocol::Uuid>(-1) || ptype != protocol::PropertyType::Rpc)
+        {
+            return RpcContainerPtr();
+        }
+    }
+
+    log << logger::DEBUG << "RPC FETCHED WITH UUID " << uuid;
+    auto rc = std::make_shared<RpcContainer>(uuid, std::function<Buffer(Buffer&)>(), std::function<Buffer(Buffer&)>(), false);
+    insertLocalRpc(uuid, rc);
+    return rc;
+}
+
 
 void PTreeClient::addMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler)
 {

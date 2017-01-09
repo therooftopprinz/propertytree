@@ -163,7 +163,8 @@ TEST_F(ClientTests, shouldFetchValueWithGetSpecificMetaWhenNotAutoUpdate)
 
     ptc = std::make_shared<PTreeClient>(endpoint);
 
-    auto value = ptc->getValue("/Value");
+    std::string valuePath = "/Value";
+    auto value = ptc->getValue(valuePath);
 
     EXPECT_EQ(value->get<uint32_t>(), 42u);
 
@@ -181,7 +182,8 @@ TEST_F(ClientTests, shouldSubscribeUpdateNotification)
 
     ptc = std::make_shared<PTreeClient>(endpoint);
 
-    auto value = ptc->getValue(std::string("/Value"));
+    std::string valuePath = "/Value";
+    auto value = ptc->getValue(valuePath);
 
     ptc->enableAutoUpdate(value);
 
@@ -203,8 +205,8 @@ TEST_F(ClientTests, shouldReceiveUpdateNotification)
     using namespace std::chrono_literals;
 
     ptc = std::make_shared<PTreeClient>(endpoint);
-
-    auto value = ptc->getValue(std::string("/Value"));
+    std::string valuePath = std::string("/Value");
+    auto value = ptc->getValue(valuePath);
     EXPECT_EQ(value->get<uint32_t>(), 42u);
     ptc->enableAutoUpdate(value);
 
@@ -213,7 +215,7 @@ TEST_F(ClientTests, shouldReceiveUpdateNotification)
     auto updateNotifMsg = createPropertyUpdateNotificationMessage(3, updates);
     this->endpoint->queueToReceive(updateNotifMsg);
     std::this_thread::sleep_for(10ms);
-    auto value2 = ptc->getValue(std::string("/Value"));
+    auto value2 = ptc->getValue(valuePath);
     EXPECT_EQ(value->get<uint32_t>(), 69u);
 
     std::this_thread::sleep_for(1ms);
@@ -240,7 +242,8 @@ TEST_F(ClientTests, shouldReceiveUpdateNotificationAndRunHandler)
 
     ptc = std::make_shared<PTreeClient>(endpoint);
 
-    auto value = ptc->getValue(std::string("/Value"));
+    std::string valuePath = "/Value";
+    auto value = ptc->getValue(valuePath);
     value->addWatcher(handlerMock);
     EXPECT_EQ(value->get<uint32_t>(), 42u);
     ptc->enableAutoUpdate(value);
@@ -286,13 +289,14 @@ TEST_F(ClientTests, shouldUnsubscribe)
 
     ptc = std::make_shared<PTreeClient>(endpoint);
 
-    auto value = ptc->getValue(std::string("/Value"));
+    std::string valuePath = "/Value";
+    auto value = ptc->getValue(valuePath);
     value->addWatcher(handlerMock);
 
     ptc->enableAutoUpdate(value);
     ptc->disableAutoUpdate(value);
 
-    auto value2 = ptc->getValue(std::string("/Value"));
+    auto value2 = ptc->getValue(valuePath);
     EXPECT_EQ(value->get<uint32_t>(), 69u);
     EXPECT_EQ(value2->get<uint32_t>(), 69u);
 
@@ -413,6 +417,31 @@ TEST_F(ClientTests, shouldCallRpcHandler)
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(100ms);
     endpoint->waitForAllSending(10000.0);
+    logger::loggerServer.waitEmpty();
+}
+
+TEST_F(ClientTests, shouldFetchRpcWithGetSpecificMetaWhenNotAutoUpdate)
+{
+    std::string rpcPath = "/Rpc";
+
+    MessageMatcher getSpecificMetaRequestMessageMatcher = createGetSpecificMetaRequestMessage(0, rpcPath);
+
+    std::function<void()> getSpecificMetaRequestAction = [this]()
+    {
+        this->endpoint->queueToReceive(createGetSpecificMetaResponseMessage(0, 100, protocol::PropertyType::Rpc, "/Rpc"));
+    };
+
+    endpoint->expectSend(1, 0, false, 1, getSpecificMetaRequestMessageMatcher.get(), getSpecificMetaRequestAction);
+
+    ptc = std::make_shared<PTreeClient>(endpoint);
+
+    auto value = ptc->getRpc(rpcPath);
+
+    EXPECT_TRUE(value);
+
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1s);
+    endpoint->waitForAllSending(2500.0);
     logger::loggerServer.waitEmpty();
 }
 

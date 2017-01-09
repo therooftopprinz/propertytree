@@ -54,8 +54,8 @@ public:
     ValueContainerPtr createValue(std::string path, Buffer value);
     RpcContainerPtr createRpc(std::string path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler);
     bool createNode(std::string path);
-    ValueContainerPtr getValue(std::string path);
-
+    ValueContainerPtr getValue(std::string& path);
+    RpcContainerPtr getRpc(std::string& path);
     void addMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
     void deleteMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
 
