@@ -29,6 +29,7 @@ public:
     /** TODO: on destruction if meta uuid is not watched delete meta. **/
     void setHandler(std::function<Buffer(Buffer&)>);
     void setVoidHandler(std::function<void(Buffer&)>);
+    protocol::Uuid getUuid();
 
     RpcContainer(protocol::Uuid uuid, bool owned);
     RpcContainer(protocol::Uuid uuid, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler, bool owned);

@@ -613,6 +613,28 @@ bool PTreeClient::waitTransactionCV(uint32_t transactionId)
     }
 }
 
+Buffer PTreeClient::rpcRequest(RpcContainerPtr& rpc, Buffer& parameter)
+{
+    auto uuid = rpc->getUuid();
+    protocol::RpcRequest request;
+    request.uuid = uuid;
+    request.parameter = parameter;
+    auto tid = getTransactionId();
+    messageSender(tid, protocol::MessageType::RpcRequest, request);
+    auto tcv = addTransactionCV(tid);
+    if (waitTransactionCV(tid))
+    {
+        protocol::RpcResponse response;
+        response.unpackFrom(tcv->value);
+        return response.returnValue;
+    }
+    else
+    {
+        log << logger::ERROR << "RPC REQUEST TIMEOUT";
+    }
+    return Buffer();
+}
+
 void PTreeClient::handleIncoming()
 {
     handleIncomingIsRunning = true;

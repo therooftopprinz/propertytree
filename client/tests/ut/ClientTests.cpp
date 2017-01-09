@@ -435,15 +435,50 @@ TEST_F(ClientTests, shouldFetchRpcWithGetSpecificMetaWhenNotAutoUpdate)
 
     ptc = std::make_shared<PTreeClient>(endpoint);
 
-    auto value = ptc->getRpc(rpcPath);
+    auto rpc = ptc->getRpc(rpcPath);
 
-    EXPECT_TRUE(value);
+    EXPECT_TRUE(rpc);
 
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(1s);
     endpoint->waitForAllSending(2500.0);
     logger::loggerServer.waitEmpty();
 }
+
+TEST_F(ClientTests, shouldRequestRpc)
+{
+    std::string rpcPath = "/Rpc";
+    Buffer param = {69};
+    MessageMatcher getSpecificMetaRequestMessageMatcher = createGetSpecificMetaRequestMessage(0, rpcPath);
+    MessageMatcher rpcRequestMessageMatcher = createRpcRequestMessage(1, 100, param);
+
+    std::function<void()> getSpecificMetaRequestAction = [this]()
+    {
+        this->endpoint->queueToReceive(createGetSpecificMetaResponseMessage(0, 100, protocol::PropertyType::Rpc, "/Rpc"));
+    };
+
+    std::function<void()> rpcRequestAction = [this]()
+    {
+        this->endpoint->queueToReceive(createRpcResponseMessage(1, Buffer({0})));
+    };
+
+    endpoint->expectSend(1, 0, false, 1, getSpecificMetaRequestMessageMatcher.get(), getSpecificMetaRequestAction);
+    endpoint->expectSend(1, 0, false, 1, rpcRequestMessageMatcher.get(), rpcRequestAction);
+
+    ptc = std::make_shared<PTreeClient>(endpoint);
+
+    auto rpc = ptc->getRpc(rpcPath);
+
+    ASSERT_TRUE(rpc);
+    auto rval = ptc->rpcRequest(rpc, param);
+    EXPECT_TRUE(rval.size()>0);
+
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1s);
+    endpoint->waitForAllSending(2500.0);
+    logger::loggerServer.waitEmpty();
+}
+
 
 } // namespace client
 } // namespace ptree

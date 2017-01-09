@@ -13,6 +13,10 @@ void RpcContainer::setVoidHandler(std::function<void(Buffer&)>)
 {
 
 }
+protocol::Uuid RpcContainer::getUuid()
+{
+    return uuid;
+}
 RpcContainer::RpcContainer(protocol::Uuid uuid, bool owned):
     uuid(uuid), owned(owned), log("RpcContainer")
 {

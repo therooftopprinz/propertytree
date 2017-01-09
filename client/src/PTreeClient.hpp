@@ -77,7 +77,7 @@ public:
         sendSetValue(vc);
     }
 
-    BufferPtr rpcRequest(std::string rpcObject, Buffer argument);
+    Buffer rpcRequest(RpcContainerPtr& rpc, Buffer& argument);
 
 private:
     void signIn(bool enableMetaUpdate, uint32_t updateRate);
