@@ -58,7 +58,7 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Buff
         {
             log << logger::DEBUG << "Node to be created.";
             auto node = ptree.createProperty<core::Node>(request.path);
-            node.second->setOwner(&clientServer);
+            /**TODO: set owner**/
             id = node.first;
         }
         else if (request.type == protocol::PropertyType::Value)
@@ -67,7 +67,7 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Buff
             auto val = ptree.createProperty<core::Value>(request.path);
             utils::printRaw((request.data).data(), (request.data).size());
             val.second->setValue(request.data);
-            val.second->setOwner(&clientServer);
+            /**TODO: set owner**/
             id = val.first;
         }
         else if (request.type == protocol::PropertyType::Rpc)

@@ -30,16 +30,11 @@ inline void DeleteRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
     {
         log << logger::DEBUG << "Deleting " << request.path;
         auto property = ptree.getPropertyByPath<core::IProperty>(request.path);
-        if (property->getOwner() != &clientServer)
-        {
-            response.response = protocol::DeleteResponse::Response::NOT_PERMITTED;
-            log << logger::ERROR << "Permission error: " << request.path;
-        }
-        else
-        {
-            uuid = ptree.deleteProperty(request.path);
-            deleted = true;
-        }
+        /**TODO: check ownership if allowed to delete**/
+
+        uuid = ptree.deleteProperty(request.path);
+        deleted = true;
+
     }
     catch (core::ObjectNotFound)
     {

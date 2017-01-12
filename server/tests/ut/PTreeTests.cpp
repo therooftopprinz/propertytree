@@ -41,6 +41,7 @@ struct PTreeTests : public ::testing::Test
         return reinterpret_cast<T*>(value);
     }
 
+    const protocol::Uuid uuid = 100; 
     logger::Logger log;
 
 };
@@ -63,7 +64,8 @@ TYPED_TEST_P(ValueSetGetTest, shouldSetGetNative) {
     TypeParam tval = static_cast<TypeParam>(randomVal);
     // std::cout << "converted: " << tval << std::endl;
 
-    Value value;
+    const protocol::Uuid uuid = 100;
+    Value value(uuid, NodePtr());
 
     value.setValue(tval);
     EXPECT_EQ(value.getValue<TypeParam>(), tval);
@@ -95,7 +97,7 @@ TEST_F(PTreeTests, shouldSetGetBuffered)
 
     ValueContainer data = makeValue(&testvalue, sizeof(testvalue));
 
-    Value value;
+    Value value(uuid, NodePtr());
 
     value.setValue(testvalue);
 
@@ -118,8 +120,7 @@ TEST_F(PTreeTests, shouldCallWatcherWhenModified)
     WatcherMock watcher;
     ValueWatcher watcherfn = std::bind(&WatcherMock::watch, &watcher, _1);
 
-    ValuePtr value = std::make_shared<Value>();
-    value->setUuid(42);
+    ValuePtr value = std::make_shared<Value>(42, NodePtr());
     ValueWkPtr container;
 
     EXPECT_CALL(watcher, watch(_))
@@ -139,8 +140,7 @@ TEST_F(PTreeTests, shouldNotCallWatcherWhenRemoved)
     ValueWatcher watcher1fn = std::bind(&WatcherMock::watch, &watcher1, _1); 
     ValueWatcher watcher2fn = std::bind(&WatcherMock::watch, &watcher2, _1); 
 
-    ValuePtr value = std::make_shared<Value>();
-    value->setUuid(42);
+    ValuePtr value = std::make_shared<Value>(42, NodePtr());
 
     EXPECT_CALL(watcher1, watch(_))
         .Times(2)
@@ -162,8 +162,7 @@ TEST_F(PTreeTests, shouldNotAddSameId)
     using std::placeholders::_1;
     WatcherMock watcher1;
     ValueWatcher watcher1fn = std::bind(&WatcherMock::watch, &watcher1, _1); 
-    Value value;
-    value.setUuid(42);
+    Value value(42, NodePtr());
 
     EXPECT_TRUE(value.addWatcher((void*)1, watcher1fn));
     EXPECT_FALSE(value.addWatcher((void*)1, watcher1fn));
@@ -174,8 +173,7 @@ TEST_F(PTreeTests, shouldNotRemoveIfNone)
     using std::placeholders::_1;
     WatcherMock watcher1;
     ValueWatcher watcher1fn = std::bind(&WatcherMock::watch, &watcher1, _1); 
-    ValuePtr value = std::make_shared<Value>();
-    value->setUuid(42);
+    ValuePtr value = std::make_shared<Value>(42, NodePtr());
 
     EXPECT_TRUE(value->addWatcher((void*)1, watcher1fn));
     EXPECT_TRUE(value->addWatcher((void*)2, watcher1fn));
@@ -186,20 +184,25 @@ TEST_F(PTreeTests, shouldNotRemoveIfNone)
 TEST_F(PTreeTests, shouldCreateAndGetNode)
 {
     using std::placeholders::_1;
-    NodePtr root = std::make_shared<Node>();
+    NodePtr root = std::make_shared<Node>(uuid, NodePtr());
 
-    auto node1 = root->createProperty<Node>("parent");
-    auto node2 = node1->createProperty<Node>("children");
-    auto valu1 = node1->createProperty<Value>("value1");
-    auto valu2 = node2->createProperty<Value>("value2");
+    const std::string parentPath = "parent";
+    const std::string childrenPath = "children";
+    const std::string value1Path = "value1";
+    const std::string value2Path = "value2";
 
-    auto gNode1 = root->getProperty<Node>("parent");
-    auto gNode2 = node1->getProperty<Node>("children");
-    auto gValu1 = node1->getProperty<Value>("value1");
-    auto gValu2 = node2->getProperty<Value>("value2");
+    auto node1 = root->createProperty<Node>(parentPath, 100);
+    auto node2 = node1->createProperty<Node>(childrenPath, 101);
+    auto valu1 = node1->createProperty<Value>(value1Path, 102);
+    auto valu2 = node2->createProperty<Value>(value2Path, 103);
 
-    auto test3 = root->getProperty<Value>("parent");
-    auto test4 = root->getProperty<Node>("parent");
+    auto gNode1 = root->getProperty<Node>(parentPath);
+    auto gNode2 = node1->getProperty<Node>(childrenPath);
+    auto gValu1 = node1->getProperty<Value>(value1Path);
+    auto gValu2 = node2->getProperty<Value>(value2Path);
+
+    auto test3 = root->getProperty<Value>(parentPath);
+    auto test4 = root->getProperty<Node>(parentPath);
 
     EXPECT_EQ(node1, gNode1);
     EXPECT_EQ(node2, gNode2);
@@ -215,9 +218,14 @@ TEST_F(PTreeTests, getNodeByPath)
     PTree ptree(idgen);
 
     auto root = ptree.getNodeByPath("/");
-    auto fGen = root->createProperty<Node>("FCS");
-    auto sGen = fGen->createProperty<Node>("AILERON");
-    auto val = sGen->createProperty<Value>("VALUE");
+
+    const std::string fcsName = "FCS";
+    const std::string aileronName = "AILERON";
+    const std::string valueName = "VALUE";
+
+    auto fGen = root->createProperty<Node>(fcsName, 100);
+    auto sGen = fGen->createProperty<Node>(aileronName, 101);
+    auto val = sGen->createProperty<Value>(valueName, 102);
     val->setValue<uint32_t>(420);
 
     auto gnode = ptree.getNodeByPath("/FCS/AILERON");
@@ -279,10 +287,13 @@ TEST_F(PTreeTests, getPropertyByPath)
     IIdGeneratorPtr idgen = std::make_shared<IdGenerator>();
     PTree ptree(idgen);
 
+    const std::string fcsName = "FCS";
+    const std::string aileronName = "AILERON";
+    const std::string valueName = "VALUE";
     auto root = ptree.getNodeByPath("/");
-    auto fGen = root->createProperty<Node>("FCS");
-    auto sGen = fGen->createProperty<Node>("AILERON");
-    auto val = sGen->createProperty<Value>("VALUE");
+    auto fGen = root->createProperty<Node>(fcsName, 100);
+    auto sGen = fGen->createProperty<Node>(aileronName, 101);
+    auto val = sGen->createProperty<Value>(valueName, 102);
     val->setValue<uint32_t>(420);
 
     auto val2 = ptree.getPropertyByPath<Value>("/FCS/AILERON/VALUE");

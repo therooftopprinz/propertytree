@@ -50,24 +50,20 @@ private:
 class IProperty
 {
 public:
+    IProperty(protocol::Uuid uuid, NodeWkPtr&& parent);
     virtual ~IProperty() = default;
-    void setOwner(void* ptr);
-    void* getOwner();
-    void setUuid(uint32_t uuid);
+    /**TODO: implement ownership**/
     protocol::Uuid getUuid();
 protected:
-    void* owner;
-    std::string path;
     protocol::Uuid uuid;
+    NodeWkPtr parent;
 };
 
 class ValueSizeIncompatible {};
 class Value : public IProperty, public std::enable_shared_from_this<Value>
 {
 public:
-    Value()
-    {
-    }
+    Value(protocol::Uuid, NodeWkPtr parent);
 
     Value(const Value& val) = delete;
 
@@ -108,7 +104,7 @@ private:
 class Rpc : public IProperty, public std::enable_shared_from_this<Rpc>
 {
 public:
-    Rpc();
+    Rpc(protocol::Uuid uuid, NodeWkPtr parent);
     ~Rpc();
 
     void setWatcher(RpcWatcher& handler);
@@ -121,15 +117,12 @@ private:
 class Node : public IProperty, public std::enable_shared_from_this<Node>
 {
 public:
-    Node():
-     properties(std::make_shared<PropertyMap>())
-    {
-    }
+    Node(protocol::Uuid uuid, NodeWkPtr parent);
 
     void deleteProperty(std::string name);
 
     template<class T>
-    std::shared_ptr<T> getProperty(std::string name)
+    std::shared_ptr<T> getProperty(const std::string& name)
     {
         std::lock_guard<std::mutex> guard(propertiesMutex);
         if (properties->find(name) != properties->end())
@@ -141,12 +134,12 @@ public:
     }
 
     template<class T>
-    std::shared_ptr<T> createProperty(std::string name)
+    std::shared_ptr<T> createProperty(const std::string& name, protocol::Uuid uuid)
     {
         std::lock_guard<std::mutex> guard(propertiesMutex);
         if (properties->find(name) == properties->end())
         {
-            auto rv = std::make_shared<T>();
+            auto rv = std::make_shared<T>(uuid, shared_from_this());
             (*properties)[name] = std::dynamic_pointer_cast<IProperty>(rv);
             return rv;
         }
@@ -170,7 +163,7 @@ class PTree
 public:
     PTree() = delete;
     PTree(IIdGeneratorPtr idgen);
-    NodePtr getNodeByPath(std::string path);
+    NodePtr getNodeByPath(const std::string& path);
 
     template<class T>
     std::shared_ptr<T> getPropertyByUuid(protocol::Uuid uuid)
@@ -185,7 +178,7 @@ public:
     }
 
     template<class T>
-    std::pair<uint32_t, std::shared_ptr<T>> createProperty(std::string path)
+    std::pair<uint32_t, std::shared_ptr<T>> createProperty(const std::string& path)
     {
         auto parentChild = utils::getParentAndChildNames(path);
 
@@ -195,19 +188,19 @@ public:
         NodePtr p = getNodeByPath(parentChild.first);
 
         std::lock_guard<std::mutex> treeguard(ptree);
-        auto rv = p->createProperty<T>(parentChild.second);
-
         uint32_t id = idgen->getId();
+        auto rv = p->createProperty<T>(parentChild.second, id);
+
         log << logger::DEBUG << "uuid:" << id;
         std::lock_guard<std::mutex> guard(uuidpropMutex);
         uuids[id] = rv;
         props[rv] = id;
-        rv->setUuid(id);
+
         return std::make_pair(id, rv);
     }
 
     template<class T>
-    std::shared_ptr<T> getPropertyByPath(std::string path)
+    std::shared_ptr<T> getPropertyByPath(const std::string& path)
     {
         auto parentChild = utils::getParentAndChildNames(path);
 

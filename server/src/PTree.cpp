@@ -11,24 +11,18 @@ namespace ptree
 namespace core
 {
 
-void IProperty::setOwner(void* ptr)
+IProperty::IProperty(protocol::Uuid uuid, NodeWkPtr&& parent):
+    uuid(uuid), parent(std::move(parent))
 {
-    owner = ptr;
 }
-
-void* IProperty::getOwner()
-{
-    return owner;
-}
-
-void IProperty::setUuid(uint32_t uuid)
-{
-    this->uuid = uuid;
-}
-
 uint32_t IProperty::getUuid()
 {
     return uuid;
+}
+
+Value::Value(protocol::Uuid uuid, NodeWkPtr parent):
+    IProperty(uuid, std::move(parent))
+{
 }
 
 Value::~Value()
@@ -105,6 +99,11 @@ ValueContainer& Value::getValue()
     return value;
 }
 
+Node::Node(protocol::Uuid uuid, NodeWkPtr parent):
+    IProperty(uuid, std::move(parent)), properties(std::make_shared<PropertyMap>())
+{
+}
+
 uint32_t Node::numberOfChildren()
 {
     return properties->size();
@@ -150,7 +149,8 @@ std::shared_ptr<const PropertyMap> Node::getProperties()
     return properties;
 }
 
-Rpc::Rpc()
+Rpc::Rpc(protocol::Uuid uuid, NodeWkPtr parent):
+    IProperty(uuid, std::move(parent))
 {
 }
 
@@ -169,13 +169,13 @@ void Rpc::operator()(uint64_t csid, uint32_t tid, ValueContainer&& parameter)
 }
 
 PTree::PTree(IIdGeneratorPtr idgen) :
-    root(std::make_shared<Node>()),
     idgen(idgen),
     log("PTree")
 {
+    root = std::make_shared<Node>(idgen->getId(), NodePtr());
 }
 
-NodePtr PTree::getNodeByPath(std::string path)
+NodePtr PTree::getNodeByPath(const std::string& path)
 {
     log << logger::DEBUG << "Get Node:" << path;
 
@@ -327,7 +327,7 @@ uint32_t PTree::deleteProperty(std::string path)
 }
 
 IdGenerator::IdGenerator():
-    base(100),
+    base(99),
     log("IdGenerator")
 {
 }
