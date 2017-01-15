@@ -20,6 +20,11 @@ uint32_t IProperty::getUuid()
     return uuid;
 }
 
+NodeWkPtr& IProperty::getParent()
+{
+    return parent;
+}
+
 Value::Value(protocol::Uuid uuid, NodeWkPtr parent):
     IProperty(uuid, std::move(parent))
 {
@@ -109,10 +114,8 @@ uint32_t Node::numberOfChildren()
     return properties->size();
 }
 
-void Node::deleteProperty(std::string name)
+void Node::deleteProperty(PropertyMap::iterator found)
 {
-    std::lock_guard<std::mutex> guard(propertiesMutex);
-    auto found = properties->find(name);
     if (found != properties->end())
     {
         auto asNode = std::dynamic_pointer_cast<Node>(found->second);
@@ -130,16 +133,34 @@ void Node::deleteProperty(std::string name)
             }
             else
             {
-                log << logger::ERROR << "Delete: Node not empty:" << name;
+                log << logger::ERROR << "Delete: Node not empty!";
                 throw NotEmpty();
             }
         }
     }
     else
     {
-        log << logger::ERROR << "Delete: Node not found:" << name;
+        log << logger::ERROR << "Delete: Not found!";
         throw ObjectNotFound();
     }
+}
+
+void Node::deleteProperty(std::string name)
+{
+    log << logger::ERROR << "Deleting: " << name;
+    std::lock_guard<std::mutex> guard(propertiesMutex);
+    auto found = properties->find(name);
+    deleteProperty(found);
+}
+
+void Node::deleteProperty(protocol::Uuid uuid)
+{
+    log << logger::ERROR << "Deleting: " << uuid;
+    std::lock_guard<std::mutex> guard(propertiesMutex);
+    auto found = std::find_if(properties->begin(), properties->end(), [&uuid](const auto& i) {
+            return i.second->getUuid() == uuid;
+        });
+    deleteProperty(found);
 }
 
 logger::Logger Node::log = logger::Logger("Node");
@@ -324,6 +345,22 @@ uint32_t PTree::deleteProperty(std::string path)
     uuids.erase(deleteItUuid);
 
     return uuid;
+}
+
+bool PTree::deleteProperty(protocol::Uuid uuid)
+{
+    std::lock_guard<std::mutex> treeguard(ptree);
+    log << logger::DEBUG << "PTree deleting: " << uuid;
+
+    std::lock_guard<std::mutex> guard(uuidpropMutex);
+    auto deleteItProp = uuids.find(uuid);
+    if (deleteItProp != uuids.end())
+    {
+        // NOTE: should not happen to be null
+        auto parent = deleteItProp->second->getParent().lock();
+        parent->deleteProperty(uuid);
+    }
+    return false;
 }
 
 IdGenerator::IdGenerator():

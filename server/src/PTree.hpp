@@ -54,6 +54,7 @@ public:
     virtual ~IProperty() = default;
     /**TODO: implement ownership**/
     protocol::Uuid getUuid();
+    NodeWkPtr& getParent();
 protected:
     protocol::Uuid uuid;
     NodeWkPtr parent;
@@ -120,6 +121,7 @@ public:
     Node(protocol::Uuid uuid, NodeWkPtr parent);
 
     void deleteProperty(std::string name);
+    void deleteProperty(protocol::Uuid uuid);
 
     template<class T>
     std::shared_ptr<T> getProperty(const std::string& name)
@@ -150,6 +152,8 @@ public:
     std::shared_ptr<const PropertyMap> getProperties();
     uint32_t numberOfChildren();
 private:
+    void deleteProperty(PropertyMap::iterator found);
+
     PropertyMapPtr properties;
     std::mutex propertiesMutex;
     static logger::Logger log;
@@ -211,6 +215,7 @@ public:
 
     std::list<std::tuple<std::string, protocol::Uuid, protocol::PropertyType>> getPTreeInfo();
     uint32_t deleteProperty(std::string path);
+    bool deleteProperty(protocol::Uuid uuid);
 private:
     NodePtr root;
     UuidPropertyMap uuids;

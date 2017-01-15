@@ -300,5 +300,33 @@ TEST_F(PTreeTests, getPropertyByPath)
     EXPECT_EQ(val, val2);
 }
 
+TEST_F(PTreeTests, shouldDeleteOnPTree)
+{
+    using std::placeholders::_1;
+    IIdGeneratorPtr idgen = std::make_shared<IdGenerator>();
+    PTree ptree(idgen);
+
+    const std::string valuePath = "/Value";
+    auto fcs =  ptree.createProperty<Node>(valuePath);
+
+    ptree.deleteProperty(valuePath);
+
+    EXPECT_THROW(ptree.getPropertyByPath<Value>(valuePath), ObjectNotFound);
+}
+
+TEST_F(PTreeTests, shouldDelete2OnPTree)
+{
+    using std::placeholders::_1;
+    IIdGeneratorPtr idgen = std::make_shared<IdGenerator>();
+    PTree ptree(idgen);
+
+    const std::string valuePath = "/Value";
+    auto fcs =  ptree.createProperty<Node>(valuePath);
+
+    ptree.deleteProperty(fcs.first);
+
+    EXPECT_THROW(ptree.getPropertyByPath<Value>(valuePath), ObjectNotFound);
+}
+
 } // namespace core
 } // namespace ptree
