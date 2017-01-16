@@ -61,18 +61,16 @@ void ClientServerMonitor::notifyDeletion(uint32_t uuid)
     }
 }
 
-IClientServerPtr ClientServerMonitor::getClientServerPtrById(uint64_t csId)
+void ClientServerMonitor::notifyRpcResponse(uint64_t clientServerId, uint32_t transactionId, Buffer&& returnValue)
 {
     std::lock_guard<std::mutex> guard(clientServersMutex);
     for (auto& clientServer : clientServers)
     {
-        if(csId == (uintptr_t)clientServer.get())
+        if(clientServerId == (uintptr_t)clientServer.get())
         {
-            return clientServer;
+            clientServer->notifyRpcResponse(transactionId, std::move(returnValue));;
         }
     }
-
-    return IClientServerPtr();
 }
 
 void ClientServer::setup()

@@ -25,9 +25,7 @@ void HandleRpcResponseMessageHandler::handle(protocol::MessageHeaderPtr header, 
 
     log << logger::DEBUG << "requesting handle rpc for: " << response.callerId << " at: "
         << response.callerTransactionId;
-    auto csTarget = monitor.getClientServerPtrById(response.callerId);
-
-    csTarget->notifyRpcResponse(response.callerTransactionId, std::move(response.returnValue));
+    monitor.notifyRpcResponse(response.callerId, response.callerTransactionId, std::move(response.returnValue));
 }
 
 } // server

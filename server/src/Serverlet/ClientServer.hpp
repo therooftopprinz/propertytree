@@ -9,6 +9,7 @@
 #include <server/src/Types.hpp>
 
 #include "IClientServer.hpp"
+#include "PTreeOutgoing.hpp"
 
 #include "MessageHandlerFactory.hpp"
 
@@ -55,7 +56,7 @@ public:
     virtual void removeClientServer(IClientServerPtr clientServer) = 0;
     virtual void notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path) = 0;
     virtual void notifyDeletion(uint32_t uuid) = 0;
-    virtual IClientServerPtr getClientServerPtrById(uint64_t csId) = 0;
+    virtual void notifyRpcResponse(uint64_t csId, uint32_t transactionId, Buffer&& returnValue) = 0;
 };
 
 /** TODO: UT for monitor **/
@@ -69,7 +70,6 @@ public:
     void notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path);
     void notifyDeletion(uint32_t uuid);
     void notifyRpcResponse(uint64_t clientServerId, uint32_t transactionId, Buffer&& returnValue);
-    IClientServerPtr getClientServerPtrById(uint64_t csId);
 
 private:
     /** NOTE: This will be kept as shared_ptr because weak doesnt have == operator for searching through the list.
@@ -87,6 +87,7 @@ class ClientServer : public IClientServer
 public:
     ClientServer(IEndPointPtr endpoint, core::PTreePtr ptree, IClientServerMonitorPtr monitor):
         endpoint(endpoint),
+        outgoing(endpoint),
         ptree(ptree),
         monitor(monitor),
         handleIncomingIsRunning(false),
@@ -146,6 +147,8 @@ private:
 
     IEndPointPtr endpoint;
     std::mutex sendLock;
+
+    PTreeOutgoing outgoing;
 
     core::PTreePtr ptree;
     IClientServerMonitorPtr monitor;
