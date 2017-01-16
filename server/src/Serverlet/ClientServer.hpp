@@ -2,29 +2,60 @@
 #define SERVER_CLIENTSERVER_HPP_
 
 #include <mutex>
-#include <interface/protocol.hpp>
+
 #include <server/src/PTreeTcpServer.hpp>
 #include <server/src/PTree.hpp>
 #include <common/src/Logger.hpp>
 #include <server/src/Types.hpp>
+
+#include "IClientServer.hpp"
 
 #include "MessageHandlerFactory.hpp"
 
 namespace ptree
 {
 namespace server
-{   
+{
+
+
+/**
+Inteface: IClientServer
+Responsibilities:
+    notifyCreation, notifyDeletion - notify the ClientServer about the change in meta
+    notifyValueUpdate              - notify the ClientServer about the change in property value
+    notifyRpcRequest               - notify the owning ClientServer about the incoming rpc request
+    notifyRpcResponse              - notify the ClientServer about the rpc response
+    setUpdateInterval              - outgoing update rate
+    clientSigned                   - set ClientServer to signedIn
+**/
+struct  IClientServer : public std::enable_shared_from_this<IClientServer>
+{
+    virtual void notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path) = 0;
+    virtual void notifyDeletion(uint32_t uuid) = 0;
+    virtual void notifyValueUpdate(core::ValuePtr) = 0;
+
+    virtual void notifyRpcRequest(protocol::Uuid uuid, uint64_t clientServerId, uint32_t transactionId, Buffer&& parameter) = 0;
+    virtual void notifyRpcResponse(uint32_t transactionId, Buffer&& returnValue) = 0;
+
+    // virtual void send(uint32_t transactionId, protocol::MessageType messageType, protocol::Message message); 
+
+    virtual void setUpdateInterval(uint32_t interval) = 0;
+    virtual void clientSigned() = 0;
+
+};
+
+using IClientServerPtr = std::shared_ptr<IClientServer>;
 
 class IClientServerMonitor
 {
 public:
     IClientServerMonitor() {}
     virtual ~IClientServerMonitor() {}
-    virtual void addClientServer(ClientServerPtr clientServer) = 0;
-    virtual void removeClientServer(ClientServerPtr clientServer) = 0;
+    virtual void addClientServer(IClientServerPtr clientServer) = 0;
+    virtual void removeClientServer(IClientServerPtr clientServer) = 0;
     virtual void notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path) = 0;
     virtual void notifyDeletion(uint32_t uuid) = 0;
-    virtual ClientServerPtr getClientServerPtrById(uint64_t csId) = 0;
+    virtual IClientServerPtr getClientServerPtrById(uint64_t csId) = 0;
 };
 
 /** TODO: UT for monitor **/
@@ -33,24 +64,25 @@ class ClientServerMonitor : public IClientServerMonitor
 public:
     ClientServerMonitor();
     ~ClientServerMonitor();
-    void addClientServer(ClientServerPtr clientServer);
-    void removeClientServer(ClientServerPtr clientServer);
+    void addClientServer(IClientServerPtr clientServer);
+    void removeClientServer(IClientServerPtr clientServer);
     void notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path);
     void notifyDeletion(uint32_t uuid);
     void notifyRpcResponse(uint64_t clientServerId, uint32_t transactionId, Buffer&& returnValue);
-    ClientServerPtr getClientServerPtrById(uint64_t csId);
+    IClientServerPtr getClientServerPtrById(uint64_t csId);
 
 private:
     /** NOTE: This will be kept as shared_ptr because weak doesnt have == operator for searching through the list.
         This won't cause circular references if ClientServer is removed from the monitor.**/
-    std::list<ClientServerPtr> clientServers;
+    std::list<IClientServerPtr> clientServers;
     std::mutex clientServersMutex;
     logger::Logger log;
 };
 
 
 struct MessageHandlerFactory;
-class ClientServer : public std::enable_shared_from_this<ClientServer>
+
+class ClientServer : public IClientServer
 {
 public:
     ClientServer(IEndPointPtr endpoint, core::PTreePtr ptree, IClientServerMonitorPtr monitor):

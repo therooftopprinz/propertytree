@@ -1,9 +1,9 @@
+#ifndef SERVER_TYPES_HPP_
+#define SERVER_TYPES_HPP_
+
 #include <memory>
 #include <vector>
 #include <map>
-
-#ifndef SERVER_TYPES_HPP_
-#define SERVER_TYPES_HPP_
 
 namespace ptree
 {

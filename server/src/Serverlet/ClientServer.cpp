@@ -19,14 +19,14 @@ ClientServerMonitor::~ClientServerMonitor()
 {
 }
 
-void ClientServerMonitor::addClientServer(ClientServerPtr clientServer)
+void ClientServerMonitor::addClientServer(IClientServerPtr clientServer)
 {
     std::lock_guard<std::mutex> guard(clientServersMutex);
     log << logger::DEBUG << "adding client server to monitor " << (void*)clientServer.get();
     clientServers.push_back(clientServer);
 }
 
-void ClientServerMonitor::removeClientServer(ClientServerPtr clientServer)
+void ClientServerMonitor::removeClientServer(IClientServerPtr clientServer)
 {
     std::lock_guard<std::mutex> guard(clientServersMutex);
     log << logger::DEBUG << "removing client server to monitor " << (void*)clientServer.get();
@@ -61,7 +61,7 @@ void ClientServerMonitor::notifyDeletion(uint32_t uuid)
     }
 }
 
-ClientServerPtr ClientServerMonitor::getClientServerPtrById(uint64_t csId)
+IClientServerPtr ClientServerMonitor::getClientServerPtrById(uint64_t csId)
 {
     std::lock_guard<std::mutex> guard(clientServersMutex);
     for (auto& clientServer : clientServers)
@@ -72,7 +72,7 @@ ClientServerPtr ClientServerMonitor::getClientServerPtrById(uint64_t csId)
         }
     }
 
-    return ClientServerPtr();
+    return IClientServerPtr();
 }
 
 void ClientServer::setup()
@@ -125,7 +125,7 @@ void ClientServer::processMessage(protocol::MessageHeaderPtr header, BufferPtr m
     log << logger::DEBUG << "ClientServer::processMessage()";
     auto type = header->type;
     std::lock_guard<std::mutex> guard(sendLock);
-    auto lval_this = shared_from_this();
+    auto lval_this = std::dynamic_pointer_cast<ClientServer>(shared_from_this());
     /** TODO: Remove after investigation is done **/
     // if (type==protocol::MessageType::SubscribePropertyUpdateRequest)
     //     std::make_unique<SubscribePropertyUpdateRequestMessageHandler>(lval_this, *endpoint.get(), *ptree.get(), *monitor.get())->handle(header, message);
