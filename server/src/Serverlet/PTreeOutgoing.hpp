@@ -2,6 +2,7 @@
 #define SERVER_PTREEOUTGOING_HPP_
 
 #include <mutex>
+#include <memory>
 #include <common/src/IEndPoint.hpp>
 #include <server/src/PTree.hpp>
 #include <common/src/Logger.hpp>
@@ -48,6 +49,9 @@ public:
 
     logger::Logger log;
 };
+
+
+using PTreeOutgoingPtr = std::shared_ptr<PTreeOutgoing>;
 
 } // namespace server
 } // namespace ptree

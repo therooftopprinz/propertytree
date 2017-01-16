@@ -87,7 +87,7 @@ class ClientServer : public IClientServer
 public:
     ClientServer(IEndPointPtr endpoint, core::PTreePtr ptree, IClientServerMonitorPtr monitor):
         endpoint(endpoint),
-        outgoing(endpoint),
+        outgoing(std::make_shared<PTreeOutgoing>(endpoint)),
         ptree(ptree),
         monitor(monitor),
         handleIncomingIsRunning(false),
@@ -148,7 +148,7 @@ private:
     IEndPointPtr endpoint;
     std::mutex sendLock;
 
-    PTreeOutgoing outgoing;
+    PTreeOutgoingPtr outgoing;
 
     core::PTreePtr ptree;
     IClientServerMonitorPtr monitor;
