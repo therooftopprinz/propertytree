@@ -676,46 +676,45 @@ TEST_F(ClientServerTests, shouldNotSendPropertyUpdateNotificationWhenUnsubscribe
     logger::loggerServer.waitEmpty();
 }
 
+TEST_F(ClientServerTests, shouldGetValue)
+{
+    endpoint->queueToReceive(createTestRequestMessage);
 
-// TEST_F(ClientServerTests, shouldGetValue)
-// {
-//     endpoint->queueToReceive(createTestRequestMessage);
+    auto expectedValue = utils::buildSharedBufferedValue(6969);
+    MessageMatcher getValueResponseFullMatcher(createGetValueResponseMessage(getValueReqTid, *expectedValue));
 
-//     auto expectedValue = utils::buildSharedBufferedValue(6969);
-//     MessageMatcher getValueResponseFullMatcher(createGetValueResponseMessage(getValueReqTid, *expectedValue));
+    PropertyUpdateNotificationMatcher valueUpdateMatcher("/Test/Value", expectedValue, ptree);
 
-//     PropertyUpdateNotificationMatcher valueUpdateMatcher("/Test/Value", expectedValue, ptree);
+    std::function<void()> subscribeValueRspAction = [this, &expectedValue]()
+    {
+        log << logger::DEBUG << "Subscribed to uuid: " << this->uuidOfValue;
+        /** TODO: setValueReqTid **/
+        this->endpoint->queueToReceive(createSetValueIndicationMessage(getValueReqTid, this->uuidOfValue, *expectedValue));
+    };
 
-//     std::function<void()> subscribeValueRspAction = [this, &expectedValue]()
-//     {
-//         log << logger::DEBUG << "Subscribed to uuid: " << this->uuidOfValue;
-//         /** TODO: setValueReqTid **/
-//         this->endpoint->queueToReceive(createSetValueIndicationMessage(getValueReqTid, this->uuidOfValue, *expectedValue));
-//     };
+    std::function<void()> valueUpdateAction = [this]()
+    {
+        log << logger::DEBUG << "Getting value of uuid: " << this->uuidOfValue;
+        this->endpoint->queueToReceive(createGetValueRequestMessage(getValueReqTid, this->uuidOfValue));
+    };
 
-//     std::function<void()> valueUpdateAction = [this]()
-//     {
-//         log << logger::DEBUG << "Getting value of uuid: " << this->uuidOfValue;
-//         this->endpoint->queueToReceive(createGetValueRequestMessage(getValueReqTid, this->uuidOfValue));
-//     };
+    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationSubscribeAction);
+    endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(6, 0, false, 1, subscribeValueResponseOkMatcher.get(), subscribeValueRspAction);
+    endpoint->expectSend(7, 0, false, 1, valueUpdateMatcher.get(), valueUpdateAction);
+    endpoint->expectSend(8, 0, false, 1, getValueResponseFullMatcher.get(), DefaultAction::get());
 
-//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
-//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationSubscribeAction);
-//     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-//     endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(6, 0, false, 1, subscribeValueResponseOkMatcher.get(), subscribeValueRspAction);
-//     endpoint->expectSend(7, 0, false, 1, valueUpdateMatcher.get(), valueUpdateAction);
-//     endpoint->expectSend(8, 0, false, 1, getValueResponseFullMatcher.get(), DefaultAction::get());
+    server->setup();
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(500ms);
+    endpoint->waitForAllSending(10000.0);
+    server->teardown();
 
-//     server->setup();
-//     using namespace std::chrono_literals;
-//     std::this_thread::sleep_for(500ms);
-//     endpoint->waitForAllSending(10000.0);
-//     server->teardown();
-
-//     logger::loggerServer.waitEmpty();
-// }
+    logger::loggerServer.waitEmpty();
+}
 
 // TEST_F(ClientServerTests, shouldForwardRcpRequestToExecutor)
 // {

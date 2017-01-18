@@ -118,7 +118,7 @@ void PTreeOutgoing::handleOutgoing()
     {
         if (!config.enableOutgoing)
         {
-            // std::this_thread::sleep_for(std::chrono::microseconds(config.updateInterval));
+            std::this_thread::sleep_for(std::chrono::microseconds(config.updateInterval));
             continue;
         }
 
