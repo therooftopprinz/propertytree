@@ -35,8 +35,8 @@ std::unique_ptr<MessageHandler>
             return std::make_unique<RpcRequestMessageHandler>(clientServerId, *ptree);
         case (Enum) protocol::MessageType::HandleRpcResponse:
             return std::make_unique<HandleRpcResponseMessageHandler>(*notifier);
-        // case (Enum) protocol::MessageType::GetSpecificMetaRequest:
-        //     return std::make_unique<GetSpecificMetaRequestMessageHandler>(*cs.get(), *ep.get(), *pt.get(), *csmon.get());
+        case (Enum) protocol::MessageType::GetSpecificMetaRequest:
+            return std::make_unique<GetSpecificMetaRequestMessageHandler>(*outgoing, *ptree);
     }
 
     log << logger::ERROR << "Unregconize message type.";

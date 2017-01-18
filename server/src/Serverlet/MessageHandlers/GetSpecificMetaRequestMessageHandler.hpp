@@ -1,20 +1,26 @@
-// #ifndef SERVER_SERVERLET_MESSAGEHANDLERS_GETSPECIFICMETAREQUESTMESSAGEHANDLER_HPP_
-// #define SERVER_SERVERLET_MESSAGEHANDLERS_GETSPECIFICMETAREQUESTMESSAGEHANDLER_HPP_
+#ifndef SERVER_SERVERLET_MESSAGEHANDLERS_GETSPECIFICMETAREQUESTMESSAGEHANDLER_HPP_
+#define SERVER_SERVERLET_MESSAGEHANDLERS_GETSPECIFICMETAREQUESTMESSAGEHANDLER_HPP_
 
-// #include "MessageHandler.hpp"
+#include <server/src/PTree.hpp>
+#include <server/src/Serverlet/IPTreeOutgoing.hpp>
+#include "MessageHandler.hpp"
 
-// namespace ptree
-// {
-// namespace server
-// {
+namespace ptree
+{
+namespace server
+{
 
-// struct  GetSpecificMetaRequestMessageHandler : public MessageHandler
-// {
-//     GetSpecificMetaRequestMessageHandler(ClientServer& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor& csmon);
-//     void handle(protocol::MessageHeaderPtr header, BufferPtr message);
-// };
+class  GetSpecificMetaRequestMessageHandler : public MessageHandler
+{
+public:
+    GetSpecificMetaRequestMessageHandler(IPTreeOutgoing& outgoing, core::PTree& ptree);
+    void handle(protocol::MessageHeaderPtr header, BufferPtr message);
+private:
+    IPTreeOutgoing& outgoing;
+    core::PTree& ptree;
+};
 
-// } // namespace server
-// } // namespace ptree
+} // namespace server
+} // namespace ptree
 
-// #endif // SERVER_SERVERLET_MESSAGEHANDLERS_GETSPECIFICMETAREQUESTMESSAGEHANDLER_HPP_
+#endif // SERVER_SERVERLET_MESSAGEHANDLERS_GETSPECIFICMETAREQUESTMESSAGEHANDLER_HPP_

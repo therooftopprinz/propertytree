@@ -778,62 +778,26 @@ TEST_F(ClientServerTests, shouldForwardRcpResponseToCaller)
     logger::loggerServer.waitEmpty();
 }
 
-// /** TODO: For reference only. new test will be created for new  GetSpecificMeta **/
-// // TEST_F(ClientServerTests, shouldSigninRequestAndRespondWithMeta)
-// // {
-// //     auto fcs =  ptree->createProperty<core::Node>("/FCS"); // 100
-// //     auto sens = ptree->createProperty<core::Node>("/SENSOR"); // 101
-// //     auto aile = ptree->createProperty<core::Node>("/FCS/AILERON"); // 102
-// //     auto acel = ptree->createProperty<core::Node>("/SENSOR/ACCELEROMETER"); // 103
-// //     auto ther = ptree->createProperty<core::Node>("/SENSOR/THERMOMETER"); // 104
-// //     auto val1 = ptree->createProperty<core::Value>("/SENSOR/THERMOMETER/VALUE"); // 105
-// //     auto val2 = ptree->createProperty<core::Value>("/SENSOR/ACCELEROMETER/VALUE"); // 106
-// //     auto val3 = ptree->createProperty<core::Value>("/FCS/AILERON/CURRENT_DEFLECTION"); // 107
-// //     auto val4 = ptree->createProperty<core::Value>("/FCS/AILERON/TRIM"); //108
+TEST_F(ClientServerTests, shouldGetSpecificMetaRequestAndRespondTheCorrectMeta)
+{
+    ptree->createProperty<core::Node>("/FCS"); // 100
+    ptree->createProperty<core::Node>("/FCS/AILERON"); // 101
+    ptree->createProperty<core::Value>("/FCS/AILERON/CURRENT_DEFLECTION"); // 102
 
-// //     std::list<std::tuple<std::string, protocol::Uuid, protocol::PropertyType>> metalist;
+    std::string path = "/FCS/AILERON/CURRENT_DEFLECTION";
 
-// //     metalist.emplace_back("/FCS", protocol::Uuid(100), protocol::PropertyType::Node);
-// //     metalist.emplace_back("/FCS/AILERON", protocol::Uuid(102), protocol::PropertyType::Node);
-// //     metalist.emplace_back("/FCS/AILERON/CURRENT_DEFLECTION", protocol::Uuid(107), protocol::PropertyType::Value);
-// //     metalist.emplace_back("/FCS/AILERON/TRIM", protocol::Uuid(108), protocol::PropertyType::Value);
-// //     metalist.emplace_back("/SENSOR", protocol::Uuid(101), protocol::PropertyType::Node);
-// //     metalist.emplace_back("/SENSOR/ACCELEROMETER", protocol::Uuid(103), protocol::PropertyType::Node);
-// //     metalist.emplace_back("/SENSOR/ACCELEROMETER/VALUE", protocol::Uuid(106), protocol::PropertyType::Value);
-// //     metalist.emplace_back("/SENSOR/THERMOMETER", protocol::Uuid(104), protocol::PropertyType::Node);
-// //     metalist.emplace_back("/SENSOR/THERMOMETER/VALUE", protocol::Uuid(105), protocol::PropertyType::Value);
+    endpoint->queueToReceive(createGetSpecificMetaRequestMessage(1, path));
+    MessageMatcher getSpecifiMetaResponsetMessageMatcher(
+        createGetSpecificMetaResponseMessage(1, 102, protocol::PropertyType::Value, path));
 
-// //     signinRspMsgMatcher = std::make_shared<MessageMatcher>(createSigninResponseMessage(signinRqstTid, 1, metalist));
+    endpoint->expectSend(0, 0, false, 1, getSpecifiMetaResponsetMessageMatcher.get(), DefaultAction::get());
 
-// //     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-
-// //     using namespace std::chrono_literals;
-// //     std::this_thread::sleep_for(1ms);
-// //     server->setup();
-// //     endpoint->waitForAllSending(2500.0);
-// //     server->teardown();
-// // }
-
-// TEST_F(ClientServerTests, shouldGetSpecificMetaRequestAndRespondTheCorrectMeta)
-// {
-//     ptree->createProperty<core::Node>("/FCS"); // 100
-//     ptree->createProperty<core::Node>("/FCS/AILERON"); // 101
-//     ptree->createProperty<core::Value>("/FCS/AILERON/CURRENT_DEFLECTION"); // 102
-
-//     std::string path = "/FCS/AILERON/CURRENT_DEFLECTION";
-
-//     endpoint->queueToReceive(createGetSpecificMetaRequestMessage(1, path));
-//     MessageMatcher getSpecifiMetaResponsetMessageMatcher(
-//         createGetSpecificMetaResponseMessage(1, 102, protocol::PropertyType::Value, path));
-
-//     endpoint->expectSend(0, 0, false, 1, getSpecifiMetaResponsetMessageMatcher.get(), DefaultAction::get());
-
-//     using namespace std::chrono_literals;
-//     std::this_thread::sleep_for(1ms);
-//     server->setup();
-//     endpoint->waitForAllSending(2500.0);
-//     server->teardown();
-// }
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1ms);
+    server->setup();
+    endpoint->waitForAllSending(2500.0);
+    server->teardown();
+}
 
 } // namespace server
 } // namespace ptree
