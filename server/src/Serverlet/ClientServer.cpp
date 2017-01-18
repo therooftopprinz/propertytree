@@ -76,7 +76,7 @@ void ClientServer::setup()
         return;
     log << logger::DEBUG << "ClientServer::setup(): Setup begin...";
     isSetup = true;
-    notifier->addClientServer(csid, outgoing);
+    notifier->addClientServer(clienServerId, outgoing);
     std::function<void()> incoming = std::bind(&ClientServer::handleIncoming, this);
     killHandleIncoming = false;
     log << logger::DEBUG << "Creating incomingThread.";
@@ -97,7 +97,7 @@ void ClientServer::teardown()
     killHandleIncoming = true;
 
     log << logger::DEBUG << "teardown: removing from notifier";
-    notifier->removeClientServer(csid);
+    notifier->removeClientServer(clienServerId);
 
     log << logger::DEBUG << "teardown: waiting thread to stop...";
     log << logger::DEBUG << "teardown: handleIncoming " << handleIncomingIsRunning;
@@ -119,7 +119,7 @@ void ClientServer::processMessage(protocol::MessageHeaderPtr header, BufferPtr m
     //     std::make_unique<SubscribePropertyUpdateRequestMessageHandler>(lval_this, *endpoint.get(), *ptree.get(), *notifier.get())->handle(header, message);
     // else
         IPTreeOutgoingPtr outgoingAliased(shared_from_this(), &outgoing);
-        MessageHandlerFactory::get(type, config, outgoingAliased, ptree, notifier)->handle(header, message);
+        MessageHandlerFactory::get(clienServerId, type, config, outgoingAliased, ptree, notifier)->handle(header, message);
 
     processMessageRunning--;
 }

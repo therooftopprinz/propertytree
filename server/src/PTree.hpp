@@ -70,8 +70,8 @@ public:
 
     ~Value();
 
-    bool addWatcher(void* id, ValueWatcher& watcher);
-    bool removeWatcher(void* id);
+    bool addWatcher(uint64_t csid, ValueWatcher& watcher);
+    bool removeWatcher(uint64_t id);
     
     template<class T>
     T& getValue()
@@ -95,7 +95,7 @@ public:
     ValueContainer& getValue();
 
 private:
-    std::list<IdWatcherPair>::iterator findWatcher(void* id);
+    std::list<IdWatcherPair>::iterator findWatcher(uint64_t id);
     void informValueWatcher();
     ValueContainer value;
     std::list<IdWatcherPair> watchers;

@@ -34,7 +34,7 @@ Value::~Value()
 {
 }
 
-std::list<IdWatcherPair>::iterator Value::findWatcher(void* id)
+std::list<IdWatcherPair>::iterator Value::findWatcher(uint64_t id)
 {
     auto isFnEq = [&id](IdWatcherPair& tocompare)
     {
@@ -43,16 +43,16 @@ std::list<IdWatcherPair>::iterator Value::findWatcher(void* id)
     return std::find_if(watchers.begin(), watchers.end(), isFnEq);
 }
 
-bool Value::addWatcher(void* id, ValueWatcher& watcher)
+bool Value::addWatcher(uint64_t csid, ValueWatcher& watcher)
 {
     std::lock_guard<std::mutex> guard(watchersMutex);
-    if (findWatcher(id) != watchers.end())
+    if (findWatcher(csid) != watchers.end())
     {
         return false;
     }
     else
     {
-        watchers.push_back(std::make_pair(id, watcher));
+        watchers.push_back(std::make_pair(csid, watcher));
         return true;
     }
 }
@@ -71,7 +71,7 @@ void Value::informValueWatcher()
     }
 }
 
-bool Value::removeWatcher(void* id)
+bool Value::removeWatcher(uint64_t id)
 {
     std::lock_guard<std::mutex> guard(watchersMutex);
     auto found = findWatcher(id);

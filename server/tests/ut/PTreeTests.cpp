@@ -126,7 +126,7 @@ TEST_F(PTreeTests, shouldCallWatcherWhenModified)
     EXPECT_CALL(watcher, watch(_))
         .WillOnce(DoAll(SaveArg<0>(&container), Return(true)));
 
-    value->addWatcher((void*)1, watcherfn);
+    value->addWatcher(1, watcherfn);
     value->setValue<uint32_t>(420u);
 
     EXPECT_EQ(*reconstructValue<uint32_t>(container.lock()->getValue().data()), 420u);
@@ -149,10 +149,10 @@ TEST_F(PTreeTests, shouldNotCallWatcherWhenRemoved)
         .Times(1)
         .WillRepeatedly(Return(true));
 
-    value->addWatcher((void*)1, watcher1fn);
-    value->addWatcher((void*)2, watcher2fn);
+    value->addWatcher(1, watcher1fn);
+    value->addWatcher(2, watcher2fn);
     value->setValue<uint32_t>(420u);
-    value->removeWatcher((void*)2);
+    value->removeWatcher(2);
     value->setValue<uint32_t>(200u);
 
 }
@@ -164,8 +164,8 @@ TEST_F(PTreeTests, shouldNotAddSameId)
     ValueWatcher watcher1fn = std::bind(&WatcherMock::watch, &watcher1, _1); 
     Value value(42, NodePtr());
 
-    EXPECT_TRUE(value.addWatcher((void*)1, watcher1fn));
-    EXPECT_FALSE(value.addWatcher((void*)1, watcher1fn));
+    EXPECT_TRUE(value.addWatcher(1, watcher1fn));
+    EXPECT_FALSE(value.addWatcher(1, watcher1fn));
 }
 
 TEST_F(PTreeTests, shouldNotRemoveIfNone)
@@ -175,10 +175,10 @@ TEST_F(PTreeTests, shouldNotRemoveIfNone)
     ValueWatcher watcher1fn = std::bind(&WatcherMock::watch, &watcher1, _1); 
     ValuePtr value = std::make_shared<Value>(42, NodePtr());
 
-    EXPECT_TRUE(value->addWatcher((void*)1, watcher1fn));
-    EXPECT_TRUE(value->addWatcher((void*)2, watcher1fn));
-    EXPECT_TRUE(value->removeWatcher((void*)2));
-    EXPECT_FALSE(value->removeWatcher((void*)2));
+    EXPECT_TRUE(value->addWatcher(1, watcher1fn));
+    EXPECT_TRUE(value->addWatcher(2, watcher1fn));
+    EXPECT_TRUE(value->removeWatcher(2));
+    EXPECT_FALSE(value->removeWatcher(2));
 }
 
 TEST_F(PTreeTests, shouldCreateAndGetNode)

@@ -11,7 +11,7 @@ void MessageHandlerDummy::handle(protocol::MessageHeaderPtr, BufferPtr)
 
 std::unique_ptr<MessageHandler>
     MessageHandlerFactory::
-        get(protocol::MessageType type, ClientServerConfig& config, IPTreeOutgoingPtr& outgoing, core::PTreePtr& ptree, IClientNotifierPtr& notifier)
+        get(uint64_t clientServerId,protocol::MessageType type, ClientServerConfig& config, IPTreeOutgoingPtr& outgoing, core::PTreePtr& ptree, IClientNotifierPtr& notifier)
 {
     logger::Logger log("MessageHandlerFactory");
     using Enum = uint8_t;
@@ -25,10 +25,10 @@ std::unique_ptr<MessageHandler>
             return std::make_unique<DeleteRequestMessageHandler>(*outgoing, *ptree, *notifier);
         case (Enum) protocol::MessageType::SetValueIndication:
             return std::make_unique<SetValueIndicationMessageHandler>(*ptree);
-        // case (Enum) protocol::MessageType::SubscribePropertyUpdateRequest:
-        //     return std::make_unique<SubscribePropertyUpdateRequestMessageHandler>(cs, *ep.get(), *pt.get(), *csmon.get());
-        // case (Enum) protocol::MessageType::UnsubscribePropertyUpdateRequest:
-        //     return std::make_unique<UnsubscribePropertyUpdateRequestMessageHandler>(*cs.get(), *ep.get(), *pt.get(), *csmon.get());
+        case (Enum) protocol::MessageType::SubscribePropertyUpdateRequest:
+            return std::make_unique<SubscribePropertyUpdateRequestMessageHandler>(clientServerId, outgoing, *ptree, *notifier);
+        case (Enum) protocol::MessageType::UnsubscribePropertyUpdateRequest:
+            return std::make_unique<UnsubscribePropertyUpdateRequestMessageHandler>(clientServerId, *outgoing, *ptree);
         // case (Enum) protocol::MessageType::GetValueRequest:
         //     return std::make_unique<GetValueRequestMessageHandler>(*cs.get(), *ep.get(), *pt.get(), *csmon.get());
         // case (Enum) protocol::MessageType::RpcRequest:

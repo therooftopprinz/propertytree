@@ -1,20 +1,27 @@
-// #ifndef SERVER_SERVERLET_MESSAGEHANDLERS_UNSUBSCRIBEPROPERTYUPDATEREQUESTMESSAGEHANDLER_HPP_
-// #define SERVER_SERVERLET_MESSAGEHANDLERS_UNSUBSCRIBEPROPERTYUPDATEREQUESTMESSAGEHANDLER_HPP_
+#ifndef SERVER_SERVERLET_MESSAGEHANDLERS_UNSUBSCRIBEPROPERTYUPDATEREQUESTMESSAGEHANDLER_HPP_
+#define SERVER_SERVERLET_MESSAGEHANDLERS_UNSUBSCRIBEPROPERTYUPDATEREQUESTMESSAGEHANDLER_HPP_
 
-// #include "MessageHandler.hpp"
+#include <server/src/PTree.hpp>
+#include <server/src/Serverlet/IPTreeOutgoing.hpp>
+#include "MessageHandler.hpp"
 
-// namespace ptree
-// {
-// namespace server
-// {
+namespace ptree
+{
+namespace server
+{
 
-// struct  UnsubscribePropertyUpdateRequestMessageHandler : public MessageHandler
-// {
-//     UnsubscribePropertyUpdateRequestMessageHandler(ClientServer& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor& csmon);
-//     void handle(protocol::MessageHeaderPtr header, BufferPtr message);
-// };
+class  UnsubscribePropertyUpdateRequestMessageHandler : public MessageHandler
+{
+public:
+    UnsubscribePropertyUpdateRequestMessageHandler(uint64_t clientServerId, IPTreeOutgoing& outgoing, core::PTree& ptree);
+    void handle(protocol::MessageHeaderPtr header, BufferPtr message);
+private:
+    uint64_t clientServerId;
+    IPTreeOutgoing& outgoing;
+    core::PTree& ptree;
+};
 
-// } // namespace server
-// } // namespace ptree
+} // namespace server
+} // namespace ptree
 
-// #endif // SERVER_SERVERLET_MESSAGEHANDLERS_UNSUBSCRIBEPROPERTYUPDATEREQUESTMESSAGEHANDLER_HPP_
+#endif // SERVER_SERVERLET_MESSAGEHANDLERS_UNSUBSCRIBEPROPERTYUPDATEREQUESTMESSAGEHANDLER_HPP_

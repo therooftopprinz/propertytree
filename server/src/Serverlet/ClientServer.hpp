@@ -73,7 +73,7 @@ class ClientServer : public IClientServer
 {
 public:
     ClientServer(IEndPointPtr endpoint, core::PTreePtr ptree, IClientNotifierPtr notifier):
-        csid(std::uintptr_t(this)),
+        clienServerId(std::uintptr_t(this)),
         endpoint(endpoint),
         outgoing(config, this->endpoint),
         ptree(ptree),
@@ -118,7 +118,7 @@ public:
 private:
     void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);
 
-    uint64_t csid;
+    uint64_t clienServerId;
     ClientServerConfig config;
 
     UuidActionTypeAndPathMap metaUpdateNotification;

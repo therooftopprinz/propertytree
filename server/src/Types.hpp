@@ -57,7 +57,7 @@ namespace core
 
     class PTree;
     class IIdGenerator;
-    typedef std::pair<void*, ValueWatcher> IdWatcherPair;
+    typedef std::pair<uint64_t, ValueWatcher> IdWatcherPair;
     typedef std::shared_ptr<IIdGenerator> IIdGeneratorPtr;
     typedef std::map<std::string, IPropertyPtr> PropertyMap;
     typedef std::shared_ptr<PropertyMap> PropertyMapPtr;
