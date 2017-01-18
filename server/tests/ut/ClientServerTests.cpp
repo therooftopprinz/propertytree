@@ -492,40 +492,40 @@ TEST_F(ClientServerTests, shouldDeleteWithMetaUpdateNotification)
     logger::loggerServer.waitEmpty();
 }
 
-// TEST_F(ClientServerTests, shouldSetSetValueWhenSetValueIndIsValid)
-// {
-//     endpoint->queueToReceive(createTestRequestMessage);
+TEST_F(ClientServerTests, shouldSetSetValueWhenSetValueIndIsValid)
+{
+    endpoint->queueToReceive(createTestRequestMessage);
 
-//     std::function<void()> valueCreationAction = [this]()
-//     {
-//         uint32_t uuid = this->valueCreationMatcher->getUuidOfLastMatched(); 
-//         log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher->getUuidOfLastMatched();
-//         auto data = utils::buildBufferedValue<uint32_t>(41);
+    std::function<void()> valueCreationAction = [this]()
+    {
+        uint32_t uuid = this->valueCreationMatcher->getUuidOfLastMatched(); 
+        log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher->getUuidOfLastMatched();
+        auto data = utils::buildBufferedValue<uint32_t>(41);
 
-//         this->endpoint->queueToReceive(createSetValueIndicationMessage(setValueInd1stTid, uuid, data));
-//     };
+        this->endpoint->queueToReceive(createSetValueIndicationMessage(setValueInd1stTid, uuid, data));
+    };
 
-//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
-//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
-//     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-//     endpoint->expectSend(0, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-//     endpoint->expectSend(0, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
+    endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+    endpoint->expectSend(0, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(0, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
 
-//     server->setup();
+    server->setup();
 
-//     log << logger::DEBUG << "Waiting for setval processing...";
-//     using namespace std::chrono_literals;
-//     /** TODO: use the value update notification matcher for this checking to avoid waiting **/
-//     std::this_thread::sleep_for(6s);
-//     core::ValuePtr val;
-//     ASSERT_NO_THROW(val = this->ptree->getPropertyByPath<core::Value>("/Test/Value"));
-//     EXPECT_EQ(41u, val->getValue<uint32_t>());
-//     std::this_thread::sleep_for(500ms);
-//     endpoint->waitForAllSending(15000.0);
-//     server->teardown();
+    log << logger::DEBUG << "Waiting for setval processing...";
+    using namespace std::chrono_literals;
+    /** TODO: use the value update notification matcher for this checking to avoid waiting **/
+    std::this_thread::sleep_for(6s);
+    core::ValuePtr val;
+    ASSERT_NO_THROW(val = this->ptree->getPropertyByPath<core::Value>("/Test/Value"));
+    EXPECT_EQ(41u, val->getValue<uint32_t>());
+    std::this_thread::sleep_for(500ms);
+    endpoint->waitForAllSending(15000.0);
+    server->teardown();
 
-//     logger::loggerServer.waitEmpty();
-// }
+    logger::loggerServer.waitEmpty();
+}
 
 // TEST_F(ClientServerTests, shouldGenerateMessageSubscribePropertyUpdateResponseOk)
 // {
