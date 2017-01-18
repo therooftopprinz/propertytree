@@ -1,21 +1,28 @@
-// #ifndef SERVER_SERVERLET_MESSAGEHANDLERS_DELETEREQUESTMESSAGEHANDLER_HPP_
-// #define SERVER_SERVERLET_MESSAGEHANDLERS_DELETEREQUESTMESSAGEHANDLER_HPP_
+#ifndef SERVER_SERVERLET_MESSAGEHANDLERS_DELETEREQUESTMESSAGEHANDLER_HPP_
+#define SERVER_SERVERLET_MESSAGEHANDLERS_DELETEREQUESTMESSAGEHANDLER_HPP_
 
-// #include "MessageHandler.hpp"
+#include <server/src/PTree.hpp>
+#include <server/src/Serverlet/IPTreeOutgoing.hpp>
+#include "MessageHandler.hpp"
 
-// namespace ptree
-// {
-// namespace server
-// {
+namespace ptree
+{
+namespace server
+{
 
-// struct DeleteRequestMessageHandler : public MessageHandler
-// {
-//     DeleteRequestMessageHandler(ClientServer& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon);
-//     void handle(protocol::MessageHeaderPtr header, BufferPtr message);
-// };
+class DeleteRequestMessageHandler : public MessageHandler
+{
+public:
+    DeleteRequestMessageHandler(IPTreeOutgoing& outgoing, core::PTree& ptree, IClientNotifier& notifier);
+    void handle(protocol::MessageHeaderPtr header, BufferPtr message);
+private:
+    IPTreeOutgoing& outgoing;
+    core::PTree& ptree;
+    IClientNotifier& notifier;
+};
 
 
-// } // namespace server
-// } // namespace ptree
+} // namespace server
+} // namespace ptree
 
-// #endif  // SERVER_SERVERLET_MESSAGEHANDLERS_DELETEREQUESTMESSAGEHANDLER_HPP_
+#endif  // SERVER_SERVERLET_MESSAGEHANDLERS_DELETEREQUESTMESSAGEHANDLER_HPP_

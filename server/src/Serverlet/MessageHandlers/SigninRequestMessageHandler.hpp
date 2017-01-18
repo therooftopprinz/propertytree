@@ -14,11 +14,11 @@ namespace server
 class SigninRequestMessageHandler : public MessageHandler
 {
 public:
-    SigninRequestMessageHandler(IPTreeOutgoingPtr& outgoing, ClientServerConfig& config, core::PTree& ptree,
+    SigninRequestMessageHandler(IPTreeOutgoing& outgoing, ClientServerConfig& config, core::PTree& ptree,
         IClientNotifier& notifier);
     void handle(protocol::MessageHeaderPtr header, BufferPtr message);
 private:
-    IPTreeOutgoingPtr& outgoing;
+    IPTreeOutgoing& outgoing;
     ClientServerConfig& config;
     core::PTree& ptree;
     IClientNotifier& notifier;

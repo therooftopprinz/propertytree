@@ -18,11 +18,11 @@ std::unique_ptr<MessageHandler>
     switch (uint8_t(type))
     {
         case (Enum) protocol::MessageType::SigninRequest:
-            return std::make_unique<SigninRequestMessageHandler>(outgoing, config, *ptree, *notifier);
+            return std::make_unique<SigninRequestMessageHandler>(*outgoing, config, *ptree, *notifier);
         case (Enum) protocol::MessageType::CreateRequest:
             return std::make_unique<CreateRequestMessageHandler>(outgoing, *ptree, *notifier);
-        // case (Enum) protocol::MessageType::DeleteRequest:
-        //     return std::make_unique<DeleteRequestMessageHandler>(*cs.get(), *ep.get(), *pt.get(), *csmon.get());
+        case (Enum) protocol::MessageType::DeleteRequest:
+            return std::make_unique<DeleteRequestMessageHandler>(*outgoing, *ptree, *notifier);
         // case (Enum) protocol::MessageType::SetValueIndication:
         //     return std::make_unique<SetValueIndicationMessageHandler>(*cs.get(), *ep.get(), *pt.get(), *csmon.get());
         // case (Enum) protocol::MessageType::SubscribePropertyUpdateRequest:
