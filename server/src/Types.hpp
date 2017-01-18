@@ -18,14 +18,14 @@ namespace common
 
 namespace server
 {
-    class IClientServerMonitor;
+    class IClientNotifier;
     class IClientServer;
     class ClientServer;
 
 
     typedef std::shared_ptr<ClientServer> ClientServerPtr;
     typedef std::weak_ptr<ClientServer> ClientServerWkPtr;
-    typedef std::shared_ptr<IClientServerMonitor> IClientServerMonitorPtr;
+    typedef std::shared_ptr<IClientNotifier> IClientNotifierPtr;
     
     typedef std::vector<uint8_t> Buffer;
     typedef std::shared_ptr<Buffer> BufferPtr;

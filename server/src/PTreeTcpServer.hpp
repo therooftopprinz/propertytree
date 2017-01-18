@@ -31,7 +31,7 @@ private:
     int socketfd;
     int portno;
     std::shared_ptr<core::PTree> ptree;
-    std::shared_ptr<IClientServerMonitor> monitor;
+    std::shared_ptr<IClientNotifier> monitor;
     logger::Logger log;
 };
 

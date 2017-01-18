@@ -1,6 +1,9 @@
 #ifndef SERVER_SERVERLET_MESSAGEHANDLERS_SIGNUPREQUESTMESSAGEHANDLER_HPP_
 #define SERVER_SERVERLET_MESSAGEHANDLERS_SIGNUPREQUESTMESSAGEHANDLER_HPP_
 
+#include <server/src/PTree.hpp>
+#include <server/src/Serverlet/IPTreeOutgoing.hpp>
+#include <server/src/Serverlet/ClientServerConfig.hpp>
 #include "MessageHandler.hpp"
 
 namespace ptree
@@ -8,10 +11,17 @@ namespace ptree
 namespace server
 {
 
-struct SigninRequestMessageHandler : public MessageHandler
+class SigninRequestMessageHandler : public MessageHandler
 {
-    SigninRequestMessageHandler(ClientServer& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon);
+public:
+    SigninRequestMessageHandler(IPTreeOutgoingPtr& outgoing, ClientServerConfig& config, core::PTree& ptree,
+        IClientNotifier& notifier);
     void handle(protocol::MessageHeaderPtr header, BufferPtr message);
+private:
+    IPTreeOutgoingPtr& outgoing;
+    ClientServerConfig& config;
+    core::PTree& ptree;
+    IClientNotifier& notifier;
 };
 
 

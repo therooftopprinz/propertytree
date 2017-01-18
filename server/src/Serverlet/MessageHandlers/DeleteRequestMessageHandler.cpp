@@ -1,66 +1,66 @@
-#include "DeleteRequestMessageHandler.hpp"
-#include <server/src/Serverlet/ClientServer.hpp>
-#include <common/src/Logger.hpp>
+// #include "DeleteRequestMessageHandler.hpp"
+// #include <server/src/Serverlet/ClientServer.hpp>
+// #include <common/src/Logger.hpp>
 
-namespace ptree
-{
-namespace server
-{
+// namespace ptree
+// {
+// namespace server
+// {
 
-DeleteRequestMessageHandler::
-    DeleteRequestMessageHandler(ClientServer& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon):
-        MessageHandler(cs,ep,pt,csmon)
-{}
+// DeleteRequestMessageHandler::
+//     DeleteRequestMessageHandler(ClientServer& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon):
+//         MessageHandler(cs,ep,pt,csmon)
+// {}
 
-inline void DeleteRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
-{
-    logger::Logger log("DeleteRequestMessageHandler");
+// inline void DeleteRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
+// {
+//     logger::Logger log("DeleteRequestMessageHandler");
 
-    protocol::DeleteRequest request;
-    request.unpackFrom(*message);
+//     protocol::DeleteRequest request;
+//     request.unpackFrom(*message);
 
-    log << logger::DEBUG << "path: " << request.path;
-    bool deleted = true;
+//     log << logger::DEBUG << "path: " << request.path;
+//     bool deleted = true;
 
-    protocol::Uuid uuid = static_cast<uint32_t>(-1);
-    protocol::DeleteResponse response;
-    response.response = protocol::DeleteResponse::Response::OK;
+//     protocol::Uuid uuid = static_cast<uint32_t>(-1);
+//     protocol::DeleteResponse response;
+//     response.response = protocol::DeleteResponse::Response::OK;
 
-    try
-    {
-        log << logger::DEBUG << "Deleting " << request.path;
-        auto property = ptree.getPropertyByPath<core::IProperty>(request.path);
-        /**TODO: check ownership if allowed to delete**/
+//     try
+//     {
+//         log << logger::DEBUG << "Deleting " << request.path;
+//         auto property = ptree.getPropertyByPath<core::IProperty>(request.path);
+//         *TODO: check ownership if allowed to delete*
 
-        uuid = ptree.deleteProperty(request.path);
-        deleted = true;
+//         uuid = ptree.deleteProperty(request.path);
+//         deleted = true;
 
-    }
-    catch (core::ObjectNotFound)
-    {
-        deleted = false;
-        response.response = protocol::DeleteResponse::Response::OBJECT_NOT_FOUND;
-        log << logger::ERROR << "Object not found: " << request.path;
-    }
-    catch (core::NotEmpty)
-    {
-        deleted = false;
-        response.response = protocol::DeleteResponse::Response::NOT_EMPTY;
-        log << logger::ERROR << "Node not empty: " << request.path;
-    }
-    catch (core::MalformedPath)
-    {
-        deleted = false;
-        response.response = protocol::DeleteResponse::Response::MALFORMED_PATH;
-        log << logger::ERROR << "Malformed path thrown!";
-    }
-    if (deleted)
-    {
-        monitor.notifyDeletion(uuid);    
-    }
-    log << logger::DEBUG << "is deleted: " << deleted;  
-    messageSender(header->transactionId, protocol::MessageType::DeleteResponse, response);
-}
+//     }
+//     catch (core::ObjectNotFound)
+//     {
+//         deleted = false;
+//         response.response = protocol::DeleteResponse::Response::OBJECT_NOT_FOUND;
+//         log << logger::ERROR << "Object not found: " << request.path;
+//     }
+//     catch (core::NotEmpty)
+//     {
+//         deleted = false;
+//         response.response = protocol::DeleteResponse::Response::NOT_EMPTY;
+//         log << logger::ERROR << "Node not empty: " << request.path;
+//     }
+//     catch (core::MalformedPath)
+//     {
+//         deleted = false;
+//         response.response = protocol::DeleteResponse::Response::MALFORMED_PATH;
+//         log << logger::ERROR << "Malformed path thrown!";
+//     }
+//     if (deleted)
+//     {
+//         monitor.notifyDeletion(uuid);    
+//     }
+//     log << logger::DEBUG << "is deleted: " << deleted;  
+//     messageSender(header->transactionId, protocol::MessageType::DeleteResponse, response);
+// }
 
-} // namespace server
-} // namespace ptree
+// } // namespace server
+// } // namespace ptree

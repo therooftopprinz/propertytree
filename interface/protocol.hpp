@@ -60,7 +60,15 @@ struct PACKED MessageHeader
     uint32_t transactionId;
 };
 
-struct SigninRequest
+struct Message
+{
+    virtual ~Message() {}
+    virtual std::vector<uint8_t> getPacked() = 0;
+    virtual bool unpackFrom(std::vector<uint8_t>& message) = 0;
+    virtual uint32_t size() = 0;
+};
+
+struct SigninRequest: public Message
 {
     SigninRequest():
         featureFlag(0)
@@ -92,13 +100,13 @@ struct SigninRequest
     MESSAGE_FIELDS(version, refreshRate, featureFlag);
 };
 
-struct SigninResponse
+struct SigninResponse: public Message
 {
     uint32_t version;
     MESSAGE_FIELDS(version);
 };
 
-struct CreateRequest
+struct CreateRequest: public Message
 {
     PropertyType type;
     std::vector<uint8_t> data;
@@ -106,7 +114,7 @@ struct CreateRequest
     MESSAGE_FIELDS(type, data, path);
 };
 
-struct CreateResponse
+struct CreateResponse: public Message
 {
     enum class Response : uint8_t {OK, PARENT_NOT_FOUND, MALFORMED_PATH, ALREADY_EXIST, TYPE_ERROR};
     Response response;
@@ -142,7 +150,7 @@ struct MetaDelete : public BlockBase
     MESSAGE_FIELDS(uuid);
 };
 
-struct MetaUpdateNotification
+struct MetaUpdateNotification: public Message
 {
     BlockArray<MetaCreate> creations;
     BlockArray<MetaDelete> deletions;
@@ -155,34 +163,34 @@ struct DeleteRequest
     MESSAGE_FIELDS(path);
 };
 
-struct DeleteResponse
+struct DeleteResponse: public Message
 {
     enum class Response : uint8_t {OK, OBJECT_NOT_FOUND, NOT_PERMITTED, NOT_EMPTY, MALFORMED_PATH};
     Response response;
     MESSAGE_FIELDS(response);
 };
 
-struct SetValueIndication
+struct SetValueIndication: public Message
 {
     Uuid uuid;
     std::vector<uint8_t> data;
     MESSAGE_FIELDS(uuid, data);
 };
 
-struct SubscribePropertyUpdateRequest
+struct SubscribePropertyUpdateRequest: public Message
 {
     Uuid uuid;
     MESSAGE_FIELDS(uuid);
 };
 
-struct SubscribePropertyUpdateResponse
+struct SubscribePropertyUpdateResponse: public Message
 {
     enum class Response : uint8_t {OK, UUID_NOT_FOUND, NOT_A_VALUE};
     Response response;
     MESSAGE_FIELDS(response);
 };
 
-struct PropertyUpdateNotificationEntry
+struct PropertyUpdateNotificationEntry: public Message
 {
     PropertyUpdateNotificationEntry(){}
     PropertyUpdateNotificationEntry(Uuid uuid, Buffer& buffer):
@@ -192,52 +200,52 @@ struct PropertyUpdateNotificationEntry
     MESSAGE_FIELDS(uuid, data);
 };
 
-struct PropertyUpdateNotification
+struct PropertyUpdateNotification: public Message
 {
     BlockArray<PropertyUpdateNotificationEntry> propertyUpdateNotifications;
     MESSAGE_FIELDS(BLOCK propertyUpdateNotifications);
 };
 
 
-struct UnsubscribePropertyUpdateRequest
+struct UnsubscribePropertyUpdateRequest: public Message
 {
     Uuid uuid;
     MESSAGE_FIELDS(uuid);
 };
 
-struct UnsubscribePropertyUpdateResponse
+struct UnsubscribePropertyUpdateResponse: public Message
 {
     enum class Response : uint8_t {OK, NOT_SUBSCRIBED, NOT_A_VALUE, UUID_NOT_FOUND};
     Response response;
     MESSAGE_FIELDS(response);
 };
 
-struct GetValueRequest
+struct GetValueRequest: public Message
 {
     Uuid uuid;
     MESSAGE_FIELDS(uuid);
 };
 
-struct GetValueResponse
+struct GetValueResponse: public Message
 {
     std::vector<uint8_t> data;
     MESSAGE_FIELDS(data);
 };
 
-struct RpcRequest
+struct RpcRequest: public Message
 {
     Uuid uuid;
     std::vector<uint8_t> parameter;
     MESSAGE_FIELDS(uuid, parameter);
 };
 
-struct RpcResponse
+struct RpcResponse: public Message
 {
     std::vector<uint8_t> returnValue;
     MESSAGE_FIELDS(returnValue);
 };
 
-struct HandleRpcRequest
+struct HandleRpcRequest: public Message
 {
     uint64_t callerId;
     uint32_t callerTransactionId;
@@ -246,7 +254,7 @@ struct HandleRpcRequest
     MESSAGE_FIELDS(callerId, callerTransactionId, uuid, parameter);
 };
 
-struct HandleRpcResponse
+struct HandleRpcResponse: public Message
 {
     uint64_t callerId;
     uint32_t callerTransactionId;
@@ -255,13 +263,13 @@ struct HandleRpcResponse
 };
 
 
-struct GetSpecificMetaRequest
+struct GetSpecificMetaRequest: public Message
 {
     std::string path;
     MESSAGE_FIELDS(path);
 };
 
-struct GetSpecificMetaResponse
+struct GetSpecificMetaResponse: public Message
 {
     MetaCreate meta;
     MESSAGE_FIELDS(BLOCK meta);

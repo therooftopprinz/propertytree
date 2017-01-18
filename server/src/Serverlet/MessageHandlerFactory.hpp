@@ -14,16 +14,22 @@
 #include "MessageHandlers/RpcRequestMessageHandler.hpp"
 #include "MessageHandlers/HandleRpcResponseMessageHandler.hpp"
 #include "MessageHandlers/GetSpecificMetaRequestMessageHandler.hpp"
+#include "ClientServerConfig.hpp"
 
 namespace ptree
 {
 namespace server
 {
 
+struct MessageHandlerDummy: public MessageHandler
+{
+    void handle(protocol::MessageHeaderPtr header, BufferPtr message);
+};
+
 struct MessageHandlerFactory
 {
     static std::unique_ptr<MessageHandler>
-        get(protocol::MessageType type, ClientServerPtr& cs, IEndPointPtr& ep, core::PTreePtr& pt, IClientServerMonitorPtr& csmon);
+        get(protocol::MessageType type, ClientServerConfig& config, IPTreeOutgoingPtr& outgoing, core::PTreePtr& pt, IClientNotifierPtr& notifier);
 };
 
 } // namespace server

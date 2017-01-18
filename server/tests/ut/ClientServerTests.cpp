@@ -39,7 +39,7 @@ struct ClientServerTests : public common::MessageCreationHelper, public ::testin
         valueCreationSubscribeAction(std::bind(&ClientServerTests::propValueCreationActionSubscribe, this)),
         endpoint(std::make_shared<common::EndPointMock>()),
         idgen(std::make_shared<core::IdGenerator>()),
-        monitor(std::make_shared<ClientServerMonitor>()),
+        monitor(std::make_shared<ClientNotifier>()),
         ptree(std::make_shared<core::PTree>(idgen)),
         server(std::make_shared<ClientServer>(endpoint, ptree, monitor)),
         log("TEST")
@@ -214,17 +214,19 @@ Test common timeline
 
     std::shared_ptr<common::EndPointMock> endpoint;
     core::IIdGeneratorPtr idgen;
-    IClientServerMonitorPtr monitor;
+    IClientNotifierPtr monitor;
     core::PTreePtr ptree;
     ClientServerPtr server;
     logger::Logger log;
 };
 
-class ClientServerMonitorMock : public IClientServerMonitor
+class ClientNotifierMock : public IClientNotifier
 {
 public:
-    ClientServerMonitorMock() {}
-    ~ClientServerMonitorMock() {}
+    ClientNotifierMock() {}
+    ~ClientNotifierMock() {}
+    using IClientNotifier::addClientServer;
+    using IClientNotifier::removeClientServer;
     MOCK_METHOD1(addClientServer, void(ClientServerPtr));
     MOCK_METHOD1(removeClientServer, void(ClientServerPtr));
     MOCK_METHOD3(notifyCreation, void(uint32_t, protocol::PropertyType, std::string));
@@ -256,9 +258,9 @@ TEST_F(ClientServerTests, shouldCreateOnPTreeWhenCreateRequested)
         EXPECT_EQ(42u, val->getValue<uint32_t>());
     };
 
+    endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
-    endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
 
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(100ms);
@@ -354,457 +356,478 @@ TEST_F(ClientServerTests, shouldNotCreateWhenParentObjectIsInvalid)
     logger::loggerServer.waitEmpty();
 }
 
-TEST_F(ClientServerTests, shouldDeleteOnPTree)
-{
-    endpoint->queueToReceive(createTestRequestMessage);
-
-    std::function<void()> valueDeletionAction = [this]()
-    {
-        this->log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher->getUuidOfLastMatched(); // nolint
-        ASSERT_THROW(this->ptree->getPropertyByPath<core::Value>("/Test/Value"), core::ObjectNotFound);
-    };
-
-    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
-    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationDeleteImmediatelyAction);
-    endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
-
-    server->setup();
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(1s);
-    endpoint->waitForAllSending(10000.0);
-    server->teardown();
-
-    logger::loggerServer.waitEmpty();
-}
-
-TEST_F(ClientServerTests, shouldGenerateDeleteResponse)
-{
-    endpoint->queueToReceive(createTestRequestMessage);
-
-    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
-    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationDeleteImmediatelyAction);
-    endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
-    endpoint->expectSend(6, 0, false, 1, deleteValueResponseOkMatcher.get(), DefaultAction::get());
-
-    server->setup();
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(1s);
-    endpoint->waitForAllSending(10000.0);
-    server->teardown();
-
-    logger::loggerServer.waitEmpty();
-}
-
-
-TEST_F(ClientServerTests, shouldDeleteResponseNotFound)
-{
-    endpoint->queueToReceive(createTestRequestMessage);
-
-    std::function<void()> testCreationAction = [this]()
-    {
-        this->log << logger::DEBUG << "/Test is created with uuid: " << this->testCreationMatcher->getUuidOfLastMatched();
-        endpoint->queueToReceive(deleteRequestMessageForValueMessage);
-    };
-
-    std::function<void()> valueDeletionAction = [this]()
-    {
-        this->log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher->getUuidOfLastMatched();
-        ASSERT_THROW(this->ptree->getPropertyByPath<core::Value>("/Test/Value"), core::ObjectNotFound);
-    };
-
-    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
-    endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-    endpoint->expectSend(6, 0, false, 1, deleteValueResponseNotFoundMatcher.get(), valueDeletionAction);
-
-    server->setup();
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(1s);
-    endpoint->waitForAllSending(10000.0);
-    server->teardown();
-
-    logger::loggerServer.waitEmpty();
-}
-
-
-TEST_F(ClientServerTests, shouldDeleteResponseNotEmpty)
-{
-    endpoint->queueToReceive(createTestRequestMessage);
-
-    std::function<void()> valueCreationAction = [this]()
-    {
-        this->log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher->getUuidOfLastMatched(); // nolint
-        using namespace std::chrono_literals;
-        std::this_thread::sleep_for(10ms);
-        this->log << logger::DEBUG << "Requesting deletion of /Test";
-        endpoint->queueToReceive(deleteRequestMessageForTestMessage);
-    };
-
-    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
-    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
-    endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
-    endpoint->expectSend(6, 0, false, 1, deleteTestResponseNotEmptyMatcher.get(), DefaultAction::get());
-
-    server->setup();
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(1s);
-    endpoint->waitForAllSending(10000.0);
-    server->teardown();
-
-    logger::loggerServer.waitEmpty();
-}
-
-TEST_F(ClientServerTests, shouldDeleteWithMetaUpdateNotification)
-{
-    endpoint->queueToReceive(createTestRequestMessage);
-
-    std::function<void()> valueCreationAction = [this]()
-    {
-        this->log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher->getUuidOfLastMatched(); // nolint
-        this->valueDeletionMatcher->setUuid(valueCreationMatcher->getUuidOfLastMatched());
-        using namespace std::chrono_literals;
-        std::this_thread::sleep_for(10ms);
-        this->log << logger::DEBUG << "Requesting deletion of /testing/Value";
-        endpoint->queueToReceive(deleteRequestMessageForValueMessage);
-    };
-
-    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
-    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
-    endpoint->expectSend(3, 2, true, 1, valueDeletionMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(0, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-    endpoint->expectSend(0, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
-
-    server->setup();
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(1s);
-    endpoint->waitForAllSending(10000.0);
-    server->teardown();
-
-    logger::loggerServer.waitEmpty();
-}
-
-TEST_F(ClientServerTests, shouldSetSetValueWhenSetValueIndIsValid)
-{
-    endpoint->queueToReceive(createTestRequestMessage);
-
-    std::function<void()> valueCreationAction = [this]()
-    {
-        uint32_t uuid = this->valueCreationMatcher->getUuidOfLastMatched(); 
-        log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher->getUuidOfLastMatched();
-        auto data = utils::buildBufferedValue<uint32_t>(41);
-
-        this->endpoint->queueToReceive(createSetValueIndicationMessage(setValueInd1stTid, uuid, data));
-    };
-
-    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
-    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
-    endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(0, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-    endpoint->expectSend(0, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
-
-    server->setup();
-
-    log << logger::DEBUG << "Waiting for setval processing...";
-    using namespace std::chrono_literals;
-    /** TODO: use the value update notification matcher for this checking to avoid waiting **/
-    std::this_thread::sleep_for(6s);
-    core::ValuePtr val;
-    ASSERT_NO_THROW(val = this->ptree->getPropertyByPath<core::Value>("/Test/Value"));
-    EXPECT_EQ(41u, val->getValue<uint32_t>());
-    std::this_thread::sleep_for(500ms);
-    endpoint->waitForAllSending(15000.0);
-    server->teardown();
-
-    logger::loggerServer.waitEmpty();
-}
-
-TEST_F(ClientServerTests, shouldGenerateMessageSubscribePropertyUpdateResponseOk)
-{
-    endpoint->queueToReceive(createTestRequestMessage);
-
-    std::function<void()> valueCreationAction = [this]()
-    {
-        uint32_t uuid = this->valueCreationMatcher->getUuidOfLastMatched();
-        log << logger::DEBUG << "/Test/Value is created with uuid: " << uuid;
-        this->endpoint->queueToReceive(createSubscribePropertyUpdateRequestMessage(subscribeValueRqstTid, uuid));
-    };
-
-    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
-    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
-    endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(0, 0, false, 1, subscribeValueResponseOkMatcher.get(), DefaultAction::get());
-
-    server->setup();
-    endpoint->waitForAllSending(10000.0);
-    server->teardown();
-
-    logger::loggerServer.waitEmpty();
-}
-
-TEST_F(ClientServerTests, shouldGenerateMessageSubscribePropertyUpdateResponseUuidNotFound)
-{
-    endpoint->queueToReceive(createTestRequestMessage);
-
-    std::function<void()> valueCreationAction = [this]()
-    {
-        uint32_t uuid = static_cast<uint32_t>(-1);
-        this->endpoint->queueToReceive(createSubscribePropertyUpdateRequestMessage(subscribeValueRqstTid, uuid));
-    };
-
-    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
-    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
-    endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(0, 0, false, 1, subscribeValueResponseUuidNotFoundMatcher.get(), DefaultAction::get());
-
-    server->setup();
-    endpoint->waitForAllSending(10000.0);
-    server->teardown();
-
-    logger::loggerServer.waitEmpty();
-}
-
-
-TEST_F(ClientServerTests, shouldGenerateMessageSubscribePropertyUpdateResponseUuidNotAValue)
-{
-    endpoint->queueToReceive(createTestRequestMessage);
-
-    std::function<void()> testCreationAction = [this]()
-    {
-        uint32_t uuid = this->testCreationMatcher->getUuidOfLastMatched();
-        this->log << logger::DEBUG << "/Test is created with uuid: " << uuid;
-        this->endpoint->queueToReceive(createSubscribePropertyUpdateRequestMessage(subscribeTestRqstTid, uuid));
-    };
-
-    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
-    endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(0, 0, false, 1, subscribeTestResponseNotAValueMatcher.get(), DefaultAction::get());
-
-
-    server->setup();
-    endpoint->waitForAllSending(10000.0);
-    server->teardown();
-
-    logger::loggerServer.waitEmpty();
-}
-
-TEST_F(ClientServerTests, shouldSendPropertyUpdateNotificationWhenChanged)
-{
-    endpoint->queueToReceive(createTestRequestMessage);
-
-    auto expectedValue = utils::buildSharedBufferedValue(6969);
-    PropertyUpdateNotificationMatcher valueUpdateMatcher("/Test/Value", expectedValue, ptree);
-
-    std::function<void()> subscribeValueRspAction = [this, &expectedValue]()
-    {
-        log << logger::DEBUG << "Subscribed to uuid: " << this->uuidOfValue;
-        this->endpoint->queueToReceive(createSetValueIndicationMessage(setValueInd1stTid, this->uuidOfValue, *expectedValue));
-    };
-
-    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
-    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationSubscribeAction);
-    endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
-    endpoint->expectSend(6, 0, false, 1, subscribeValueResponseOkMatcher.get(), subscribeValueRspAction);
-    endpoint->expectSend(6, 0, false, 1, valueUpdateMatcher.get(), DefaultAction::get());
-
-    server->setup();
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(100ms);
-    endpoint->waitForAllSending(10000.0);
-    server->teardown();
-
-    logger::loggerServer.waitEmpty();
-}
-
-TEST_F(ClientServerTests, shouldNotSendPropertyUpdateNotificationWhenUnsubscribed)
-{
-    endpoint->queueToReceive(createTestRequestMessage);
-
-    auto expectedValue = utils::buildSharedBufferedValue(6969);
-    PropertyUpdateNotificationMatcher valueUpdateMatcher("/Test/Value", expectedValue, ptree);
-
-    std::function<void()> testCreationAction = [this]()
-    {
-        this->log << logger::DEBUG << "/Test is created with uuid: " << this->testCreationMatcher->getUuidOfLastMatched();
-        this->endpoint->queueToReceive(createValueRequestMessage);
-    };
-
-    std::function<void()> subscribeValueRspAction = [this, &expectedValue]()
-    {
-        uint32_t uuid = this->valueCreationMatcher->getUuidOfLastMatched();
-        log << logger::DEBUG << "/Test/Value is created with uuid: " << uuid;
-        this->endpoint->queueToReceive(createSetValueIndicationMessage(setValueInd1stTid, this->uuidOfValue, *expectedValue));
-    };
-
-    std::function<void()> valueUpdateAction = [this, &expectedValue]()
-    {
-        log << logger::DEBUG << "Unsubscribing /Test/Value";
-        this->endpoint->queueToReceive(createUnsubscribePropertyUpdateRequestMessage(unsubscribeValueRqstTid, this->uuidOfValue));
-    };
-
-    std::function<void()> unsubscribeValueAction = [this, &expectedValue]()
-    {
-        log << logger::DEBUG << "Setting value again";
-        this->endpoint->queueToReceive(createSetValueIndicationMessage(setValueInd2ndTid, this->uuidOfValue, *expectedValue));
-    };
-
-    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
-    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationSubscribeAction);
-    endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
-    endpoint->expectSend(6, 0, false, 1, subscribeValueResponseOkMatcher.get(), subscribeValueRspAction);
-    endpoint->expectSend(7, 0, false, 1, valueUpdateMatcher.get(), valueUpdateAction);
-    endpoint->expectSend(8, 0, false, 1, unsubscribeValueResponseOkMatcher.get(), unsubscribeValueAction);
-
-    server->setup();
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(500ms);
-    endpoint->waitForAllSending(10000.0);
-    server->teardown();
-
-    logger::loggerServer.waitEmpty();
-}
-
-
-TEST_F(ClientServerTests, shouldGetValue)
-{
-    endpoint->queueToReceive(createTestRequestMessage);
-
-    auto expectedValue = utils::buildSharedBufferedValue(6969);
-    MessageMatcher getValueResponseFullMatcher(createGetValueResponseMessage(getValueReqTid, *expectedValue));
-
-    PropertyUpdateNotificationMatcher valueUpdateMatcher("/Test/Value", expectedValue, ptree);
-
-    std::function<void()> subscribeValueRspAction = [this, &expectedValue]()
-    {
-        log << logger::DEBUG << "Subscribed to uuid: " << this->uuidOfValue;
-        /** TODO: setValueReqTid **/
-        this->endpoint->queueToReceive(createSetValueIndicationMessage(getValueReqTid, this->uuidOfValue, *expectedValue));
-    };
-
-    std::function<void()> valueUpdateAction = [this]()
-    {
-        log << logger::DEBUG << "Getting value of uuid: " << this->uuidOfValue;
-        this->endpoint->queueToReceive(createGetValueRequestMessage(getValueReqTid, this->uuidOfValue));
-    };
-
-    endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
-    endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationSubscribeAction);
-    endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
-    endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
-    endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
-    endpoint->expectSend(6, 0, false, 1, subscribeValueResponseOkMatcher.get(), subscribeValueRspAction);
-    endpoint->expectSend(7, 0, false, 1, valueUpdateMatcher.get(), valueUpdateAction);
-    endpoint->expectSend(8, 0, false, 1, getValueResponseFullMatcher.get(), DefaultAction::get());
-
-    server->setup();
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(500ms);
-    endpoint->waitForAllSending(10000.0);
-    server->teardown();
-
-    logger::loggerServer.waitEmpty();
-}
-
-TEST_F(ClientServerTests, shouldForwardRcpRequestToExecutor)
-{
-    endpoint->queueToReceive(createRpcTestMessage);
-
-    auto expectedParam = utils::buildSharedBufferedValue(6969);
-
-    std::function<void()> rpcCreationAction = [this, &expectedParam]()
-    {
-        auto uuid = this->rpcCreationMatcher->getUuidOfLastMatched(); 
-        log << logger::DEBUG << "Requesting Rpc to uuid: " << uuid;
-        this->endpoint->queueToReceive(createRpcRequestMessage(createRpcRequestTid, uuid, *expectedParam));
-        handleRpcRequestMatcher.set(
-            createHandleRpcRequestMessage(static_cast<uint32_t>(-1), (uintptr_t)server.get(), createRpcRequestTid,
-                uuid, *expectedParam));
-    };
-
-    endpoint->expectSend(1, 0, true, 1, rpcCreationMatcher->get(), rpcCreationAction);
-    endpoint->expectSend(2, 0, true, 1, handleRpcRequestMatcher.get(), DefaultAction::get());
-
-    server->setup();
-    endpoint->waitForAllSending(500.0);
-    server->teardown();
-
-    logger::loggerServer.waitEmpty();
-}
-
-TEST_F(ClientServerTests, shouldForwardRcpResponseToCaller)
-{
-    endpoint->queueToReceive(createRpcTestMessage);
-
-    auto expectedParam = utils::buildSharedBufferedValue(6969);
-    rpcResponseMatcher.set(createRpcResponseMessage(createRpcRequestTid, *expectedParam));
-    protocol::Uuid uuid = 0;
-
-    std::function<void()> rpcCreationAction = [this, &expectedParam, &uuid]()
-    {
-        uuid = this->rpcCreationMatcher->getUuidOfLastMatched(); 
-        log << logger::DEBUG << "Requesting Rpc to uuid: " << uuid;
-        this->endpoint->queueToReceive(createRpcRequestMessage(createRpcRequestTid, uuid, *expectedParam));
-        handleRpcRequestMatcher.set(
-            createHandleRpcRequestMessage(static_cast<uint32_t>(-1), (uintptr_t)server.get(), createRpcRequestTid,
-                uuid, *expectedParam));
-    };
-
-    std::function<void()> handleRpcRequestAction = [this, &expectedParam]()
-    {
-        log << logger::DEBUG << "Sending HandleRpcResponse ";
-        this->endpoint->queueToReceive(
-            createHandleRpcResponseMessage(static_cast<uint32_t>(-1), (uintptr_t)server.get(), createRpcRequestTid, *expectedParam));
-    };
-
-    endpoint->expectSend(1, 0, true, 1, rpcCreationMatcher->get(), rpcCreationAction);
-    endpoint->expectSend(2, 0, true, 1, handleRpcRequestMatcher.get(), handleRpcRequestAction);
-    endpoint->expectSend(3, 0, true, 1, rpcResponseMatcher.get(), DefaultAction::get());
-
-    server->setup();
-    endpoint->waitForAllSending(500.0);
-    server->teardown();
-
-    logger::loggerServer.waitEmpty();
-}
-
-/** TODO: For reference only. new test will be created for new  GetSpecificMeta **/
-// TEST_F(ClientServerTests, shouldSigninRequestAndRespondWithMeta)
+// TEST_F(ClientServerTests, shouldDeleteOnPTree)
 // {
-//     auto fcs =  ptree->createProperty<core::Node>("/FCS"); // 100
-//     auto sens = ptree->createProperty<core::Node>("/SENSOR"); // 101
-//     auto aile = ptree->createProperty<core::Node>("/FCS/AILERON"); // 102
-//     auto acel = ptree->createProperty<core::Node>("/SENSOR/ACCELEROMETER"); // 103
-//     auto ther = ptree->createProperty<core::Node>("/SENSOR/THERMOMETER"); // 104
-//     auto val1 = ptree->createProperty<core::Value>("/SENSOR/THERMOMETER/VALUE"); // 105
-//     auto val2 = ptree->createProperty<core::Value>("/SENSOR/ACCELEROMETER/VALUE"); // 106
-//     auto val3 = ptree->createProperty<core::Value>("/FCS/AILERON/CURRENT_DEFLECTION"); // 107
-//     auto val4 = ptree->createProperty<core::Value>("/FCS/AILERON/TRIM"); //108
+//     endpoint->queueToReceive(createTestRequestMessage);
 
-//     std::list<std::tuple<std::string, protocol::Uuid, protocol::PropertyType>> metalist;
+//     std::function<void()> valueDeletionAction = [this]()
+//     {
+//         this->log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher->getUuidOfLastMatched(); // nolint
+//         ASSERT_THROW(this->ptree->getPropertyByPath<core::Value>("/Test/Value"), core::ObjectNotFound);
+//     };
 
-//     metalist.emplace_back("/FCS", protocol::Uuid(100), protocol::PropertyType::Node);
-//     metalist.emplace_back("/FCS/AILERON", protocol::Uuid(102), protocol::PropertyType::Node);
-//     metalist.emplace_back("/FCS/AILERON/CURRENT_DEFLECTION", protocol::Uuid(107), protocol::PropertyType::Value);
-//     metalist.emplace_back("/FCS/AILERON/TRIM", protocol::Uuid(108), protocol::PropertyType::Value);
-//     metalist.emplace_back("/SENSOR", protocol::Uuid(101), protocol::PropertyType::Node);
-//     metalist.emplace_back("/SENSOR/ACCELEROMETER", protocol::Uuid(103), protocol::PropertyType::Node);
-//     metalist.emplace_back("/SENSOR/ACCELEROMETER/VALUE", protocol::Uuid(106), protocol::PropertyType::Value);
-//     metalist.emplace_back("/SENSOR/THERMOMETER", protocol::Uuid(104), protocol::PropertyType::Node);
-//     metalist.emplace_back("/SENSOR/THERMOMETER/VALUE", protocol::Uuid(105), protocol::PropertyType::Value);
+//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationDeleteImmediatelyAction);
+//     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+//     endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+//     endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
 
-//     signinRspMsgMatcher = std::make_shared<MessageMatcher>(createSigninResponseMessage(signinRqstTid, 1, metalist));
+//     server->setup();
+//     using namespace std::chrono_literals;
+//     std::this_thread::sleep_for(1s);
+//     endpoint->waitForAllSending(10000.0);
+//     server->teardown();
 
+//     logger::loggerServer.waitEmpty();
+// }
+
+// TEST_F(ClientServerTests, shouldGenerateDeleteResponse)
+// {
+//     endpoint->queueToReceive(createTestRequestMessage);
+
+//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationDeleteImmediatelyAction);
+//     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+//     endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+//     endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
+//     endpoint->expectSend(6, 0, false, 1, deleteValueResponseOkMatcher.get(), DefaultAction::get());
+
+//     server->setup();
+//     using namespace std::chrono_literals;
+//     std::this_thread::sleep_for(1s);
+//     endpoint->waitForAllSending(10000.0);
+//     server->teardown();
+
+//     logger::loggerServer.waitEmpty();
+// }
+
+
+// TEST_F(ClientServerTests, shouldDeleteResponseNotFound)
+// {
+//     endpoint->queueToReceive(createTestRequestMessage);
+
+//     std::function<void()> testCreationAction = [this]()
+//     {
+//         this->log << logger::DEBUG << "/Test is created with uuid: " << this->testCreationMatcher->getUuidOfLastMatched();
+//         endpoint->queueToReceive(deleteRequestMessageForValueMessage);
+//     };
+
+//     std::function<void()> valueDeletionAction = [this]()
+//     {
+//         this->log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher->getUuidOfLastMatched();
+//         ASSERT_THROW(this->ptree->getPropertyByPath<core::Value>("/Test/Value"), core::ObjectNotFound);
+//     };
+
+//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+//     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+//     endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+//     endpoint->expectSend(6, 0, false, 1, deleteValueResponseNotFoundMatcher.get(), valueDeletionAction);
+
+//     server->setup();
+//     using namespace std::chrono_literals;
+//     std::this_thread::sleep_for(1s);
+//     endpoint->waitForAllSending(10000.0);
+//     server->teardown();
+
+//     logger::loggerServer.waitEmpty();
+// }
+
+
+// TEST_F(ClientServerTests, shouldDeleteResponseNotEmpty)
+// {
+//     endpoint->queueToReceive(createTestRequestMessage);
+
+//     std::function<void()> valueCreationAction = [this]()
+//     {
+//         this->log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher->getUuidOfLastMatched(); // nolint
+//         using namespace std::chrono_literals;
+//         std::this_thread::sleep_for(10ms);
+//         this->log << logger::DEBUG << "Requesting deletion of /Test";
+//         endpoint->queueToReceive(deleteRequestMessageForTestMessage);
+//     };
+
+//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
+//     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+//     endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+//     endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
+//     endpoint->expectSend(6, 0, false, 1, deleteTestResponseNotEmptyMatcher.get(), DefaultAction::get());
+
+//     server->setup();
+//     using namespace std::chrono_literals;
+//     std::this_thread::sleep_for(1s);
+//     endpoint->waitForAllSending(10000.0);
+//     server->teardown();
+
+//     logger::loggerServer.waitEmpty();
+// }
+
+// TEST_F(ClientServerTests, shouldDeleteWithMetaUpdateNotification)
+// {
+//     endpoint->queueToReceive(createTestRequestMessage);
+
+//     std::function<void()> valueCreationAction = [this]()
+//     {
+//         this->log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher->getUuidOfLastMatched(); // nolint
+//         this->valueDeletionMatcher->setUuid(valueCreationMatcher->getUuidOfLastMatched());
+//         using namespace std::chrono_literals;
+//         std::this_thread::sleep_for(10ms);
+//         this->log << logger::DEBUG << "Requesting deletion of /testing/Value";
+//         endpoint->queueToReceive(deleteRequestMessageForValueMessage);
+//     };
+
+//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
+//     endpoint->expectSend(3, 2, true, 1, valueDeletionMatcher->get(), DefaultAction::get());
 //     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+//     endpoint->expectSend(0, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+//     endpoint->expectSend(0, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
+
+//     server->setup();
+//     using namespace std::chrono_literals;
+//     std::this_thread::sleep_for(1s);
+//     endpoint->waitForAllSending(10000.0);
+//     server->teardown();
+
+//     logger::loggerServer.waitEmpty();
+// }
+
+// TEST_F(ClientServerTests, shouldSetSetValueWhenSetValueIndIsValid)
+// {
+//     endpoint->queueToReceive(createTestRequestMessage);
+
+//     std::function<void()> valueCreationAction = [this]()
+//     {
+//         uint32_t uuid = this->valueCreationMatcher->getUuidOfLastMatched(); 
+//         log << logger::DEBUG << "/Test/Value is created with uuid: " << this->valueCreationMatcher->getUuidOfLastMatched();
+//         auto data = utils::buildBufferedValue<uint32_t>(41);
+
+//         this->endpoint->queueToReceive(createSetValueIndicationMessage(setValueInd1stTid, uuid, data));
+//     };
+
+//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
+//     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+//     endpoint->expectSend(0, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+//     endpoint->expectSend(0, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
+
+//     server->setup();
+
+//     log << logger::DEBUG << "Waiting for setval processing...";
+//     using namespace std::chrono_literals;
+//     /** TODO: use the value update notification matcher for this checking to avoid waiting **/
+//     std::this_thread::sleep_for(6s);
+//     core::ValuePtr val;
+//     ASSERT_NO_THROW(val = this->ptree->getPropertyByPath<core::Value>("/Test/Value"));
+//     EXPECT_EQ(41u, val->getValue<uint32_t>());
+//     std::this_thread::sleep_for(500ms);
+//     endpoint->waitForAllSending(15000.0);
+//     server->teardown();
+
+//     logger::loggerServer.waitEmpty();
+// }
+
+// TEST_F(ClientServerTests, shouldGenerateMessageSubscribePropertyUpdateResponseOk)
+// {
+//     endpoint->queueToReceive(createTestRequestMessage);
+
+//     std::function<void()> valueCreationAction = [this]()
+//     {
+//         uint32_t uuid = this->valueCreationMatcher->getUuidOfLastMatched();
+//         log << logger::DEBUG << "/Test/Value is created with uuid: " << uuid;
+//         this->endpoint->queueToReceive(createSubscribePropertyUpdateRequestMessage(subscribeValueRqstTid, uuid));
+//     };
+
+//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
+//     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+//     endpoint->expectSend(0, 0, false, 1, subscribeValueResponseOkMatcher.get(), DefaultAction::get());
+
+//     server->setup();
+//     endpoint->waitForAllSending(10000.0);
+//     server->teardown();
+
+//     logger::loggerServer.waitEmpty();
+// }
+
+// TEST_F(ClientServerTests, shouldGenerateMessageSubscribePropertyUpdateResponseUuidNotFound)
+// {
+//     endpoint->queueToReceive(createTestRequestMessage);
+
+//     std::function<void()> valueCreationAction = [this]()
+//     {
+//         uint32_t uuid = static_cast<uint32_t>(-1);
+//         this->endpoint->queueToReceive(createSubscribePropertyUpdateRequestMessage(subscribeValueRqstTid, uuid));
+//     };
+
+//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationAction);
+//     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+//     endpoint->expectSend(0, 0, false, 1, subscribeValueResponseUuidNotFoundMatcher.get(), DefaultAction::get());
+
+//     server->setup();
+//     endpoint->waitForAllSending(10000.0);
+//     server->teardown();
+
+//     logger::loggerServer.waitEmpty();
+// }
+
+
+// TEST_F(ClientServerTests, shouldGenerateMessageSubscribePropertyUpdateResponseUuidNotAValue)
+// {
+//     endpoint->queueToReceive(createTestRequestMessage);
+
+//     std::function<void()> testCreationAction = [this]()
+//     {
+//         uint32_t uuid = this->testCreationMatcher->getUuidOfLastMatched();
+//         this->log << logger::DEBUG << "/Test is created with uuid: " << uuid;
+//         this->endpoint->queueToReceive(createSubscribePropertyUpdateRequestMessage(subscribeTestRqstTid, uuid));
+//     };
+
+//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+//     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+//     endpoint->expectSend(0, 0, false, 1, subscribeTestResponseNotAValueMatcher.get(), DefaultAction::get());
+
+
+//     server->setup();
+//     endpoint->waitForAllSending(10000.0);
+//     server->teardown();
+
+//     logger::loggerServer.waitEmpty();
+// }
+
+// TEST_F(ClientServerTests, shouldSendPropertyUpdateNotificationWhenChanged)
+// {
+//     endpoint->queueToReceive(createTestRequestMessage);
+
+//     auto expectedValue = utils::buildSharedBufferedValue(6969);
+//     PropertyUpdateNotificationMatcher valueUpdateMatcher("/Test/Value", expectedValue, ptree);
+
+//     std::function<void()> subscribeValueRspAction = [this, &expectedValue]()
+//     {
+//         log << logger::DEBUG << "Subscribed to uuid: " << this->uuidOfValue;
+//         this->endpoint->queueToReceive(createSetValueIndicationMessage(setValueInd1stTid, this->uuidOfValue, *expectedValue));
+//     };
+
+//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationSubscribeAction);
+//     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+//     endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+//     endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
+//     endpoint->expectSend(6, 0, false, 1, subscribeValueResponseOkMatcher.get(), subscribeValueRspAction);
+//     endpoint->expectSend(6, 0, false, 1, valueUpdateMatcher.get(), DefaultAction::get());
+
+//     server->setup();
+//     using namespace std::chrono_literals;
+//     std::this_thread::sleep_for(100ms);
+//     endpoint->waitForAllSending(10000.0);
+//     server->teardown();
+
+//     logger::loggerServer.waitEmpty();
+// }
+
+// TEST_F(ClientServerTests, shouldNotSendPropertyUpdateNotificationWhenUnsubscribed)
+// {
+//     endpoint->queueToReceive(createTestRequestMessage);
+
+//     auto expectedValue = utils::buildSharedBufferedValue(6969);
+//     PropertyUpdateNotificationMatcher valueUpdateMatcher("/Test/Value", expectedValue, ptree);
+
+//     std::function<void()> testCreationAction = [this]()
+//     {
+//         this->log << logger::DEBUG << "/Test is created with uuid: " << this->testCreationMatcher->getUuidOfLastMatched();
+//         this->endpoint->queueToReceive(createValueRequestMessage);
+//     };
+
+//     std::function<void()> subscribeValueRspAction = [this, &expectedValue]()
+//     {
+//         uint32_t uuid = this->valueCreationMatcher->getUuidOfLastMatched();
+//         log << logger::DEBUG << "/Test/Value is created with uuid: " << uuid;
+//         this->endpoint->queueToReceive(createSetValueIndicationMessage(setValueInd1stTid, this->uuidOfValue, *expectedValue));
+//     };
+
+//     std::function<void()> valueUpdateAction = [this, &expectedValue]()
+//     {
+//         log << logger::DEBUG << "Unsubscribing /Test/Value";
+//         this->endpoint->queueToReceive(createUnsubscribePropertyUpdateRequestMessage(unsubscribeValueRqstTid, this->uuidOfValue));
+//     };
+
+//     std::function<void()> unsubscribeValueAction = [this, &expectedValue]()
+//     {
+//         log << logger::DEBUG << "Setting value again";
+//         this->endpoint->queueToReceive(createSetValueIndicationMessage(setValueInd2ndTid, this->uuidOfValue, *expectedValue));
+//     };
+
+//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationSubscribeAction);
+//     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+//     endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+//     endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
+//     endpoint->expectSend(6, 0, false, 1, subscribeValueResponseOkMatcher.get(), subscribeValueRspAction);
+//     endpoint->expectSend(7, 0, false, 1, valueUpdateMatcher.get(), valueUpdateAction);
+//     endpoint->expectSend(8, 0, false, 1, unsubscribeValueResponseOkMatcher.get(), unsubscribeValueAction);
+
+//     server->setup();
+//     using namespace std::chrono_literals;
+//     std::this_thread::sleep_for(500ms);
+//     endpoint->waitForAllSending(10000.0);
+//     server->teardown();
+
+//     logger::loggerServer.waitEmpty();
+// }
+
+
+// TEST_F(ClientServerTests, shouldGetValue)
+// {
+//     endpoint->queueToReceive(createTestRequestMessage);
+
+//     auto expectedValue = utils::buildSharedBufferedValue(6969);
+//     MessageMatcher getValueResponseFullMatcher(createGetValueResponseMessage(getValueReqTid, *expectedValue));
+
+//     PropertyUpdateNotificationMatcher valueUpdateMatcher("/Test/Value", expectedValue, ptree);
+
+//     std::function<void()> subscribeValueRspAction = [this, &expectedValue]()
+//     {
+//         log << logger::DEBUG << "Subscribed to uuid: " << this->uuidOfValue;
+//         /** TODO: setValueReqTid **/
+//         this->endpoint->queueToReceive(createSetValueIndicationMessage(getValueReqTid, this->uuidOfValue, *expectedValue));
+//     };
+
+//     std::function<void()> valueUpdateAction = [this]()
+//     {
+//         log << logger::DEBUG << "Getting value of uuid: " << this->uuidOfValue;
+//         this->endpoint->queueToReceive(createGetValueRequestMessage(getValueReqTid, this->uuidOfValue));
+//     };
+
+//     endpoint->expectSend(1, 0, true, 1, testCreationMatcher->get(), testCreationAction);
+//     endpoint->expectSend(2, 1, true, 1, valueCreationMatcher->get(), valueCreationSubscribeAction);
+//     endpoint->expectSend(3, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+//     endpoint->expectSend(4, 0, false, 1, createTestResponseFullMatcher.get(), DefaultAction::get());
+//     endpoint->expectSend(5, 0, false, 1, createValueResponseFullMatcher.get(), DefaultAction::get());
+//     endpoint->expectSend(6, 0, false, 1, subscribeValueResponseOkMatcher.get(), subscribeValueRspAction);
+//     endpoint->expectSend(7, 0, false, 1, valueUpdateMatcher.get(), valueUpdateAction);
+//     endpoint->expectSend(8, 0, false, 1, getValueResponseFullMatcher.get(), DefaultAction::get());
+
+//     server->setup();
+//     using namespace std::chrono_literals;
+//     std::this_thread::sleep_for(500ms);
+//     endpoint->waitForAllSending(10000.0);
+//     server->teardown();
+
+//     logger::loggerServer.waitEmpty();
+// }
+
+// TEST_F(ClientServerTests, shouldForwardRcpRequestToExecutor)
+// {
+//     endpoint->queueToReceive(createRpcTestMessage);
+
+//     auto expectedParam = utils::buildSharedBufferedValue(6969);
+
+//     std::function<void()> rpcCreationAction = [this, &expectedParam]()
+//     {
+//         auto uuid = this->rpcCreationMatcher->getUuidOfLastMatched(); 
+//         log << logger::DEBUG << "Requesting Rpc to uuid: " << uuid;
+//         this->endpoint->queueToReceive(createRpcRequestMessage(createRpcRequestTid, uuid, *expectedParam));
+//         handleRpcRequestMatcher.set(
+//             createHandleRpcRequestMessage(static_cast<uint32_t>(-1), (uintptr_t)server.get(), createRpcRequestTid,
+//                 uuid, *expectedParam));
+//     };
+
+//     endpoint->expectSend(1, 0, true, 1, rpcCreationMatcher->get(), rpcCreationAction);
+//     endpoint->expectSend(2, 0, true, 1, handleRpcRequestMatcher.get(), DefaultAction::get());
+
+//     server->setup();
+//     endpoint->waitForAllSending(500.0);
+//     server->teardown();
+
+//     logger::loggerServer.waitEmpty();
+// }
+
+// TEST_F(ClientServerTests, shouldForwardRcpResponseToCaller)
+// {
+//     endpoint->queueToReceive(createRpcTestMessage);
+
+//     auto expectedParam = utils::buildSharedBufferedValue(6969);
+//     rpcResponseMatcher.set(createRpcResponseMessage(createRpcRequestTid, *expectedParam));
+//     protocol::Uuid uuid = 0;
+
+//     std::function<void()> rpcCreationAction = [this, &expectedParam, &uuid]()
+//     {
+//         uuid = this->rpcCreationMatcher->getUuidOfLastMatched(); 
+//         log << logger::DEBUG << "Requesting Rpc to uuid: " << uuid;
+//         this->endpoint->queueToReceive(createRpcRequestMessage(createRpcRequestTid, uuid, *expectedParam));
+//         handleRpcRequestMatcher.set(
+//             createHandleRpcRequestMessage(static_cast<uint32_t>(-1), (uintptr_t)server.get(), createRpcRequestTid,
+//                 uuid, *expectedParam));
+//     };
+
+//     std::function<void()> handleRpcRequestAction = [this, &expectedParam]()
+//     {
+//         log << logger::DEBUG << "Sending HandleRpcResponse ";
+//         this->endpoint->queueToReceive(
+//             createHandleRpcResponseMessage(static_cast<uint32_t>(-1), (uintptr_t)server.get(), createRpcRequestTid, *expectedParam));
+//     };
+
+//     endpoint->expectSend(1, 0, true, 1, rpcCreationMatcher->get(), rpcCreationAction);
+//     endpoint->expectSend(2, 0, true, 1, handleRpcRequestMatcher.get(), handleRpcRequestAction);
+//     endpoint->expectSend(3, 0, true, 1, rpcResponseMatcher.get(), DefaultAction::get());
+
+//     server->setup();
+//     endpoint->waitForAllSending(500.0);
+//     server->teardown();
+
+//     logger::loggerServer.waitEmpty();
+// }
+
+// /** TODO: For reference only. new test will be created for new  GetSpecificMeta **/
+// // TEST_F(ClientServerTests, shouldSigninRequestAndRespondWithMeta)
+// // {
+// //     auto fcs =  ptree->createProperty<core::Node>("/FCS"); // 100
+// //     auto sens = ptree->createProperty<core::Node>("/SENSOR"); // 101
+// //     auto aile = ptree->createProperty<core::Node>("/FCS/AILERON"); // 102
+// //     auto acel = ptree->createProperty<core::Node>("/SENSOR/ACCELEROMETER"); // 103
+// //     auto ther = ptree->createProperty<core::Node>("/SENSOR/THERMOMETER"); // 104
+// //     auto val1 = ptree->createProperty<core::Value>("/SENSOR/THERMOMETER/VALUE"); // 105
+// //     auto val2 = ptree->createProperty<core::Value>("/SENSOR/ACCELEROMETER/VALUE"); // 106
+// //     auto val3 = ptree->createProperty<core::Value>("/FCS/AILERON/CURRENT_DEFLECTION"); // 107
+// //     auto val4 = ptree->createProperty<core::Value>("/FCS/AILERON/TRIM"); //108
+
+// //     std::list<std::tuple<std::string, protocol::Uuid, protocol::PropertyType>> metalist;
+
+// //     metalist.emplace_back("/FCS", protocol::Uuid(100), protocol::PropertyType::Node);
+// //     metalist.emplace_back("/FCS/AILERON", protocol::Uuid(102), protocol::PropertyType::Node);
+// //     metalist.emplace_back("/FCS/AILERON/CURRENT_DEFLECTION", protocol::Uuid(107), protocol::PropertyType::Value);
+// //     metalist.emplace_back("/FCS/AILERON/TRIM", protocol::Uuid(108), protocol::PropertyType::Value);
+// //     metalist.emplace_back("/SENSOR", protocol::Uuid(101), protocol::PropertyType::Node);
+// //     metalist.emplace_back("/SENSOR/ACCELEROMETER", protocol::Uuid(103), protocol::PropertyType::Node);
+// //     metalist.emplace_back("/SENSOR/ACCELEROMETER/VALUE", protocol::Uuid(106), protocol::PropertyType::Value);
+// //     metalist.emplace_back("/SENSOR/THERMOMETER", protocol::Uuid(104), protocol::PropertyType::Node);
+// //     metalist.emplace_back("/SENSOR/THERMOMETER/VALUE", protocol::Uuid(105), protocol::PropertyType::Value);
+
+// //     signinRspMsgMatcher = std::make_shared<MessageMatcher>(createSigninResponseMessage(signinRqstTid, 1, metalist));
+
+// //     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
+
+// //     using namespace std::chrono_literals;
+// //     std::this_thread::sleep_for(1ms);
+// //     server->setup();
+// //     endpoint->waitForAllSending(2500.0);
+// //     server->teardown();
+// // }
+
+// TEST_F(ClientServerTests, shouldGetSpecificMetaRequestAndRespondTheCorrectMeta)
+// {
+//     ptree->createProperty<core::Node>("/FCS"); // 100
+//     ptree->createProperty<core::Node>("/FCS/AILERON"); // 101
+//     ptree->createProperty<core::Value>("/FCS/AILERON/CURRENT_DEFLECTION"); // 102
+
+//     std::string path = "/FCS/AILERON/CURRENT_DEFLECTION";
+
+//     endpoint->queueToReceive(createGetSpecificMetaRequestMessage(1, path));
+//     MessageMatcher getSpecifiMetaResponsetMessageMatcher(
+//         createGetSpecificMetaResponseMessage(1, 102, protocol::PropertyType::Value, path));
+
+//     endpoint->expectSend(0, 0, false, 1, getSpecifiMetaResponsetMessageMatcher.get(), DefaultAction::get());
 
 //     using namespace std::chrono_literals;
 //     std::this_thread::sleep_for(1ms);
@@ -812,27 +835,6 @@ TEST_F(ClientServerTests, shouldForwardRcpResponseToCaller)
 //     endpoint->waitForAllSending(2500.0);
 //     server->teardown();
 // }
-
-TEST_F(ClientServerTests, shouldGetSpecificMetaRequestAndRespondTheCorrectMeta)
-{
-    ptree->createProperty<core::Node>("/FCS"); // 100
-    ptree->createProperty<core::Node>("/FCS/AILERON"); // 101
-    ptree->createProperty<core::Value>("/FCS/AILERON/CURRENT_DEFLECTION"); // 102
-
-    std::string path = "/FCS/AILERON/CURRENT_DEFLECTION";
-
-    endpoint->queueToReceive(createGetSpecificMetaRequestMessage(1, path));
-    MessageMatcher getSpecifiMetaResponsetMessageMatcher(
-        createGetSpecificMetaResponseMessage(1, 102, protocol::PropertyType::Value, path));
-
-    endpoint->expectSend(0, 0, false, 1, getSpecifiMetaResponsetMessageMatcher.get(), DefaultAction::get());
-
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(1ms);
-    server->setup();
-    endpoint->waitForAllSending(2500.0);
-    server->teardown();
-}
 
 } // namespace server
 } // namespace ptree

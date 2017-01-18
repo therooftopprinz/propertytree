@@ -5,13 +5,20 @@ namespace ptree
 namespace server
 {   
 
-PTreeOutgoing::PTreeOutgoing(IEndPointPtr& endpoint):
-    endpoint(endpoint), log("PTreeOutgoing")
+PTreeOutgoing::PTreeOutgoing(ClientServerConfig& config, IEndPointPtr& endpoint):
+    handleOutgoingIsRunning(true), killHandleOutgoing(false), config(config), endpoint(endpoint), log("PTreeOutgoing")
 {
+    log << logger::DEBUG << "Creating outgoingThread.";
+    std::function<void()> outgoing = std::bind(&PTreeOutgoing::handleOutgoing, this);
+    std::thread outgoingThread(outgoing); 
+    outgoingThread.detach();
+    log << logger::DEBUG << "Created thread detached.";
 }
 
 PTreeOutgoing::~PTreeOutgoing()
 {
+    killHandleOutgoing = true;
+    while(handleOutgoingIsRunning);
 }
 
 void PTreeOutgoing::notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path)
@@ -70,17 +77,7 @@ void PTreeOutgoing::notifyRpcRequest(protocol::Uuid uuid, uint64_t clientServerI
     request.callerTransactionId = transactionId;
     request.uuid = uuid;
     request.parameter = std::move(parameter);
-
-    Buffer enbuff = request.getPacked();
-
-    Buffer header(sizeof(protocol::MessageHeader));
-    protocol::MessageHeader& headerRaw = *((protocol::MessageHeader*)header.data());
-    headerRaw.type = protocol::MessageType::HandleRpcRequest;
-    headerRaw.size = enbuff.size()+sizeof(protocol::MessageHeader);
-    headerRaw.transactionId = static_cast<uint32_t>(-1);
-    /** NOTE: sendLock not needing since calling function is from the MessageHandler which already locks sendLock.**/
-    endpoint->send(header.data(), header.size());
-    endpoint->send(enbuff.data(), enbuff.size());
+    sendToClient(static_cast<uint32_t>(-1), protocol::MessageType::HandleRpcRequest, request);
 }
 
 void PTreeOutgoing::notifyRpcResponse(uint32_t transactionId, Buffer&& returnValue)
@@ -88,17 +85,93 @@ void PTreeOutgoing::notifyRpcResponse(uint32_t transactionId, Buffer&& returnVal
     log << logger::DEBUG << "notifyRpcResponse for transactionId: " << transactionId << " and cs: " << (void*)this;
     protocol::RpcResponse response;
     response.returnValue = std::move(returnValue);
+    sendToClient(transactionId, protocol::MessageType::RpcResponse, response);
+}
 
-    Buffer enbuff = response.getPacked();
 
+/**TODO: single send for header and content**/
+Buffer PTreeOutgoing::createHeader(protocol::MessageType type, uint32_t payloadSize, uint32_t transactionId)
+{
     Buffer header(sizeof(protocol::MessageHeader));
     protocol::MessageHeader& headerRaw = *((protocol::MessageHeader*)header.data());
-    headerRaw.type = protocol::MessageType::RpcResponse;
-    headerRaw.size = enbuff.size()+sizeof(protocol::MessageHeader);
+    headerRaw.type = type;
+    headerRaw.size = payloadSize+sizeof(protocol::MessageHeader);
     headerRaw.transactionId = transactionId;
-    /** NOTE: sendLock not needing since calling function is from the MessageHandler which already locks sendLock.**/
+    return header;
+}
+
+void PTreeOutgoing::sendToClient(uint32_t tid, protocol::MessageType mtype, protocol::Message& msg)
+{
+    std::lock_guard<std::mutex> sendGuard(sendLock);
+
+    Buffer header = createHeader(mtype, msg.size(), tid);
     endpoint->send(header.data(), header.size());
-    endpoint->send(enbuff.data(), enbuff.size());
+
+    Buffer responseMessageBuffer = msg.getPacked();
+    endpoint->send(responseMessageBuffer.data(), responseMessageBuffer.size());
+}
+
+void PTreeOutgoing::handleOutgoing()
+{
+    handleOutgoingIsRunning = true;
+    while (!killHandleOutgoing)
+    {
+        if (!config.enableOutgoing)
+        {
+            // std::this_thread::sleep_for(std::chrono::microseconds(config.updateInterval));
+            continue;
+        }
+
+        {
+            std::lock_guard<std::mutex> updatenotifGuard(metaUpdateNotificationMutex);
+            if (metaUpdateNotification.size())
+            {
+                log << logger::DEBUG << "Meta Notifaction available!";
+
+                protocol::MetaUpdateNotification metaUpdateNotif;
+                for(const auto& i : metaUpdateNotification)
+                {
+                    if (i.second.utype == ActionTypeAndPath::UpdateType::CREATE_OBJECT)
+                    {
+                        metaUpdateNotif.creations.get().push_back(protocol::MetaCreate(i.first, i.second.ptype, i.second.path));
+                    }
+                    else
+                    {
+                        metaUpdateNotif.deletions.get().push_back(protocol::MetaDelete(i.first));
+                    }
+                }
+
+                log << logger::DEBUG << "sending meta..";
+                sendToClient(static_cast<uint32_t>(-1), protocol::MessageType::MetaUpdateNotification, metaUpdateNotif);
+                log << logger::DEBUG << "MetaUpdateNotification sent!";
+                metaUpdateNotification.clear();
+            }
+        }
+        {
+            std::lock_guard<std::mutex> updatenotifGuard(valueUpdateNotificationMutex);
+            if (valueUpdateNotification.size())
+            {
+                log << logger::DEBUG << "Property Update Notifaction available!";
+
+                protocol::PropertyUpdateNotification propertyUpdateNotifs;
+                for(const auto& i : valueUpdateNotification)
+                {
+                    propertyUpdateNotifs.propertyUpdateNotifications.get().push_back(
+                        protocol::PropertyUpdateNotificationEntry(i->getUuid(), i->getValue()));
+                    /** TODO: Optimize by only using the reference of value since value's lifetime is dependent to 
+                        valueUpdateNotification which assures an instance of value.**/
+                }
+
+                sendToClient(static_cast<uint32_t>(-1), protocol::MessageType::PropertyUpdateNotification, propertyUpdateNotifs);
+                log << logger::DEBUG << "PropertyUpdateNotification sent!";
+                valueUpdateNotification.clear();
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::microseconds(config.updateInterval));
+    }
+    log << logger::DEBUG << "handleOutgoing: exiting..";
+    handleOutgoingIsRunning = false;
 }
 
 } // namespace server

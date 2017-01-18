@@ -1,52 +1,19 @@
 #ifndef SERVER_SERVERLET_MESSAGEHANDLERS_MESSAGEHANDLER_HPP_
 #define SERVER_SERVERLET_MESSAGEHANDLERS_MESSAGEHANDLER_HPP_
 
+#include <interface/protocol.hpp>
 #include <common/src/IEndPoint.hpp>
-#include <server/src/PTree.hpp>
 #include <server/src/Types.hpp>
-#include <common/src/Logger.hpp>
+
 
 namespace ptree
 {
 namespace server
 {
 
-// g++ buggy case?    
-// struct ClientServer;
-// struct IEndPoint;
-// struct IClientServerMonitor;
-// namespace core
-// {
-//     struct PTree;
-// }
-
-struct ClientServer;
 struct MessageHandler
 {
-    MessageHandler(ClientServer& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon):
-        clientServer(cs),
-        endpoint(ep),
-        ptree(pt),
-        monitor(csmon)
-    {}
-
-    virtual void handle(protocol::MessageHeaderPtr header, BufferPtr message);
-    static Buffer createHeader(protocol::MessageType type, uint32_t payloadSize, uint32_t transactionId);
-    /**TODO: This assumes that send is locked before calling. Move message sending to server**/
-    template<class T>
-    void messageSender(uint32_t tid, protocol::MessageType mtype, T& msg)
-    {
-        Buffer header = createHeader(mtype, msg.size(), tid);
-        endpoint.send(header.data(), header.size());
-
-        Buffer responseMessageBuffer = msg.getPacked();
-        endpoint.send(responseMessageBuffer.data(), responseMessageBuffer.size());
-    }
-
-    ClientServer& clientServer;
-    IEndPoint& endpoint;
-    core::PTree& ptree;
-    IClientServerMonitor& monitor;
+    virtual void handle(protocol::MessageHeaderPtr header, BufferPtr message) = 0;
 };
 
 

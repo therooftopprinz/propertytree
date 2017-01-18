@@ -7,12 +7,8 @@ namespace ptree
 namespace server
 {
 
-RcpHandler::RcpHandler()
-{
-}
-
-RcpHandler::RcpHandler(ClientServerWkPtr clientServer, protocol::Uuid uuid) :
-    clientServer(clientServer), uuid(uuid)
+RcpHandler::RcpHandler(IPTreeOutgoingWkPtr outgoing, protocol::Uuid uuid) :
+    outgoing(outgoing), uuid(uuid)
 {
 }
 
@@ -22,16 +18,15 @@ RcpHandler::~RcpHandler()
 
 void RcpHandler::handle(uint64_t csid, uint32_t tid, Buffer&& parameter)
 {
-    auto csshared = clientServer.lock();
-    if(csshared)
+    auto outgoingsh = outgoing.lock();
+    if(outgoingsh)
     {
-        csshared->notifyRpcRequest(uuid, csid, tid, std::move(parameter));
+        outgoingsh->notifyRpcRequest(uuid, csid, tid, std::move(parameter));
     }
 }
 
-CreateRequestMessageHandler::
-    CreateRequestMessageHandler(ClientServerPtr& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon):
-        MessageHandler(*cs.get(),ep,pt,csmon), cs(cs)
+CreateRequestMessageHandler::CreateRequestMessageHandler(IPTreeOutgoingPtr& outgoing, core::PTree& ptree, IClientNotifier& notifier):
+    outgoing(outgoing), ptree(ptree), notifier(notifier)
 {
 }
 
@@ -75,7 +70,7 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Buff
             log << logger::DEBUG << "Rpc to be created.";
             auto val = ptree.createProperty<core::Rpc>(request.path);
             id = val.first;
-            std::shared_ptr<RcpHandler> rcphandler = std::make_shared<RcpHandler>(cs, id);
+            std::shared_ptr<RcpHandler> rcphandler = std::make_shared<RcpHandler>(outgoing, id);
             using std::placeholders::_1;
             using std::placeholders::_2;
             using std::placeholders::_3;
@@ -112,12 +107,12 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Buff
     if (created)
     {
         response.uuid = id;
-        monitor.notifyCreation(id, static_cast<protocol::PropertyType>(request.type), request.path);
+        notifier.notifyCreation(id, static_cast<protocol::PropertyType>(request.type), request.path);
     }
 
     log << logger::DEBUG << "is created: " << created;  
 
-    messageSender(header->transactionId, protocol::MessageType::CreateResponse, response);
+    outgoing->sendToClient(header->transactionId, protocol::MessageType::CreateResponse, response);
     log << logger::DEBUG << "response size: " << response.size()+sizeof(protocol::MessageHeader);
 }
 

@@ -12,8 +12,7 @@ namespace server
 PTreeTcpServer::PTreeTcpServer():
     portno(6666),
     ptree(std::make_shared<core::PTree>(std::make_shared<core::IdGenerator>())),
-    monitor(std::make_shared<ClientServerMonitor>()),
-    log("PTreeTcpServer")
+    monitor(std::make_shared<ClientNotifier>()), log("PTreeTcpServer")
 {
     
 }

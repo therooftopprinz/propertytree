@@ -7,9 +7,9 @@ namespace ptree
 namespace server
 {
 
-SigninRequestMessageHandler::
-    SigninRequestMessageHandler(ClientServer& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor&  csmon):
-        MessageHandler(cs,ep,pt,csmon)
+SigninRequestMessageHandler::SigninRequestMessageHandler(IPTreeOutgoingPtr& outgoing, ClientServerConfig& config,
+     core::PTree& ptree, IClientNotifier& notifier):
+        outgoing(outgoing), config(config), ptree(ptree), notifier(notifier)
 {}
 
 inline void SigninRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
@@ -27,8 +27,8 @@ inline void SigninRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
         supported = false;
     }
 
-    clientServer.setUpdateInterval(request.refreshRate);
-    clientServer.clientSigned();
+    config.updateInterval = request.refreshRate;
+    config.enableOutgoing = true;
 
     protocol::SigninResponse response;
     response.version = supported ? request.version : 0;
@@ -41,7 +41,7 @@ inline void SigninRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
     //     }
     // }
 
-    messageSender(header->transactionId, protocol::MessageType::SigninResponse, response);
+    outgoing->sendToClient(header->transactionId, protocol::MessageType::SigninResponse, response);
     log << logger::DEBUG << "response size: " << response.size()+sizeof(protocol::MessageHeader);
 }
 
