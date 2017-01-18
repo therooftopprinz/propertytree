@@ -1,19 +1,24 @@
-// #ifndef SERVER_SERVERLET_MESSAGEHANDLERS_HANDLERPCRRESPONSEMESSAGEHANDLER_HPP_
-// #define SERVER_SERVERLET_MESSAGEHANDLERS_HANDLERPCRRESPONSEMESSAGEHANDLER_HPP_
+#ifndef SERVER_SERVERLET_MESSAGEHANDLERS_HANDLERPCRRESPONSEMESSAGEHANDLER_HPP_
+#define SERVER_SERVERLET_MESSAGEHANDLERS_HANDLERPCRRESPONSEMESSAGEHANDLER_HPP_
 
-// #include "MessageHandler.hpp"
+#include <server/src/PTree.hpp>
+#include <server/src/Serverlet/IPTreeOutgoing.hpp>
+#include "MessageHandler.hpp"
 
-// namespace ptree
-// {
-// namespace server
-// {
+namespace ptree
+{
+namespace server
+{
 
-// struct HandleRpcResponseMessageHandler : public MessageHandler
-// {
-//     HandleRpcResponseMessageHandler(ClientServer& cs, IEndPoint& ep, core::PTree& pt, IClientServerMonitor& csmon);
-//     void handle(protocol::MessageHeaderPtr header, BufferPtr message);
-// };
+class HandleRpcResponseMessageHandler : public MessageHandler
+{
+public:
+    HandleRpcResponseMessageHandler(IClientNotifier& notifier);
+    void handle(protocol::MessageHeaderPtr header, BufferPtr message);
+private:
+    IClientNotifier& notifier;
+};
 
-// }
-// }
-// #endif // SERVER_SERVERLET_MESSAGEHANDLERS_HANDLERRESPONSEMESSAGEHANDLER_HPP_
+}
+}
+#endif // SERVER_SERVERLET_MESSAGEHANDLERS_HANDLERRESPONSEMESSAGEHANDLER_HPP_

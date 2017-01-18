@@ -716,67 +716,67 @@ TEST_F(ClientServerTests, shouldGetValue)
     logger::loggerServer.waitEmpty();
 }
 
-// TEST_F(ClientServerTests, shouldForwardRcpRequestToExecutor)
-// {
-//     endpoint->queueToReceive(createRpcTestMessage);
+TEST_F(ClientServerTests, shouldForwardRcpRequestToExecutor)
+{
+    endpoint->queueToReceive(createRpcTestMessage);
 
-//     auto expectedParam = utils::buildSharedBufferedValue(6969);
+    auto expectedParam = utils::buildSharedBufferedValue(6969);
 
-//     std::function<void()> rpcCreationAction = [this, &expectedParam]()
-//     {
-//         auto uuid = this->rpcCreationMatcher->getUuidOfLastMatched(); 
-//         log << logger::DEBUG << "Requesting Rpc to uuid: " << uuid;
-//         this->endpoint->queueToReceive(createRpcRequestMessage(createRpcRequestTid, uuid, *expectedParam));
-//         handleRpcRequestMatcher.set(
-//             createHandleRpcRequestMessage(static_cast<uint32_t>(-1), (uintptr_t)server.get(), createRpcRequestTid,
-//                 uuid, *expectedParam));
-//     };
+    std::function<void()> rpcCreationAction = [this, &expectedParam]()
+    {
+        auto uuid = this->rpcCreationMatcher->getUuidOfLastMatched(); 
+        log << logger::DEBUG << "Requesting Rpc to uuid: " << uuid;
+        this->endpoint->queueToReceive(createRpcRequestMessage(createRpcRequestTid, uuid, *expectedParam));
+        handleRpcRequestMatcher.set(
+            createHandleRpcRequestMessage(static_cast<uint32_t>(-1), (uintptr_t)server.get(), createRpcRequestTid,
+                uuid, *expectedParam));
+    };
 
-//     endpoint->expectSend(1, 0, true, 1, rpcCreationMatcher->get(), rpcCreationAction);
-//     endpoint->expectSend(2, 0, true, 1, handleRpcRequestMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(1, 0, true, 1, rpcCreationMatcher->get(), rpcCreationAction);
+    endpoint->expectSend(2, 0, true, 1, handleRpcRequestMatcher.get(), DefaultAction::get());
 
-//     server->setup();
-//     endpoint->waitForAllSending(500.0);
-//     server->teardown();
+    server->setup();
+    endpoint->waitForAllSending(500.0);
+    server->teardown();
 
-//     logger::loggerServer.waitEmpty();
-// }
+    logger::loggerServer.waitEmpty();
+}
 
-// TEST_F(ClientServerTests, shouldForwardRcpResponseToCaller)
-// {
-//     endpoint->queueToReceive(createRpcTestMessage);
+TEST_F(ClientServerTests, shouldForwardRcpResponseToCaller)
+{
+    endpoint->queueToReceive(createRpcTestMessage);
 
-//     auto expectedParam = utils::buildSharedBufferedValue(6969);
-//     rpcResponseMatcher.set(createRpcResponseMessage(createRpcRequestTid, *expectedParam));
-//     protocol::Uuid uuid = 0;
+    auto expectedParam = utils::buildSharedBufferedValue(6969);
+    rpcResponseMatcher.set(createRpcResponseMessage(createRpcRequestTid, *expectedParam));
+    protocol::Uuid uuid = 0;
 
-//     std::function<void()> rpcCreationAction = [this, &expectedParam, &uuid]()
-//     {
-//         uuid = this->rpcCreationMatcher->getUuidOfLastMatched(); 
-//         log << logger::DEBUG << "Requesting Rpc to uuid: " << uuid;
-//         this->endpoint->queueToReceive(createRpcRequestMessage(createRpcRequestTid, uuid, *expectedParam));
-//         handleRpcRequestMatcher.set(
-//             createHandleRpcRequestMessage(static_cast<uint32_t>(-1), (uintptr_t)server.get(), createRpcRequestTid,
-//                 uuid, *expectedParam));
-//     };
+    std::function<void()> rpcCreationAction = [this, &expectedParam, &uuid]()
+    {
+        uuid = this->rpcCreationMatcher->getUuidOfLastMatched(); 
+        log << logger::DEBUG << "Requesting Rpc to uuid: " << uuid;
+        this->endpoint->queueToReceive(createRpcRequestMessage(createRpcRequestTid, uuid, *expectedParam));
+        handleRpcRequestMatcher.set(
+            createHandleRpcRequestMessage(static_cast<uint32_t>(-1), (uintptr_t)server.get(), createRpcRequestTid,
+                uuid, *expectedParam));
+    };
 
-//     std::function<void()> handleRpcRequestAction = [this, &expectedParam]()
-//     {
-//         log << logger::DEBUG << "Sending HandleRpcResponse ";
-//         this->endpoint->queueToReceive(
-//             createHandleRpcResponseMessage(static_cast<uint32_t>(-1), (uintptr_t)server.get(), createRpcRequestTid, *expectedParam));
-//     };
+    std::function<void()> handleRpcRequestAction = [this, &expectedParam]()
+    {
+        log << logger::DEBUG << "Sending HandleRpcResponse ";
+        this->endpoint->queueToReceive(
+            createHandleRpcResponseMessage(static_cast<uint32_t>(-1), (uintptr_t)server.get(), createRpcRequestTid, *expectedParam));
+    };
 
-//     endpoint->expectSend(1, 0, true, 1, rpcCreationMatcher->get(), rpcCreationAction);
-//     endpoint->expectSend(2, 0, true, 1, handleRpcRequestMatcher.get(), handleRpcRequestAction);
-//     endpoint->expectSend(3, 0, true, 1, rpcResponseMatcher.get(), DefaultAction::get());
+    endpoint->expectSend(1, 0, true, 1, rpcCreationMatcher->get(), rpcCreationAction);
+    endpoint->expectSend(2, 0, true, 1, handleRpcRequestMatcher.get(), handleRpcRequestAction);
+    endpoint->expectSend(3, 0, true, 1, rpcResponseMatcher.get(), DefaultAction::get());
 
-//     server->setup();
-//     endpoint->waitForAllSending(500.0);
-//     server->teardown();
+    server->setup();
+    endpoint->waitForAllSending(500.0);
+    server->teardown();
 
-//     logger::loggerServer.waitEmpty();
-// }
+    logger::loggerServer.waitEmpty();
+}
 
 // /** TODO: For reference only. new test will be created for new  GetSpecificMeta **/
 // // TEST_F(ClientServerTests, shouldSigninRequestAndRespondWithMeta)

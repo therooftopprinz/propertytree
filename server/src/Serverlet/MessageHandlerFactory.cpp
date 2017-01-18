@@ -31,10 +31,10 @@ std::unique_ptr<MessageHandler>
             return std::make_unique<UnsubscribePropertyUpdateRequestMessageHandler>(clientServerId, *outgoing, *ptree);
         case (Enum) protocol::MessageType::GetValueRequest:
             return std::make_unique<GetValueRequestMessageHandler>(*outgoing, *ptree);
-        // case (Enum) protocol::MessageType::RpcRequest:
-        //     return std::make_unique<RpcRequestMessageHandler>(cs, *ep.get(), *pt.get(), *csmon.get());
-        // case (Enum) protocol::MessageType::HandleRpcResponse:
-        //     return std::make_unique<HandleRpcResponseMessageHandler>(*cs.get(), *ep.get(), *pt.get(), *csmon.get());
+        case (Enum) protocol::MessageType::RpcRequest:
+            return std::make_unique<RpcRequestMessageHandler>(clientServerId, *ptree);
+        case (Enum) protocol::MessageType::HandleRpcResponse:
+            return std::make_unique<HandleRpcResponseMessageHandler>(*notifier);
         // case (Enum) protocol::MessageType::GetSpecificMetaRequest:
         //     return std::make_unique<GetSpecificMetaRequestMessageHandler>(*cs.get(), *ep.get(), *pt.get(), *csmon.get());
     }
