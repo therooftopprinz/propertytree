@@ -13,7 +13,7 @@ namespace server
 
 struct IPTreeOutgoing
 {
-	virtual ~IPTreeOutgoing() {}
+    virtual ~IPTreeOutgoing() {}
 
     virtual void notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path) = 0;
     virtual void notifyDeletion(uint32_t uuid) = 0;

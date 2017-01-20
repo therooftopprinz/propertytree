@@ -21,6 +21,9 @@ public:
     PTreeOutgoing(ClientServerConfig& config, IEndPointPtr& endpoint);
     ~PTreeOutgoing();
 
+    void setup();
+    void teardown();
+
     void notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path);
     void notifyDeletion(uint32_t uuid);
     void notifyValueUpdate(core::ValuePtr);

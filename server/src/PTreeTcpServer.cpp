@@ -19,8 +19,8 @@ PTreeTcpServer::PTreeTcpServer():
 
 void PTreeTcpServer::serverlet(ClientServerPtr cs)
 {
-    log << logger::DEBUG << "Serverlet is starting...";
     cs->setup();
+    log << logger::DEBUG << "Serverlet is starting...";
     while(1);
 }
 
