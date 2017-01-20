@@ -86,28 +86,19 @@ ClientServer::ClientServer(IEndPointPtr endpoint, core::PTreePtr ptree, IClientN
     notifier->addClientServer(clientServerId, outgoing);
 }
 
-void ClientServer::setup()
+void ClientServer::init()
 {
-    log << logger::DEBUG << "construct";
     log << logger::DEBUG << "initializing incoming...";
-    incoming.setup(std::shared_ptr<IPTreeOutgoing>(shared_from_this(), &outgoing));
-    outgoing.setup();
-}
-
-void ClientServer::teardown()
-{
-    log << logger::DEBUG << "destruct";
-    incoming.teardown();
-    outgoing.teardown();
-    using namespace std::chrono_literals;
-    std::this_thread::sleep_for(1s); // wait setup to finish
-    log << logger::DEBUG << "teardown: removing from notifier";
-    notifier->removeClientServer(clientServerId);
+    incoming.init(std::shared_ptr<IPTreeOutgoing>(shared_from_this(), &outgoing));
 }
 
 ClientServer::~ClientServer()
 {
-
+    log << logger::DEBUG << "destruct";
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1s); // wait setup to finish
+    log << logger::DEBUG << "teardown: removing from notifier";
+    notifier->removeClientServer(clientServerId);
 }
 
 } // namespace server

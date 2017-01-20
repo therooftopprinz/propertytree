@@ -55,7 +55,6 @@ struct MessageHandlerFactory;
 class ClientServer : public std::enable_shared_from_this<ClientServer>
 {
 public:
-    ClientServer(IEndPointPtr endpoint, core::PTreePtr ptree, IClientNotifierPtr notifier);
     ClientServer(const ClientServer&) = delete;
     ClientServer(ClientServer&) = delete;
     void operator = (const ClientServer&) = delete;
@@ -63,10 +62,17 @@ public:
 
     ~ClientServer();
 
-    void setup();
-    void teardown();
 
+    inline static std::shared_ptr<ClientServer> create(IEndPointPtr& endpoint, core::PTreePtr& ptree, IClientNotifierPtr& notifier)
+    {
+        auto cs = std::make_shared<ClientServer>(endpoint, ptree, notifier);
+        cs->init();
+        return cs;
+    }
+
+    ClientServer(IEndPointPtr endpoint, core::PTreePtr ptree, IClientNotifierPtr notifier);
 private:
+    void init();
     void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);
 
     uint64_t clientServerId;

@@ -19,7 +19,6 @@ PTreeTcpServer::PTreeTcpServer():
 
 void PTreeTcpServer::serverlet(ClientServerPtr cs)
 {
-    cs->setup();
     log << logger::DEBUG << "Serverlet is starting...";
     while(1);
 }
@@ -65,8 +64,8 @@ void PTreeTcpServer::run()
         }
 
         log << logger::DEBUG << "ACCEPTING NEW CONNECTION";
-        std::shared_ptr<TcpEndPoint> ep = std::make_shared<TcpEndPoint>(newsockfd);
-        ClientServerPtr cs = std::make_shared<ClientServer>(ep, ptree, monitor);
+        IEndPointPtr ep = std::make_shared<TcpEndPoint>(newsockfd);
+        ClientServerPtr cs = ClientServer::create(ep, ptree, monitor);
         std::function<void()> sevlet= std::bind(&PTreeTcpServer::serverlet, this, cs);
         std::thread t(sevlet);
         t.detach();

@@ -41,7 +41,6 @@ struct ClientServerTests : public common::MessageCreationHelper, public ::testin
         idgen(std::make_shared<core::IdGenerator>()),
         monitor(std::make_shared<ClientNotifier>()),
         ptree(std::make_shared<core::PTree>(idgen)),
-        server(std::make_shared<ClientServer>(endpoint, ptree, monitor)),
         log("TEST")
     {
         signinRspMsgMatcher = std::make_shared<MessageMatcher>(createSigninResponseMessage(signinRqstTid, 1));
@@ -107,12 +106,12 @@ struct ClientServerTests : public common::MessageCreationHelper, public ::testin
 
     void SetUp()
     {
-        server->setup();
+        auto ep = std::dynamic_pointer_cast<IEndPoint>(endpoint);
+        server = ClientServer::create(ep, ptree, monitor);
     }
 
     void TearDown()
     {
-        server->teardown();
         using namespace std::chrono_literals;
         std::this_thread::sleep_for(1ms);
     }

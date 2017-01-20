@@ -22,8 +22,8 @@ public:
     PTreeIncoming(uint64_t clientServerId, ClientServerConfig& config, IEndPointPtr& endpoint,
         core::PTreePtr& ptree, IClientNotifierPtr& notifier);
     ~PTreeIncoming();
-    void setup(IPTreeOutgoingPtr o);
-    void teardown();
+    void init(IPTreeOutgoingWkPtr o);
+
 private:
     void handleIncoming();
     void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);
@@ -35,7 +35,7 @@ private:
     protocol::MessageType type;
     ClientServerConfig& config;
     IEndPointPtr& endpoint;
-    IPTreeOutgoingPtr outgoing;
+    IPTreeOutgoingWkPtr outgoing;
     core::PTreePtr& ptree;
     IClientNotifierPtr& notifier;
     logger::Logger log;

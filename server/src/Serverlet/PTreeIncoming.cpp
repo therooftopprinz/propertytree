@@ -16,12 +16,17 @@ PTreeIncoming::PTreeIncoming(uint64_t clientServerId,
 PTreeIncoming::~PTreeIncoming()
 {
     log << logger::DEBUG << "destruct";
+    killHandleIncoming = true;
+    log << logger::DEBUG << "teardown: waiting thread to stop...";
+    log << logger::DEBUG << "teardown: handleIncoming " << handleIncomingIsRunning;
+    log << logger::DEBUG << "teardown: prossesing " << processMessageRunning;
+    while (handleIncomingIsRunning || processMessageRunning);
+    log << logger::DEBUG << "Teardown complete.";
 }
 
-void PTreeIncoming::setup(IPTreeOutgoingPtr o)
+void PTreeIncoming::init(IPTreeOutgoingWkPtr o)
 {
     outgoing = o;
-
     std::function<void()> incoming = std::bind(&PTreeIncoming::handleIncoming, this);
     killHandleIncoming = false;
     log << logger::DEBUG << "Creating incomingThread.";
@@ -31,27 +36,13 @@ void PTreeIncoming::setup(IPTreeOutgoingPtr o)
     log << logger::DEBUG << "Setup complete.";
 }
 
-void PTreeIncoming::teardown()
-{
-    outgoing.reset();
-    killHandleIncoming = true;
-    log << logger::DEBUG << "teardown: waiting thread to stop...";
-    log << logger::DEBUG << "teardown: handleIncoming " << handleIncomingIsRunning;
-    log << logger::DEBUG << "teardown: prossesing " << processMessageRunning;
-    while (handleIncomingIsRunning || processMessageRunning);
-    log << logger::DEBUG << "Teardown complete.";
-}
-
 void PTreeIncoming::processMessage(protocol::MessageHeaderPtr header, BufferPtr message)
 {
     processMessageRunning++;
     log << logger::DEBUG << "ClientServer::processMessage()";
     auto type = header->type;
-    /** TODO: Remove after investigation is done **/
-    // if (type==protocol::MessageType::SubscribePropertyUpdateRequest)
-    //     std::make_unique<SubscribePropertyUpdateRequestMessageHandler>(lval_this, *endpoint.get(), *ptree.get(), *notifier.get())->handle(header, message);
-    // else
-        MessageHandlerFactory::get(clientServerId, type, config, outgoing, ptree, notifier)->handle(header, message);
+    auto outgoingShared = outgoing.lock();
+    MessageHandlerFactory::get(clientServerId, type, config, outgoingShared, ptree, notifier)->handle(header, message);
 
     processMessageRunning--;
 }
