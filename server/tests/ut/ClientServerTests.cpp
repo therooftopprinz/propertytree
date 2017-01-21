@@ -262,7 +262,7 @@ TEST_F(ClientServerTests, shouldCreateOnPTreeWhenCreateRequested)
             this->valueCreationMatcher->getUuidOfLastMatched();
         core::ValuePtr val;
         ASSERT_NO_THROW(val = this->ptree->getPropertyByPath<core::Value>("/Test/Value"));
-        EXPECT_EQ(42u, val->getValue<uint32_t>());
+        EXPECT_EQ(42u, *(uint32_t*)(val->getValue().data()));
     };
 
     endpoint->expectSend(0, 0, false, 1, signinRspMsgMatcher->get(), DefaultAction::get());
@@ -506,7 +506,7 @@ TEST_F(ClientServerTests, shouldSetSetValueWhenSetValueIndIsValid)
     std::this_thread::sleep_for(6s);
     core::ValuePtr val;
     ASSERT_NO_THROW(val = this->ptree->getPropertyByPath<core::Value>("/Test/Value"));
-    EXPECT_EQ(41u, val->getValue<uint32_t>());
+    EXPECT_EQ(41u, *(uint32_t*)(val->getValue().data()));
     std::this_thread::sleep_for(500ms);
     endpoint->waitForAllSending(15000.0);
 

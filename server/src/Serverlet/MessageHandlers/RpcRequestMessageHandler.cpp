@@ -15,12 +15,12 @@ RpcRequestMessageHandler::RpcRequestMessageHandler(uint64_t clientServerId, core
 
 }
 
-void RpcRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
+void RpcRequestMessageHandler::handle(protocol::MessageHeader& header, Buffer& message)
 {
     logger::Logger log("RcpRequestMessageHandler");
 
     protocol::RpcRequest request;
-    request.unpackFrom(*message);
+    request.unpackFrom(message);
 
     log << logger::DEBUG << "requesting rpc for: " << request.uuid;
     try
@@ -29,7 +29,7 @@ void RpcRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferP
         if (rpc)
         {
             log << logger::DEBUG << "Calling RPC object ";
-            (*rpc)(clientServerId, header->transactionId, std::move(request.parameter));
+            (*rpc)(clientServerId, header.transactionId, std::move(request.parameter));
         }
         else
         {

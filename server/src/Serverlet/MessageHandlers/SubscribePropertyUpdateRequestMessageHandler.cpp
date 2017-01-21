@@ -33,12 +33,12 @@ SubscribePropertyUpdateRequestMessageHandler::SubscribePropertyUpdateRequestMess
 
 }
 
-void SubscribePropertyUpdateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
+void SubscribePropertyUpdateRequestMessageHandler::handle(protocol::MessageHeader& header, Buffer& message)
 {
     logger::Logger log("SubscribePropertyUpdateRequest");
 
     protocol::SubscribePropertyUpdateRequest request;
-    request.unpackFrom(*message);
+    request.unpackFrom(message);
 
     protocol::SubscribePropertyUpdateResponse response;
     response.response = protocol::SubscribePropertyUpdateResponse::Response::OK;
@@ -71,7 +71,7 @@ void SubscribePropertyUpdateRequestMessageHandler::handle(protocol::MessageHeade
         response.response = protocol::SubscribePropertyUpdateResponse::Response::UUID_NOT_FOUND;
     }
 
-    outgoing->sendToClient(header->transactionId, protocol::MessageType::SubscribePropertyUpdateResponse, response);
+    outgoing->sendToClient(header.transactionId, protocol::MessageType::SubscribePropertyUpdateResponse, response);
 }
 
 }

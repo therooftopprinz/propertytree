@@ -12,12 +12,12 @@ SigninRequestMessageHandler::SigninRequestMessageHandler(IPTreeOutgoing& outgoin
         outgoing(outgoing), config(config), ptree(ptree), notifier(notifier)
 {}
 
-inline void SigninRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
+inline void SigninRequestMessageHandler::handle(protocol::MessageHeader& header, Buffer& message)
 {
     logger::Logger log("SigninRequestMessageHandler");
 
     protocol::SigninRequest request;
-    request.unpackFrom(*message);
+    request.unpackFrom(message);
 
     bool supported = true;
     if (request.version != 1)
@@ -41,7 +41,7 @@ inline void SigninRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
     //     }
     // }
 
-    outgoing.sendToClient(header->transactionId, protocol::MessageType::SigninResponse, response);
+    outgoing.sendToClient(header.transactionId, protocol::MessageType::SigninResponse, response);
     log << logger::DEBUG << "response size: " << response.size()+sizeof(protocol::MessageHeader);
 }
 

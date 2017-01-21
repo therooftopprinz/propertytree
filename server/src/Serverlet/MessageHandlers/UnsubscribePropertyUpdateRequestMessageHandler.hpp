@@ -14,7 +14,7 @@ class  UnsubscribePropertyUpdateRequestMessageHandler : public MessageHandler
 {
 public:
     UnsubscribePropertyUpdateRequestMessageHandler(uint64_t clientServerId, IPTreeOutgoing& outgoing, core::PTree& ptree);
-    void handle(protocol::MessageHeaderPtr header, BufferPtr message);
+    void handle(protocol::MessageHeader& header, Buffer& message);
 private:
     uint64_t clientServerId;
     IPTreeOutgoing& outgoing;

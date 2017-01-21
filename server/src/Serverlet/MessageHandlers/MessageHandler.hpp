@@ -13,7 +13,7 @@ namespace server
 
 struct MessageHandler
 {
-    virtual void handle(protocol::MessageHeaderPtr header, BufferPtr message) = 0;
+    virtual void handle(protocol::MessageHeader& header, Buffer& message) = 0;
 };
 
 

@@ -17,7 +17,7 @@ PTreeTcpServer::PTreeTcpServer():
     
 }
 
-void PTreeTcpServer::serverlet(ClientServerPtr cs)
+void PTreeTcpServer::serverlet(ClientServerPtr)
 {
     log << logger::DEBUG << "Serverlet is starting...";
     while(1);
@@ -57,11 +57,18 @@ void PTreeTcpServer::run()
     {
         log << logger::DEBUG << "WATING FOR NEW CONNECTION";
         newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr,&clilen);
+
         if (newsockfd < 0)
         {
             log << logger::DEBUG << "ACCEPT FAILED";
             continue;
         }
+
+        struct timeval tv;
+        tv.tv_sec = 1;
+        tv.tv_usec = 0;
+
+        setsockopt(newsockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
 
         log << logger::DEBUG << "ACCEPTING NEW CONNECTION";
         IEndPointPtr ep = std::make_shared<TcpEndPoint>(newsockfd);

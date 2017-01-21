@@ -14,7 +14,7 @@ class HandleRpcResponseMessageHandler : public MessageHandler
 {
 public:
     HandleRpcResponseMessageHandler(IClientNotifier& notifier);
-    void handle(protocol::MessageHeaderPtr header, BufferPtr message);
+    void handle(protocol::MessageHeader& header, Buffer& message);
 private:
     IClientNotifier& notifier;
 };

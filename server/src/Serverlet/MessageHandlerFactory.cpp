@@ -6,7 +6,7 @@ namespace ptree
 namespace server
 {
 
-void MessageHandlerDummy::handle(protocol::MessageHeaderPtr, BufferPtr)
+void MessageHandlerDummy::handle(protocol::MessageHeader&, Buffer&)
 {}
 
 std::unique_ptr<MessageHandler>

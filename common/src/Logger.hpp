@@ -8,6 +8,7 @@
 #include <chrono>
 #include <ctime>
 #include <mutex>
+#include <condition_variable>
 #include <atomic>
 
 namespace ptree
@@ -55,6 +56,10 @@ public:
     {
         std::cout << "LoggerServer will now be destroyed!!" << std::endl;
         killLogProcessor = true;
+        {
+            std::lock_guard<std::mutex> guard(toBeLoggedMutex);
+            toBeLoggedCv.notify_one();
+        }
         while(logProcessorRunning)
         {
             using namespace std::chrono_literals;
@@ -70,7 +75,8 @@ private:
     std::atomic<bool> logProcessorRunning;
     std::atomic<bool> killLogProcessor;
     std::list<LogEntry> toBeLogged;
-    std::mutex logQueueMutex;
+    std::condition_variable toBeLoggedCv;
+    std::mutex toBeLoggedMutex;
     uint64_t timeBase;
 };
 

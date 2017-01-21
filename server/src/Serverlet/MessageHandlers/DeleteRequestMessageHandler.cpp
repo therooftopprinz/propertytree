@@ -12,12 +12,12 @@ DeleteRequestMessageHandler::
         outgoing(outgoing), ptree(ptree), notifier(notifier)
 {}
 
-inline void DeleteRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
+inline void DeleteRequestMessageHandler::handle(protocol::MessageHeader& header, Buffer& message)
 {
     logger::Logger log("DeleteRequestMessageHandler");
 
     protocol::DeleteRequest request;
-    request.unpackFrom(*message);
+    request.unpackFrom(message);
 
     log << logger::DEBUG << "path: " << request.path;
     bool deleted = true;
@@ -59,7 +59,7 @@ inline void DeleteRequestMessageHandler::handle(protocol::MessageHeaderPtr heade
         notifier.notifyDeletion(uuid);
     }
     log << logger::DEBUG << "is deleted: " << deleted;  
-    outgoing.sendToClient(header->transactionId, protocol::MessageType::DeleteResponse, response);
+    outgoing.sendToClient(header.transactionId, protocol::MessageType::DeleteResponse, response);
 }
 
 } // namespace server

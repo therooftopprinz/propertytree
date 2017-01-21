@@ -72,25 +72,9 @@ public:
 
     bool addWatcher(uint64_t csid, ValueWatcher& watcher);
     bool removeWatcher(uint64_t id);
-    
-    template<class T>
-    T& getValue()
-    {
-        if (value.size() != sizeof(T))
-            throw ValueSizeIncompatible();
-        return *(reinterpret_cast<T*>(value.data()));
-    }
 
-    template<class T>
-    void setValue(T valueToSet)
-    {
-        value.resize(sizeof(T));
-        *(reinterpret_cast<T*>(value.data())) = valueToSet;
-        informValueWatcher();
-    }
-
-    void setValue(ValueContainer& valueToSet);
-    void setValue(void* offset, uint32_t size);
+    void setValue(const ValueContainer& valueToSet);
+    void setValue(const void* offset, uint32_t size);
 
     ValueContainer& getValue();
 

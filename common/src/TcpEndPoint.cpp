@@ -1,5 +1,5 @@
+#include <string.h>
 #include "TcpEndPoint.hpp"
-
 namespace ptree
 {
 namespace common
@@ -7,7 +7,7 @@ namespace common
 
 
 TcpEndPoint::TcpEndPoint(int sockfd) :
-    sockfd(sockfd), flags(0)
+    sockfd(sockfd), flags(0), log("TcpEndPoint")
 {
 }
 
@@ -18,12 +18,26 @@ TcpEndPoint::~TcpEndPoint()
 
 ssize_t TcpEndPoint::send(const void *buffer, uint32_t size)
 {
-    return ::send(sockfd, buffer, size, flags);
+    auto rv = ::send(sockfd, buffer, size, flags);
+    int errcode = errno;
+    if (rv == -1)
+    {
+        log << logger::ERROR << "send error occured!! error: " << strerror(errcode);
+        return 0;
+    }
+    return rv;
 }
 
 ssize_t TcpEndPoint::receive(void *buffer, uint32_t size)
 {
-    return recv(sockfd, buffer, size, flags);
+    auto rv = recv(sockfd, buffer, size, flags);
+    int errcode = errno;
+    if (rv == -1)
+    {
+        log << logger::ERROR << "receiv error occured!! error: " << strerror(errcode);
+        return 0;
+    }
+    return rv;
 }
 
 void TcpEndPoint::setBlockingTimeout(int secs, int microsecs)

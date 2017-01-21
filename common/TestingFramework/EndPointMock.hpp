@@ -5,6 +5,8 @@
 #include <gmock/gmock.h>
 #include <list>
 #include <vector>
+#include <mutex>
+#include <condition_variable>
 #include <cstring>
 #include <functional>
 #include <common/src/Logger.hpp>
@@ -68,6 +70,8 @@ private:
         bool chainable = false;
     };
 
+    std::mutex toReceiveBufferMutex;
+    std::condition_variable toReceiveCv;
     enum class ESendState {WAITING, INCOMPLETE};
     ESendState sendState = ESendState::WAITING;
     uint32_t sendSize = 0;

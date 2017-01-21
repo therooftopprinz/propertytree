@@ -15,12 +15,12 @@ UnsubscribePropertyUpdateRequestMessageHandler::UnsubscribePropertyUpdateRequest
 {
 }
 
-void UnsubscribePropertyUpdateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
+void UnsubscribePropertyUpdateRequestMessageHandler::handle(protocol::MessageHeader& header, Buffer& message)
 {
     logger::Logger log("UnsubscribePropertyUpdateRequestHandler");
 
     protocol::UnsubscribePropertyUpdateRequest request;
-    request.unpackFrom(*message);
+    request.unpackFrom(message);
 
     protocol::UnsubscribePropertyUpdateResponse response;
     response.response = protocol::UnsubscribePropertyUpdateResponse::Response::OK;
@@ -49,7 +49,7 @@ void UnsubscribePropertyUpdateRequestMessageHandler::handle(protocol::MessageHea
         log << logger::ERROR << "Uuid not found!";
         response.response = protocol::UnsubscribePropertyUpdateResponse::Response::UUID_NOT_FOUND;
     }
-    outgoing.sendToClient(header->transactionId, protocol::MessageType::UnsubscribePropertyUpdateResponse, response);
+    outgoing.sendToClient(header.transactionId, protocol::MessageType::UnsubscribePropertyUpdateResponse, response);
 }
 
 } // namespace server

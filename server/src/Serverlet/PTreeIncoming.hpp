@@ -26,9 +26,8 @@ public:
 
 private:
     void handleIncoming();
-    void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);
+    void processMessage(protocol::MessageHeader& header, Buffer& message);
 
-    uint32_t processMessageRunning;
     bool handleIncomingIsRunning;
     bool killHandleIncoming;
     uint64_t clientServerId;
@@ -39,17 +38,6 @@ private:
     core::PTreePtr& ptree;
     IClientNotifierPtr& notifier;
     logger::Logger log;
-
-    enum class EIncomingState
-    {
-        WAIT_FOR_HEADER_EMPTY,
-        WAIT_FOR_HEADER,
-        WAIT_FOR_MESSAGE_EMPTY,
-        WAIT_FOR_MESSAGE,
-        ERROR_HEADER_TIMEOUT,
-        ERROR_MESSAGE_TIMEOUT
-    };
-    EIncomingState incomingState;
 };
 
 } // namespace server

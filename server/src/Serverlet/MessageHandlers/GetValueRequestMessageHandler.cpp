@@ -14,12 +14,12 @@ GetValueRequestMessageHandler::GetValueRequestMessageHandler(IPTreeOutgoing& out
 {
 }
 
-void GetValueRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
+void GetValueRequestMessageHandler::handle(protocol::MessageHeader& header, Buffer& message)
 {
     logger::Logger log("GetValueRequestMessageHandler");
 
     protocol::GetValueRequest request;
-    request.unpackFrom(*message);
+    request.unpackFrom(message);
 
     protocol::GetValueResponse response;
 
@@ -41,7 +41,7 @@ void GetValueRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Bu
         log << logger::ERROR << "Object(uuid)" << request.uuid << " not found.";
     }
 
-    outgoing.sendToClient(header->transactionId, protocol::MessageType::GetValueResponse, response);
+    outgoing.sendToClient(header.transactionId, protocol::MessageType::GetValueResponse, response);
 }
 
 } // namespace server

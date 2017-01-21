@@ -23,7 +23,7 @@ namespace server
 
 struct MessageHandlerDummy: public MessageHandler
 {
-    void handle(protocol::MessageHeaderPtr header, BufferPtr message);
+    void handle(protocol::MessageHeader& header, Buffer& message);
 };
 
 struct MessageHandlerFactory

@@ -14,7 +14,7 @@ class RpcRequestMessageHandler : public MessageHandler
 {
 public:
     RpcRequestMessageHandler(uint64_t clientServerId, core::PTree& ptree);
-    void handle(protocol::MessageHeaderPtr header, BufferPtr message);
+    void handle(protocol::MessageHeader& header, Buffer& message);
 private:
     uint64_t clientServerId;
     core::PTree& ptree;

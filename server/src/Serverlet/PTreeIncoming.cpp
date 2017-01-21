@@ -6,7 +6,6 @@ namespace server
 
 PTreeIncoming::PTreeIncoming(uint64_t clientServerId,
     ClientServerConfig& config, IEndPointPtr& endpoint, core::PTreePtr& ptree, IClientNotifierPtr& notifier):
-        processMessageRunning(0),
         clientServerId(clientServerId), config(config), endpoint(endpoint), ptree(ptree),
         notifier(notifier), log("PTreeIncoming")
 {
@@ -19,8 +18,7 @@ PTreeIncoming::~PTreeIncoming()
     killHandleIncoming = true;
     log << logger::DEBUG << "teardown: waiting thread to stop...";
     log << logger::DEBUG << "teardown: handleIncoming " << handleIncomingIsRunning;
-    log << logger::DEBUG << "teardown: prossesing " << processMessageRunning;
-    while (handleIncomingIsRunning || processMessageRunning);
+    while (handleIncomingIsRunning);
     log << logger::DEBUG << "Teardown complete.";
 }
 
@@ -36,124 +34,103 @@ void PTreeIncoming::init(IPTreeOutgoingWkPtr o)
     log << logger::DEBUG << "Setup complete.";
 }
 
-void PTreeIncoming::processMessage(protocol::MessageHeaderPtr header, BufferPtr message)
+void PTreeIncoming::processMessage(protocol::MessageHeader& header, Buffer& message)
 {
-    processMessageRunning++;
-    log << logger::DEBUG << "ClientServer::processMessage()";
-    auto type = header->type;
+    log << logger::DEBUG << "processMessage()";
+    auto type = header.type;
     auto outgoingShared = outgoing.lock();
     MessageHandlerFactory::get(clientServerId, type, config, outgoingShared, ptree, notifier)->handle(header, message);
-
-    processMessageRunning--;
 }
 
 void PTreeIncoming::handleIncoming()
 {
     handleIncomingIsRunning = true;
-    const uint8_t HEADER_SIZE = sizeof(protocol::MessageHeader);
     log << logger::DEBUG << "handleIncoming: Spawned.";
-    incomingState = EIncomingState::WAIT_FOR_HEADER_EMPTY;
+    enum class EIncomingState
+    {
+        EMPTY = 0,
+        WAIT_HEAD,
+        WAIT_BODY
+    };
+
+    EIncomingState incomingState = EIncomingState::EMPTY;
+    protocol::MessageHeader header;
+    std::vector<uint8_t> data;
+
+    uint8_t* cursor = (uint8_t*)&header;
+    size_t size = sizeof(protocol::MessageHeader);
+    size_t remainingSize = sizeof(protocol::MessageHeader);
+    uint8_t retryCount = 0;
 
     using namespace std::chrono_literals;
 
     while (!killHandleIncoming)
     {
-        // Header is a shared for the reason that I might not block processMessage
-        protocol::MessageHeaderPtr header = std::make_shared<protocol::MessageHeader>();
+        log << logger::ERROR << "STATE:" << static_cast<uint32_t>(incomingState);
+        size_t receiveSize = endpoint->receive(cursor, size);
 
-        if (incomingState == EIncomingState::WAIT_FOR_HEADER_EMPTY)
+        if (incomingState == EIncomingState::EMPTY && receiveSize == 0)
         {
-            uint8_t cursor = 0;
-            uint8_t retryCount = 0;
-
-            log << logger::DEBUG << "handleIncoming: Waiting for header.";
-            while (!killHandleIncoming)
+            continue;
+        }
+        else if (incomingState != EIncomingState::EMPTY && receiveSize == 0)
+        {
+            if (++retryCount > 3)
             {
-                ssize_t br = endpoint->receive(header.get()+cursor, HEADER_SIZE-cursor);
-                cursor += br;
-
-                if(cursor == HEADER_SIZE)
-                {
-                    log << logger::DEBUG << 
-                        "Header received expecting message size: " <<
-                        header->size << " with type " << (uint32_t)header->type;
-                    incomingState = EIncomingState::WAIT_FOR_MESSAGE_EMPTY;
-                    break;
-                }
-
-                if (incomingState != EIncomingState::WAIT_FOR_HEADER_EMPTY)
-                {
-                    log << logger::DEBUG <<  "handleIncoming: Header receive timeout!";
-                    retryCount++;
-                }
-                else if (br != 0)
-                {
-                    log << logger::DEBUG << "handleIncoming: Header received.";
-                    incomingState = EIncomingState::WAIT_FOR_HEADER;
-                }
-
-                if (retryCount >= 3)
-                {
-                    log << logger::DEBUG <<
-                        "handleIncoming: Header receive failed!";
-                    incomingState = EIncomingState::ERROR_HEADER_TIMEOUT;
-                    // TODO: ERROR HANDLING
-                    break;
-                }
-
-                std::this_thread::sleep_for(1ms);
-
+                /**TODO: send receive failure to client**/
+                log << logger::ERROR << "RECEIVE FAILED!!";
+                incomingState = EIncomingState::EMPTY;
+                cursor = (uint8_t*)&header;
+                size = sizeof(protocol::MessageHeader);
+                remainingSize = size;
+                continue;
             }
         }
-        
-        if (incomingState == EIncomingState::WAIT_FOR_MESSAGE_EMPTY)
+        else
         {
-            uint8_t cursor = 0;
-            uint8_t retryCount = 0;
-            uint32_t expectedSize = (header->size)-HEADER_SIZE;
-            BufferPtr message = std::make_shared<Buffer>(expectedSize);
+            retryCount = 0;
+        }
 
-            log << logger::DEBUG << "handleIncoming: Waiting for message with size: " <<
-                expectedSize << " ( total " << header->size << ") with header size: " <<
-                (uint32_t) HEADER_SIZE << ".";
-
-            while (!killHandleIncoming)
+        switch(incomingState)
+        {
+        case EIncomingState::EMPTY:
+        case EIncomingState::WAIT_HEAD:
+            log << logger::DEBUG << "receiving: " << receiveSize << " for " << remainingSize;
+            incomingState = EIncomingState::WAIT_HEAD;
+            remainingSize -= receiveSize;
+            cursor += receiveSize;
+            if (remainingSize == 0)
             {
-                ssize_t br = endpoint->receive(message->data()+cursor, expectedSize-cursor);
-                cursor += br;
-
-                if(cursor == expectedSize)
+                log << logger::DEBUG << "HEADER RECEIVED!! content size: " << header.size;
+                if (header.size >= 1024*1024*1024)
                 {
-                    log << logger::DEBUG << "handleIncoming: Message complete.";
-                    using std::placeholders::_1;
-                    incomingState = EIncomingState::WAIT_FOR_HEADER_EMPTY;
-                    processMessage(header, message);
-                    break;
+                    log << logger::ERROR << "INVALID CONTENT SIZE!!";
+                    incomingState = EIncomingState::EMPTY;
+                    cursor = (uint8_t*)&header;
+                    size = sizeof(protocol::MessageHeader);
+                    remainingSize = size;
+                    continue;
                 }
-
-                if (incomingState != EIncomingState::WAIT_FOR_MESSAGE_EMPTY)
-                {
-                    log << logger::DEBUG <<
-                        "handleIncoming: Message receive timeout!";
-                    retryCount++;
-                }
-                else
-                {
-                    log << logger::DEBUG << "handleIncoming: Message received with size " << br;
-                    incomingState = EIncomingState::WAIT_FOR_MESSAGE;
-                }
-
-                if (retryCount >= 3)
-                {
-                    log << logger::DEBUG <<
-                        "handleIncoming: Message receive failed!";
-                    incomingState = EIncomingState::ERROR_MESSAGE_TIMEOUT;
-                    break;
-                }
-
-                std::this_thread::sleep_for(1ms);
-
+                incomingState = EIncomingState::WAIT_BODY;
+                data.resize(header.size);
+                cursor = data.data();
+                size = header.size - sizeof(protocol::MessageHeader);
+                remainingSize = size;
             }
+            break;
+        case EIncomingState::WAIT_BODY:
+            remainingSize -= receiveSize;
+            cursor += receiveSize;
+            if (remainingSize == 0)
+            {
+                log << logger::DEBUG << "handleIncoming: Message complete.";
+                processMessage(header, data);
+                incomingState = EIncomingState::EMPTY;
+                cursor = (uint8_t*)&header;
+                size = sizeof(protocol::MessageHeader);
+                remainingSize = size;
+            }
+            break;
         }
     }
 

@@ -136,32 +136,24 @@ ssize_t EndPointMock::send(const void *buffer, uint32_t size)
 
 ssize_t EndPointMock::receive(void *buffer, uint32_t size)
 {
-    // log << logger::DEBUG << "Receive called! Requesting " << size << " byte(s)";
-    
-    if (toReceive.begin() == toReceive.end())
+    std::unique_lock<std::mutex> lock(toReceiveBufferMutex);
+    toReceiveCv.wait_for(lock, std::chrono::seconds(1),[this]()
+        {
+            return this->toReceive.begin() != this->toReceive.end();
+        });
+    if(toReceive.begin() == toReceive.end())
     {
-        // log << logger::DEBUG << "No expectation but message is receive is requested with size " <<
-            // size << "!";
+        log << logger::WARNING << "Receive called but no message queued!";
         return 0;
     }
     
     auto m = *(toReceive.begin());
     uint32_t rv = 0;
 
-    if (m.size() < size+cursor)
-    {
-        rv = m.size() - cursor;
-        log << logger::DEBUG << "Dispatching request with " << rv << " byte(s):";
-        std::memcpy(buffer, m.data() + cursor, rv);
-        utils::printRaw(m.data() + cursor, rv);
-    }
-    else
-    {
-        log << logger::DEBUG << "Dispatching request with " << size << " byte(s):";
-        std::memcpy(buffer, m.data() + cursor, size);
-        utils::printRaw(m.data() + cursor, size);
-        rv = size;
-    }
+    rv = m.size() < size+cursor ? m.size() - cursor : size;
+    log << logger::DEBUG << "Dispatching request with " << rv << " byte(s):";
+    std::memcpy(buffer, m.data() + cursor, rv);
+    utils::printRaw(m.data() + cursor, rv);
 
     cursor += size;
 
@@ -177,6 +169,8 @@ ssize_t EndPointMock::receive(void *buffer, uint32_t size)
 
 void EndPointMock::queueToReceive(Buffer chunk)
 {
+    std::lock_guard<std::mutex> lock(toReceiveBufferMutex);
+    toReceiveCv.notify_all();
     toReceive.push_back(chunk);
 }
 

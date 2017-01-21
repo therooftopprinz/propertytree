@@ -16,7 +16,7 @@ class SigninRequestMessageHandler : public MessageHandler
 public:
     SigninRequestMessageHandler(IPTreeOutgoing& outgoing, ClientServerConfig& config, core::PTree& ptree,
         IClientNotifier& notifier);
-    void handle(protocol::MessageHeaderPtr header, BufferPtr message);
+    void handle(protocol::MessageHeader& header, Buffer& message);
 private:
     IPTreeOutgoing& outgoing;
     ClientServerConfig& config;

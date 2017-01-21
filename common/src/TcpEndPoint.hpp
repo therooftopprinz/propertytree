@@ -4,9 +4,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <errno.h>
 #include <sys/time.h>
 #include <server/src/Types.hpp>
 #include <common/src/IEndPoint.hpp>
+
+#include <common/src/Logger.hpp>
 
 namespace ptree
 {
@@ -25,6 +28,7 @@ public:
 private:
     int sockfd;
     int flags;
+    logger::Logger log;
 };
 
 } // namespace server

@@ -22,7 +22,7 @@ private:
 struct SubscribePropertyUpdateRequestMessageHandler : public MessageHandler
 {
     SubscribePropertyUpdateRequestMessageHandler(uint64_t clientServerId, IPTreeOutgoingPtr& outgoing, core::PTree& ptree, IClientNotifier& notifier);
-    void handle(protocol::MessageHeaderPtr header, BufferPtr message);
+    void handle(protocol::MessageHeader& header, Buffer& message);
 private:
     uint64_t clientServerId;
     IPTreeOutgoingPtr& outgoing;

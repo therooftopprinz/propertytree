@@ -26,7 +26,7 @@ class CreateRequestMessageHandler : public MessageHandler
 {
 public:
     CreateRequestMessageHandler(IPTreeOutgoingPtr& outgoing, core::PTree& ptree, IClientNotifier& notifier);
-    void handle(protocol::MessageHeaderPtr header, BufferPtr message);
+    void handle(protocol::MessageHeader& header, Buffer& message);
 private:
     IPTreeOutgoingPtr& outgoing;
     core::PTree& ptree;

@@ -86,13 +86,13 @@ bool Value::removeWatcher(uint64_t id)
     }
 }
 
-void Value::setValue(ValueContainer& valueToSet)
+void Value::setValue(const ValueContainer& valueToSet)
 {
     value = valueToSet;
     informValueWatcher();
 }
 
-void Value::setValue(void* offset, uint32_t size)
+void Value::setValue(const void* offset, uint32_t size)
 {
     value = ValueContainer(size);
     std::memcpy(value.data(), offset, size);

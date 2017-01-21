@@ -67,8 +67,8 @@ TYPED_TEST_P(ValueSetGetTest, shouldSetGetNative) {
     const protocol::Uuid uuid = 100;
     Value value(uuid, NodePtr());
 
-    value.setValue(tval);
-    EXPECT_EQ(value.getValue<TypeParam>(), tval);
+    value.setValue((void*)&tval, sizeof(TypeParam));
+    EXPECT_EQ(*(TypeParam*)(value.getValue().data()), tval);
 
 }
 
@@ -99,7 +99,7 @@ TEST_F(PTreeTests, shouldSetGetBuffered)
 
     Value value(uuid, NodePtr());
 
-    value.setValue(testvalue);
+    value.setValue(&testvalue, sizeof(TestStruct));
 
     const ValueContainer& testget = value.getValue();
 
@@ -127,7 +127,8 @@ TEST_F(PTreeTests, shouldCallWatcherWhenModified)
         .WillOnce(DoAll(SaveArg<0>(&container), Return(true)));
 
     value->addWatcher(1, watcherfn);
-    value->setValue<uint32_t>(420u);
+    uint32_t val = 420u;
+    value->setValue(&val, sizeof(uint32_t));
 
     EXPECT_EQ(*reconstructValue<uint32_t>(container.lock()->getValue().data()), 420u);
 }
@@ -149,11 +150,14 @@ TEST_F(PTreeTests, shouldNotCallWatcherWhenRemoved)
         .Times(1)
         .WillRepeatedly(Return(true));
 
+    uint32_t val1 = 420u;
+    uint32_t val2 = 200u;
+
     value->addWatcher(1, watcher1fn);
     value->addWatcher(2, watcher2fn);
-    value->setValue<uint32_t>(420u);
+    value->setValue(&val1, sizeof(uint32_t));
     value->removeWatcher(2);
-    value->setValue<uint32_t>(200u);
+    value->setValue(&val2, sizeof(uint32_t));
 
 }
 
@@ -226,7 +230,8 @@ TEST_F(PTreeTests, getNodeByPath)
     auto fGen = root->createProperty<Node>(fcsName, 100);
     auto sGen = fGen->createProperty<Node>(aileronName, 101);
     auto val = sGen->createProperty<Value>(valueName, 102);
-    val->setValue<uint32_t>(420);
+    uint32_t uval = 420u;
+    val->setValue(&uval, sizeof(uint32_t));
 
     auto gnode = ptree.getNodeByPath("/FCS/AILERON");
     auto val2 = gnode->getProperty<Value>("VALUE");
@@ -294,7 +299,8 @@ TEST_F(PTreeTests, getPropertyByPath)
     auto fGen = root->createProperty<Node>(fcsName, 100);
     auto sGen = fGen->createProperty<Node>(aileronName, 101);
     auto val = sGen->createProperty<Value>(valueName, 102);
-    val->setValue<uint32_t>(420);
+    uint32_t uval = 420u;
+    val->setValue(&uval, sizeof(uint32_t));
 
     auto val2 = ptree.getPropertyByPath<Value>("/FCS/AILERON/VALUE");
     EXPECT_EQ(val, val2);

@@ -13,12 +13,12 @@ SetValueIndicationMessageHandler::SetValueIndicationMessageHandler(core::PTree& 
 {
 }
 
-void SetValueIndicationMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
+void SetValueIndicationMessageHandler::handle(protocol::MessageHeader& header, Buffer& message)
 {
     logger::Logger log("SetValueIndication");
 
     protocol::SetValueIndication request;
-    request.unpackFrom(*message);
+    request.unpackFrom(message);
 
     log << logger::DEBUG << "Setting value of (" << request.uuid << ") with size " << request.data.size();
     utils::printRaw(request.data.data(), request.data.size());

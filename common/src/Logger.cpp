@@ -33,8 +33,9 @@ namespace color {
 
 void LoggerServer::log(LogEntry logEntry)
 {
-    std::lock_guard<std::mutex> guard(logQueueMutex);
+    std::lock_guard<std::mutex> guard(toBeLoggedMutex);
     toBeLogged.push_back(logEntry);
+    toBeLoggedCv.notify_one();
 }
 
 void LoggerServer::logProcessor()
@@ -46,14 +47,14 @@ void LoggerServer::logProcessor()
     color::Modifier green(color::FG_GREEN);
     color::Modifier def(color::DEFAULT);
 
-    while(!killLogProcessor)
+    while (!killLogProcessor)
     {
-        using namespace std::chrono_literals;
-        std::this_thread::sleep_for(100us);
+        std::unique_lock<std::mutex> lock(toBeLoggedMutex);
+        toBeLoggedCv.wait(lock, [this](){
+            return this->toBeLogged.begin() != this->toBeLogged.end() || killLogProcessor;
+        });
 
-        std::lock_guard<std::mutex> guard(logQueueMutex);
-
-        while(toBeLogged.begin()!=toBeLogged.end())
+        if (toBeLogged.begin()!=toBeLogged.end())
         {
             auto& l = *(toBeLogged.begin());
             auto us = std::chrono::duration_cast<std::chrono::microseconds>

@@ -14,7 +14,7 @@ class  GetValueRequestMessageHandler : public MessageHandler
 {
 public:
     GetValueRequestMessageHandler(IPTreeOutgoing& outgoing, core::PTree& ptree);
-    void handle(protocol::MessageHeaderPtr header, BufferPtr message);
+    void handle(protocol::MessageHeader& header, Buffer& message);
 private:
     IPTreeOutgoing& outgoing;
     core::PTree& ptree;

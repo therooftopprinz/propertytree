@@ -15,12 +15,12 @@ GetSpecificMetaRequestMessageHandler::GetSpecificMetaRequestMessageHandler
 {
 }
 
-void GetSpecificMetaRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
+void GetSpecificMetaRequestMessageHandler::handle(protocol::MessageHeader& header, Buffer& message)
 {
     logger::Logger log("GetSpecificMetaRequestMessageHandler");
 
     protocol::GetSpecificMetaRequest request;
-    request.unpackFrom(*message);
+    request.unpackFrom(message);
 
     protocol::GetSpecificMetaResponse response;
 
@@ -62,7 +62,7 @@ void GetSpecificMetaRequestMessageHandler::handle(protocol::MessageHeaderPtr hea
 
     response.meta = protocol::MetaCreate(uuid, ptype, request.path);
 
-    outgoing.sendToClient(header->transactionId, protocol::MessageType::GetSpecificMetaResponse, response);
+    outgoing.sendToClient(header.transactionId, protocol::MessageType::GetSpecificMetaResponse, response);
 }
 
 } // namespace server

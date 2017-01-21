@@ -30,12 +30,12 @@ CreateRequestMessageHandler::CreateRequestMessageHandler(IPTreeOutgoingPtr& outg
 {
 }
 
-void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
+void CreateRequestMessageHandler::handle(protocol::MessageHeader& header, Buffer& message)
 {
     logger::Logger log("CreateRequestMessageHandler");
 
     protocol::CreateRequest request;
-    request.unpackFrom(*message);
+    request.unpackFrom(message);
 
     log << logger::DEBUG << "value sz: " << (request.data).size();
     log << logger::DEBUG << "path: " << request.path;
@@ -112,7 +112,7 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeaderPtr header, Buff
 
     log << logger::DEBUG << "is created: " << created;  
 
-    outgoing->sendToClient(header->transactionId, protocol::MessageType::CreateResponse, response);
+    outgoing->sendToClient(header.transactionId, protocol::MessageType::CreateResponse, response);
     log << logger::DEBUG << "response size: " << response.size()+sizeof(protocol::MessageHeader);
 }
 
