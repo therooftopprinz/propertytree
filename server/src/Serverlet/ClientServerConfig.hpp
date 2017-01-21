@@ -12,7 +12,7 @@ namespace server
 struct ClientServerConfig
 {
     bool enableOutgoing = false;
-    uint32_t updateInterval = 200;
+    uint32_t updateInterval = 200*1000;
 };
 
 } // namespace server

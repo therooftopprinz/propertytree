@@ -20,7 +20,8 @@ PTreeTcpServer::PTreeTcpServer():
 void PTreeTcpServer::serverlet(ClientServerPtr)
 {
     log << logger::DEBUG << "Serverlet is starting...";
-    while(1);
+    /** TODO: condition variable for signout **/
+    while(1)std::this_thread::sleep_for(std::chrono::seconds(100));
 }
 
 void PTreeTcpServer::run()

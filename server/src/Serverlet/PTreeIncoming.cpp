@@ -58,8 +58,8 @@ void PTreeIncoming::handleIncoming()
     std::vector<uint8_t> data;
 
     uint8_t* cursor = (uint8_t*)&header;
-    size_t size = sizeof(protocol::MessageHeader);
-    size_t remainingSize = sizeof(protocol::MessageHeader);
+    uint32_t size = sizeof(protocol::MessageHeader);
+    uint32_t remainingSize = sizeof(protocol::MessageHeader);
     uint8_t retryCount = 0;
 
     using namespace std::chrono_literals;
@@ -102,7 +102,7 @@ void PTreeIncoming::handleIncoming()
             if (remainingSize == 0)
             {
                 log << logger::DEBUG << "HEADER RECEIVED!! content size: " << header.size;
-                if (header.size >= 1024*1024*1024)
+                if (header.size >= uint32_t(1024*1024))
                 {
                     log << logger::ERROR << "INVALID CONTENT SIZE!!";
                     incomingState = EIncomingState::EMPTY;
@@ -112,6 +112,7 @@ void PTreeIncoming::handleIncoming()
                     continue;
                 }
                 incomingState = EIncomingState::WAIT_BODY;
+                log << logger::DEBUG << "allocating=" << header.size << "bytes";
                 data.resize(header.size);
                 cursor = data.data();
                 size = header.size - sizeof(protocol::MessageHeader);
