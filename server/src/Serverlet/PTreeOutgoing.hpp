@@ -2,7 +2,6 @@
 #define SERVER_PTREEOUTGOING_HPP_
 
 #include <mutex>
-#include <condition_variable>
 #include <memory>
 #include <common/src/IEndPoint.hpp>
 #include <server/src/PTree.hpp>

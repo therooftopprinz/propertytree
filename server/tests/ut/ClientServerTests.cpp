@@ -767,5 +767,23 @@ TEST_F(ClientServerTests, shouldGetSpecificMetaRequestAndRespondTheCorrectMeta)
     endpoint->waitForAllSending(2500.0);
 }
 
+TEST_F(ClientServerTests, errorScenario_BadDataOnReceive)
+{
+    const char data[] = 
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"\
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"\
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"\
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"\
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+
+    using namespace std::chrono_literals;
+    Buffer bogusData((uint8_t*)data, (uint8_t*)data+sizeof(data));
+    endpoint->queueToReceive(bogusData);
+    std::this_thread::sleep_for(2s);
+    endpoint->queueToReceive(bogusData);
+    std::this_thread::sleep_for(1ms);
+    endpoint->waitForAllSending(2500.0);
+}
+
 } // namespace server
 } // namespace ptree
