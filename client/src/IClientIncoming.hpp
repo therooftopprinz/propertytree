@@ -1,0 +1,8 @@
+#ifndef CLIENT_ICLIENTINCOMING_HPP_
+#define CLIENT_ICLIENTINCOMING_HPP_
+
+struct IClientOutgoing
+{
+};
+
+#endif  // CLIENT_ICLIENTINCOMING_HPP_

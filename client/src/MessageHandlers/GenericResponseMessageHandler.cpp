@@ -6,13 +6,14 @@ namespace client
 {
 
 GenericResponseMessageHandler::
-    GenericResponseMessageHandler(PTreeClient& pc, IEndPoint& ep):
-        MessageHandler(pc, ep)
+    GenericResponseMessageHandler(TransactionsCV& transactionsCV):
+        transactionsCV(transactionsCV), log("GenericResponseMessageHandler")
 {}
 
-void GenericResponseMessageHandler::handle(protocol::MessageHeaderPtr header, BufferPtr message)
+void GenericResponseMessageHandler::handle(protocol::MessageHeader& header, Buffer& message)
 {
-    ptreeClient.notifyTransactionCV(header->transactionId, message);
+    log << logger::DEBUG << "Receiving msg with tid=" <<  header.transactionId;
+    transactionsCV.notifyTransactionCV(header.transactionId, message);
 }
 
 } // namespace client

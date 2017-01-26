@@ -3,6 +3,7 @@
 
 #include <interface/protocol.hpp>
 #include <memory>
+#include "MessageHandlers/MessageHandler.hpp"
 #include "MessageHandlers/GenericResponseMessageHandler.hpp"
 #include "MessageHandlers/PropertyUpdateNotificationMessageHandler.hpp"
 #include "MessageHandlers/MetaUpdateNotificationMessageHandler.hpp"
@@ -16,7 +17,7 @@ namespace client
 struct MessageHandlerFactory
 {
     static std::unique_ptr<MessageHandler>
-        get(protocol::MessageType type, PTreeClientPtr& pc, IEndPointPtr& ep);
+        get(protocol::MessageType, TransactionsCV&, IEndPoint&);
 };
 
 } // namespace client

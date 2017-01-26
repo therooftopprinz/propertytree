@@ -18,6 +18,13 @@ namespace client
     class ValueContainer;
     typedef std::shared_ptr<ValueContainer> ValueContainerPtr;
 
+    template<typename T, typename M = std::mutex>
+    struct MutexedObject
+    {
+        T object;
+        M mutex;
+    };
+
 } // namespace client
 } // namespace ptree
 

@@ -10,8 +10,11 @@ namespace client
 
 struct GenericResponseMessageHandler : public MessageHandler
 {
-    GenericResponseMessageHandler(PTreeClient& ps, IEndPoint& ep);
-    void handle(protocol::MessageHeaderPtr header, BufferPtr message);
+    GenericResponseMessageHandler(TransactionsCV& transactionsCV);
+    void handle(protocol::MessageHeader& header, Buffer& message);
+private:
+    TransactionsCV& transactionsCV;
+    logger::Logger log;
 };
 
 
