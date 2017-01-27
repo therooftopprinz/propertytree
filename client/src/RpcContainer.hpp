@@ -14,6 +14,7 @@
 
 #include <interface/protocol.hpp>
 #include <common/src/Logger.hpp>
+#include <client/src/IProperty.hpp>
 #include <client/src/Types.hpp>
 
 namespace ptree
@@ -21,26 +22,21 @@ namespace ptree
 namespace client
 {
 
-class RpcContainer : public std::enable_shared_from_this<RpcContainer>
+class RpcContainer : public IProperty, public std::enable_shared_from_this<RpcContainer>
 {
 public:
     RpcContainer() = delete;
 
-    /** TODO: on destruction if meta uuid is not watched delete meta. **/
     void setHandler(std::function<Buffer(Buffer&)>);
     void setVoidHandler(std::function<void(Buffer&)>);
-    protocol::Uuid getUuid();
 
-    RpcContainer(protocol::Uuid uuid, bool owned);
-    RpcContainer(protocol::Uuid uuid, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler, bool owned);
+    RpcContainer(protocol::Uuid uuid, std::string path, bool owned);
+    RpcContainer(protocol::Uuid uuid, std::string path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler, bool owned);
+
 private:
     std::function<Buffer(Buffer&)> handler;
     std::function<void(Buffer&)> voidHandler;
-    protocol::Uuid uuid;
-    bool owned;
     logger::Logger log;
-
-    friend class PTreeClient;
 };
 
 }

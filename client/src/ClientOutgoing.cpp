@@ -51,7 +51,20 @@ std::pair<uint32_t,std::shared_ptr<TransactionCV>>
     auto tid = transactionIdGenerator.get();
     sendToClient(tid, protocol::MessageType::SigninRequest, signIn);
     auto tcv = transactionsCV.addTransactionCV(tid);
-    return std::make_pair(tid, tcv);;
+    return std::make_pair(tid, tcv);
+}
+
+std::pair<uint32_t,std::shared_ptr<TransactionCV>>
+    ClientOutgoing::createRequest(std::string path, protocol::PropertyType type, Buffer& value)
+{
+    protocol::CreateRequest request;
+    request.path = path;
+    request.data = value;
+    request.type = type;
+    auto tid = transactionIdGenerator.get();
+    sendToClient(tid, protocol::MessageType::CreateRequest, request);
+    auto tcv = transactionsCV.addTransactionCV(tid);
+    return std::make_pair(tid, tcv);
 }
 
 }

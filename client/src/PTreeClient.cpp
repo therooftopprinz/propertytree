@@ -10,6 +10,7 @@ PTreeClient::PTreeClient(common::IEndPointPtr endpoint):
     endpoint(endpoint),
     outgoing(transactionsCV, *this->endpoint),
     incoming(transactionsCV, *this->endpoint),
+    ptree(outgoing, transactionsCV),
     log("PTreeClient")
 {
     // sign in here;
@@ -34,126 +35,10 @@ PTreeClient::~PTreeClient()
 {
 }
 
-// void PTreeClient::addMeta(protocol::Uuid uuid, std::string path, protocol::PropertyType type)
-// {
-//     std::lock_guard<std::mutex> lock(metaMap.mutex);
-//     metaMap.object.uuidMetaMap[uuid] = PTreeMeta(path,type);  
-//     metaMap.object.pathUuidMap[path] = uuid;
-// }
-
-// void PTreeClient::removeMeta(protocol::Uuid uuid)
-// {
-//     std::lock_guard<std::mutex> lock(metaMap.mutex);
-//     auto i = metaMap.object.uuidMetaMap.find(uuid);
-//     if (i == metaMap.object.uuidMetaMap.end())
-//     {
-//        return;
-//     }
-//     auto j = metaMap.object.pathUuidMap.find(i->second.path);
-//     metaMap.object.uuidMetaMap.erase(i);
-//     metaMap.object.pathUuidMap.erase(j);
-// }
-
-// protocol::Uuid PTreeClient::getUuid(std::string path)
-// {
-//     std::lock_guard<std::mutex> lock(metaMap.mutex);
-//     auto i = metaMap.object.pathUuidMap.find(path);
-//     if (i == metaMap.object.pathUuidMap.end())
-//     {
-//         return static_cast<protocol::Uuid>(-1);
-//     }
-//     return i->second;
-// }
-
-// std::string PTreeClient::getPath(protocol::Uuid uuid)
-// {
-//     std::lock_guard<std::mutex> lock(metaMap.mutex);
-//     auto i = metaMap.object.uuidMetaMap.find(uuid);
-//     if (i == metaMap.object.uuidMetaMap.end())
-//     {
-//         return std::string();
-//     }
-//     return i->second.path;
-// }
-
-// PTreeClient::PTreeMeta PTreeClient::getMeta(protocol::Uuid uuid)
-// {
-//     std::lock_guard<std::mutex> lock(metaMap.mutex);
-//     auto i = metaMap.object.uuidMetaMap.find(uuid);
-//     if (i == metaMap.object.uuidMetaMap.end())
-//     {
-//         return PTreeMeta();
-//     }
-//     return i->second;
-// }
-
-// ValueContainerPtr PTreeClient::getLocalValue(protocol::Uuid uuid)
-// {
-//     std::lock_guard<std::mutex> lock(values.mutex);
-//     auto i = values.object.find(uuid);
-//     if (i == values.object.end())
-//     {
-//         return ValueContainerPtr();
-//     }
-
-//     return i->second;
-// }
-
-// void PTreeClient::insertLocalValue(protocol::Uuid uuid, ValueContainerPtr& value)
-// {
-//     std::lock_guard<std::mutex> lock(values.mutex);
-//     values.object[uuid] = value;
-// }
-
-// RpcContainerPtr PTreeClient::getLocalRpc(protocol::Uuid uuid)
-// {
-//     std::lock_guard<std::mutex> lock(rpcs.mutex);
-//     auto i = rpcs.object.find(uuid);
-//     if (i == rpcs.object.end())
-//     {
-//         return RpcContainerPtr();
-//     }
-
-//     return i->second;
-// }
-
-// void PTreeClient::insertLocalRpc(protocol::Uuid uuid, RpcContainerPtr& rpc)
-// {
-//     std::lock_guard<std::mutex> lock(rpcs.mutex);
-//     rpcs.object[uuid] = rpc;
-// }
-
-// ValueContainerPtr PTreeClient::createValue(std::string path, Buffer value)
-// {
-//     protocol::CreateRequest request;
-//     request.path = path;
-//     request.data = value;
-//     request.type = protocol::PropertyType::Value;
-//     auto tid = getTransactionId();
-//     messageSender(tid, protocol::MessageType::CreateRequest, request);
-//     auto tcv = addTransactionCV(tid);
-//     if (waitTransactionCV(tid))
-//     {
-//         protocol::CreateResponse response;
-//         response.unpackFrom(tcv->value);
-//         if ( response.response  == protocol::CreateResponse::Response::OK)
-//         {
-//             log << logger::DEBUG << "VALUE CREATED WITH UUID " << response.uuid;
-//             auto vc = std::make_shared<ValueContainer>(response.uuid, value, true);
-//             // insertLocalValue(response.uuid, vc);
-//             return vc;
-//         }
-//         else
-//         {
-//             log << logger::ERROR << "VALUE CREATE REQUEST NOT OK";
-//         }
-//     }
-//     else
-//     {
-//         log << logger::ERROR << "VALUE CREATE REQUEST TIMEOUT";
-//     }
-//     return ValueContainerPtr();
-// }
+LocalPTree& PTreeClient::getPTree()
+{
+    return ptree;
+}
 
 // RpcContainerPtr PTreeClient::createRpc(std::string path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler)
 // {

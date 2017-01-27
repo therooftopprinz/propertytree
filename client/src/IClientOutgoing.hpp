@@ -16,7 +16,8 @@ struct IClientOutgoing
 {
     virtual std::pair<uint32_t,std::shared_ptr<TransactionCV>>
         signinRequest(int refreshRate, const std::list<protocol::SigninRequest::FeatureFlag> features) = 0;
-    // virtual uint32_t createRequest() = 0;
+    virtual std::pair<uint32_t,std::shared_ptr<TransactionCV>>
+        createRequest(std::string path, protocol::PropertyType type, Buffer& value) = 0;
     // virtual uint32_t deleteRequest() = 0;
     // virtual uint32_t setValueIndicationRequest() = 0;
     // virtual uint32_t subscribePropertyUpdateRequest() = 0;

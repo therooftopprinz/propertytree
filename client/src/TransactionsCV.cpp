@@ -30,7 +30,7 @@ void TransactionsCV::notifyTransactionCV(uint32_t transactionId, Buffer& value)
         tcv = it->second;
     }
 
-    log << logger::ERROR << "unlocking cv for tid=" << transactionId;
+    log << logger::DEBUG << "unlocking cv for tid=" << transactionId;
     tcv->condition = true;
 
     {

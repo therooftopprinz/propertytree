@@ -17,6 +17,7 @@
 #include <client/src/TransactionsCV.hpp>
 #include <client/src/ClientOutgoing.hpp>
 #include <client/src/ClientIncoming.hpp>
+#include <client/src/LocalPTree.hpp>
 
 namespace ptree
 {
@@ -64,6 +65,7 @@ public:
     // }
 
     // Buffer rpcRequest(RpcContainerPtr& rpc, Buffer& argument);
+    LocalPTree& getPTree();
 
 private:
     // void signIn(bool enableMetaUpdate, uint32_t updateRate);
@@ -100,54 +102,6 @@ private:
 
     // Buffer callRpc(protocol::Uuid uuid, Buffer& parameter);
 
-    // template<typename T, typename M = std::mutex>
-    // struct MutexedObject
-    // {
-    //     T object;
-    //     M mutex;
-    // };
-
-    // ValueContainerPtr getLocalValue(protocol::Uuid uuid);
-    // void insertLocalValue(protocol::Uuid uuid, ValueContainerPtr& value);
-    // MutexedObject<std::map<protocol::Uuid, ValueContainerPtr>> values;
-
-
-    // RpcContainerPtr getLocalRpc(protocol::Uuid uuid);
-    // void insertLocalRpc(protocol::Uuid uuid, RpcContainerPtr& rpc);
-    // MutexedObject<std::map<protocol::Uuid, RpcContainerPtr>> rpcs;
-
-    // void addMeta(protocol::Uuid, std::string path, protocol::PropertyType type);
-    // void removeMeta(protocol::Uuid);
-    // std::string getPath(protocol::Uuid uuid);
-    // protocol::Uuid getUuid(std::string path);
-    // struct PTreeMeta
-    // {
-    //     PTreeMeta(){}
-    //     PTreeMeta(std::string& path, protocol::PropertyType type):
-    //         path(path), type(type)
-    //     {}
-    //     std::string path;
-    //     protocol::PropertyType type;
-    // };
-    // PTreeMeta getMeta(protocol::Uuid uuid);
-
-    // /** TODO: common memory for string key and meta path **/
-    // struct MetaObjects
-    // {
-    //     std::map<protocol::Uuid, PTreeMeta> uuidMetaMap;
-    //     std::map<std::string, protocol::Uuid> pathUuidMap;
-    // };
-    // MutexedObject<MetaObjects> metaMap;
-    // struct TransactionCV
-    // {
-    //     TransactionCV():
-    //         condition(false)
-    //     {}
-    //     std::mutex mutex;
-    //     std::condition_variable cv;
-    //     std::atomic<bool> condition;
-    //     Buffer value;
-    // };
 
     // std::shared_ptr<TransactionCV> addTransactionCV(uint32_t transactionId);
     // bool waitTransactionCV(uint32_t transactionId);
@@ -166,6 +120,7 @@ private:
     TransactionsCV transactionsCV;
     ClientOutgoing outgoing;
     ClientIncoming incoming;
+    LocalPTree ptree;
     logger::Logger log;
 };
 

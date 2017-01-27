@@ -1,4 +1,5 @@
 #include <memory>
+#include <mutex>
 #include <vector>
 #include <map>
 
@@ -17,6 +18,9 @@ namespace client
 
     class ValueContainer;
     typedef std::shared_ptr<ValueContainer> ValueContainerPtr;
+
+    class NodeContainer;
+    typedef std::shared_ptr<NodeContainer> NodeContainerPtr;
 
     template<typename T, typename M = std::mutex>
     struct MutexedObject

@@ -50,6 +50,7 @@ struct ClientTests : public common::MessageCreationHelper, public ::testing::Tes
         endpoint(std::make_shared<common::EndPointMock>()),
         handlerMock(std::make_shared<HandlerMock>()),
         metaHandlerMock(std::make_shared<MetaUpdateHandlerMock>()),
+        signinRequestMessageMatcher(createSigninRequestMessage(0, 1, 200*1000)),
         log("TEST")
     {}
 
@@ -78,27 +79,26 @@ struct ClientTests : public common::MessageCreationHelper, public ::testing::Tes
             (2, protocol::SubscribePropertyUpdateResponse::Response::OK));
     };
 
+    void signinRequestActionFn()
+    {
+        this->endpoint->queueToReceive(createSigninResponseMessage(0, 1));
+    };
+
+    std::function<void()> signinRequestAction = std::bind(&ClientTests::signinRequestActionFn, this);
     std::function<void()> getSpecificMetaRequestAction = std::bind(&ClientTests::getSpecificMetaRequestActionFn, this);
     std::function<void()> getValueRequestAction = std::bind(&ClientTests::getValueRequestActionFn, this);
     std::function<void()> subscribeUpdateNotificatioRequestAction = std::bind(&ClientTests::subscribeUpdateNotificatioRequestActionFn, this);
-
     std::shared_ptr<common::EndPointMock> endpoint;
     std::shared_ptr<HandlerMock> handlerMock;
     std::shared_ptr<MetaUpdateHandlerMock> metaHandlerMock;
     std::shared_ptr<PTreeClient> ptc;
+    MessageMatcher signinRequestMessageMatcher;
     logger::Logger log;
 };
 
 
 TEST_F(ClientTests, shouldSendSignInRequestOnCreation)
 {
-    MessageMatcher signinRequestMessageMatcher(createSigninRequestMessage(0, 1, 200*1000));
-
-    std::function<void()> signinRequestAction = [this]()
-    {
-        this->endpoint->queueToReceive(createSigninResponseMessage(0, 1));
-    };
-
     endpoint->expectSend(0, 0, false, 1, signinRequestMessageMatcher.get(), signinRequestAction);
 
     ptc = std::make_shared<PTreeClient>(endpoint);
@@ -108,52 +108,56 @@ TEST_F(ClientTests, shouldSendSignInRequestOnCreation)
     logger::loggerServer.waitEmpty();
 }
 
-// TEST_F(ClientTests, shouldCreateNode)
-// {
-//     auto expectedVal = Buffer();
-//     MessageMatcher createRequestMessageMatcher(createCreateRequestMessage(0, expectedVal, protocol::PropertyType::Node,
-//         "/Test"));
+TEST_F(ClientTests, shouldCreateNode)
+{
+    auto expectedVal = Buffer();
+    MessageMatcher createRequestMessageMatcher(createCreateRequestMessage(1, expectedVal, protocol::PropertyType::Node,
+        "/Test"));
 
-//     std::function<void()> createValueRequestAction = [this]()
-//     {
-//         this->endpoint->queueToReceive(createCreateResponseMessage(0, protocol::CreateResponse::Response::OK,
-//             protocol::Uuid(100)));
-//     };
+    std::function<void()> createValueRequestAction = [this]()
+    {
+        this->endpoint->queueToReceive(createCreateResponseMessage(1, protocol::CreateResponse::Response::OK,
+            protocol::Uuid(100)));
+    };
 
-//     endpoint->expectSend(0, 0, false, 1, createRequestMessageMatcher.get(), createValueRequestAction);
+    endpoint->expectSend(1, 0, false, 1, signinRequestMessageMatcher.get(), signinRequestAction);
+    endpoint->expectSend(2, 0, false, 1, createRequestMessageMatcher.get(), createValueRequestAction);
 
-//     ptc = std::make_shared<PTreeClient>(endpoint);
+    ptc = std::make_shared<PTreeClient>(endpoint);
+    auto ptree = ptc->getPTree();
 
-//     EXPECT_TRUE(ptc->createNode("/Test"));
+    EXPECT_TRUE(ptree.createNode("/Test"));
 
-//     using namespace std::chrono_literals;
-//     std::this_thread::sleep_for(1ms);
-//     endpoint->waitForAllSending(2500.0);
-//     logger::loggerServer.waitEmpty();
-// }
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1ms);
+    endpoint->waitForAllSending(2500.0);
+    logger::loggerServer.waitEmpty();
+}
 
-// TEST_F(ClientTests, shouldCreateValue)
-// {
-//     MessageMatcher createRequestMessageMatcher(createCreateRequestMessage(0, expectedVal, protocol::PropertyType::Value,
-//         "/Value"));
+TEST_F(ClientTests, shouldCreateValue)
+{
+    MessageMatcher createRequestMessageMatcher(createCreateRequestMessage(1, expectedVal, protocol::PropertyType::Value,
+        "/Value"));
 
-//     std::function<void()> createValueRequestAction = [this]()
-//     {
-//         this->endpoint->queueToReceive(createCreateResponseMessage(0, protocol::CreateResponse::Response::OK,
-//             protocol::Uuid(100)));
-//     };
+    std::function<void()> createValueRequestAction = [this]()
+    {
+        this->endpoint->queueToReceive(createCreateResponseMessage(1, protocol::CreateResponse::Response::OK,
+            protocol::Uuid(100)));
+    };
 
-//     endpoint->expectSend(0, 0, false, 1, createRequestMessageMatcher.get(), createValueRequestAction);
+    endpoint->expectSend(1, 0, false, 1, signinRequestMessageMatcher.get(), signinRequestAction);
+    endpoint->expectSend(0, 0, false, 1, createRequestMessageMatcher.get(), createValueRequestAction);
 
-//     ptc = std::make_shared<PTreeClient>(endpoint);
+    ptc = std::make_shared<PTreeClient>(endpoint);
+    auto ptree = ptc->getPTree();
 
-//     auto value = ptc->createValue("/Value", expectedVal);
+    auto value = ptree.createValue("/Value", expectedVal);
 
-//     using namespace std::chrono_literals;
-//     std::this_thread::sleep_for(1ms);
-//     endpoint->waitForAllSending(2500.0);
-//     logger::loggerServer.waitEmpty();
-// }
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1ms);
+    endpoint->waitForAllSending(2500.0);
+    logger::loggerServer.waitEmpty();
+}
 
 // TEST_F(ClientTests, shouldFetchValueWithGetSpecificMetaWhenNotAutoUpdate)
 // {

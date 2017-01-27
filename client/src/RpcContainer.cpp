@@ -13,16 +13,13 @@ void RpcContainer::setVoidHandler(std::function<void(Buffer&)>)
 {
 
 }
-protocol::Uuid RpcContainer::getUuid()
-{
-    return uuid;
-}
-RpcContainer::RpcContainer(protocol::Uuid uuid, bool owned):
-    uuid(uuid), owned(owned), log("RpcContainer")
+
+RpcContainer::RpcContainer(protocol::Uuid uuid, std::string path, bool owned):
+    IProperty(uuid, path, protocol::PropertyType::Rpc, owned), log("RpcContainer")
 {
 }
-RpcContainer::RpcContainer(protocol::Uuid uuid, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler, bool owned):
-    handler(handler), voidHandler(voidHandler), uuid(uuid), owned(owned), log("RpcContainer")
+RpcContainer::RpcContainer(protocol::Uuid uuid, std::string path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler, bool owned):
+    IProperty(uuid, path, protocol::PropertyType::Rpc, owned), handler(handler), voidHandler(voidHandler), log("RpcContainer")
 {
 }
 

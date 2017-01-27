@@ -33,7 +33,8 @@ public:
     ~ClientOutgoing();
     std::pair<uint32_t,std::shared_ptr<TransactionCV>>
         signinRequest(int refreshRate, const std::list<protocol::SigninRequest::FeatureFlag> features);
-    // uint32_t createRequest();
+    std::pair<uint32_t,std::shared_ptr<TransactionCV>>
+        createRequest(std::string path, protocol::PropertyType type, Buffer& value);
     // uint32_t deleteRequest();
     // uint32_t setValueIndicationRequest();
     // uint32_t subscribePropertyUpdateRequest();
