@@ -101,7 +101,9 @@ TEST_F(ClientTests, shouldSendSignInRequestOnCreation)
 {
     endpoint->expectSend(0, 0, false, 1, signinRequestMessageMatcher.get(), signinRequestAction);
 
-    ptc = std::make_shared<PTreeClient>(endpoint);
+    {
+        ptc = std::make_shared<PTreeClient>(endpoint);
+    }
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(1ms);
     endpoint->waitForAllSending(2500.0);
@@ -123,13 +125,14 @@ TEST_F(ClientTests, shouldCreateNode)
     endpoint->expectSend(1, 0, false, 1, signinRequestMessageMatcher.get(), signinRequestAction);
     endpoint->expectSend(2, 0, false, 1, createRequestMessageMatcher.get(), createValueRequestAction);
 
-    ptc = std::make_shared<PTreeClient>(endpoint);
-    auto ptree = ptc->getPTree();
-
-    EXPECT_TRUE(ptree.createNode("/Test"));
+    {
+        ptc = std::make_shared<PTreeClient>(endpoint);
+        auto ptree = ptc->getPTree();
+        EXPECT_TRUE(ptree.createNode("/Test"));
+    }
 
     using namespace std::chrono_literals;
-    std::this_thread::sleep_for(1ms);
+    std::this_thread::sleep_for(100ms);
     endpoint->waitForAllSending(2500.0);
     logger::loggerServer.waitEmpty();
 }
@@ -148,13 +151,14 @@ TEST_F(ClientTests, shouldCreateValue)
     endpoint->expectSend(1, 0, false, 1, signinRequestMessageMatcher.get(), signinRequestAction);
     endpoint->expectSend(0, 0, false, 1, createRequestMessageMatcher.get(), createValueRequestAction);
 
-    ptc = std::make_shared<PTreeClient>(endpoint);
-    auto ptree = ptc->getPTree();
-
-    auto value = ptree.createValue("/Value", expectedVal);
+    {
+        ptc = std::make_shared<PTreeClient>(endpoint);
+        auto ptree = ptc->getPTree();
+        auto value = ptree.createValue("/Value", expectedVal);
+    }
 
     using namespace std::chrono_literals;
-    std::this_thread::sleep_for(1ms);
+    std::this_thread::sleep_for(100ms);
     endpoint->waitForAllSending(2500.0);
     logger::loggerServer.waitEmpty();
 }

@@ -8,6 +8,11 @@ TransactionsCV::TransactionsCV():
     log("TransactionsCV")
 {}
 
+TransactionsCV::~TransactionsCV()
+{
+    log << logger::DEBUG << "~TransactionsCV";
+}
+
 std::shared_ptr<TransactionCV> TransactionsCV::addTransactionCV(uint32_t transactionId)
 {
     std::lock_guard<std::mutex> guard(transactionIdCV.mutex);

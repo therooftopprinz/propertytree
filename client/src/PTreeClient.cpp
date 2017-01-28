@@ -33,6 +33,7 @@ PTreeClient::PTreeClient(common::IEndPointPtr endpoint):
 
 PTreeClient::~PTreeClient()
 {
+    log << logger::DEBUG << "~PTreeClient";
 }
 
 LocalPTree& PTreeClient::getPTree()

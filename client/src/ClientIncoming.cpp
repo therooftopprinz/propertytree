@@ -30,14 +30,19 @@ ClientIncoming::~ClientIncoming()
     log << logger::DEBUG << "teardown: waiting thread to stop...";
     log << logger::DEBUG << "teardown: handleIncoming " << handleIncomingIsRunning;
     while (handleIncomingIsRunning);
-    log << logger::DEBUG << "PTreeClient Teardown complete.";
+    log << logger::DEBUG << "ClientIncoming Teardown complete.";
 }
 
 
 void ClientIncoming::processMessage(protocol::MessageHeader& header, Buffer& message)
 {
     log << logger::DEBUG << "processMessage()";
-    MessageHandlerFactory::get(header.type, transactionsCV, endpoint)->handle(header, message);
+
+    auto h = MessageHandlerFactory::get(header.type, transactionsCV, endpoint);
+    if (h)
+    {
+        h->handle(header, message);
+    }
 }
 
 void ClientIncoming::handleIncoming()

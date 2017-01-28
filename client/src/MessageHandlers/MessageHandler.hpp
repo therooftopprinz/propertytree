@@ -16,6 +16,7 @@ using common::IEndPointPtr;
 
 struct MessageHandler
 {
+    virtual ~MessageHandler() = default;
     virtual void handle(protocol::MessageHeader& header, Buffer& message);
 };
 

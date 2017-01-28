@@ -11,6 +11,7 @@ namespace client
 struct GenericResponseMessageHandler : public MessageHandler
 {
     GenericResponseMessageHandler(TransactionsCV& transactionsCV);
+    ~GenericResponseMessageHandler();
     void handle(protocol::MessageHeader& header, Buffer& message);
 private:
     TransactionsCV& transactionsCV;

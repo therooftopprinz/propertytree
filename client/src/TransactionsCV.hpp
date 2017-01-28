@@ -32,7 +32,7 @@ class TransactionsCV
 {
 public:
     TransactionsCV();
-    ~TransactionsCV() = default;
+    ~TransactionsCV();
 
     std::shared_ptr<TransactionCV> addTransactionCV(uint32_t transactionId);
     bool waitTransactionCV(uint32_t transactionId);
