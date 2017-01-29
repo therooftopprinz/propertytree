@@ -9,8 +9,8 @@ namespace client
 PTreeClient::PTreeClient(common::IEndPointPtr endpoint):
     endpoint(endpoint),
     outgoing(transactionsCV, *this->endpoint),
-    incoming(transactionsCV, *this->endpoint),
     ptree(outgoing, transactionsCV),
+    incoming(transactionsCV, *this->endpoint, ptree),
     log("PTreeClient")
 {
     // sign in here;
@@ -187,35 +187,6 @@ LocalPTreePtr PTreeClient::getPTree()
 //     return false;
 // }
 
-// bool PTreeClient::enableAutoUpdate(ValueContainerPtr& vc)
-// {
-//     auto uuid = vc->getUuid();
-//     protocol::SubscribePropertyUpdateRequest request;
-//     request.uuid = uuid;
-//     auto tid = getTransactionId();
-//     messageSender(tid, protocol::MessageType::SubscribePropertyUpdateRequest, request);
-//     auto tcv = addTransactionCV(tid);
-//     if (waitTransactionCV(tid))
-//     {
-//         protocol::SubscribePropertyUpdateResponse response;
-//         response.unpackFrom(tcv->value);
-//         if (response.response  == protocol::SubscribePropertyUpdateResponse::Response::OK)
-//         {
-//             vc->setAutoUpdate(true);
-//             log << logger::DEBUG << "SUBSCRIBED!! " << uuid;
-//             return true;
-//         }
-//         else
-//         {
-//             log << logger::ERROR << "PLEASE CHECK PATH IS CORRECT AND A VALUE.";
-//         }
-//     }
-//     else
-//     {
-//         log << logger::ERROR << "SUBSCRIBE REQUEST TIMEOUT";
-//     }
-//     return false;
-// }
 
 // bool PTreeClient::disableAutoUpdate(ValueContainerPtr& vc)
 // {
@@ -245,20 +216,6 @@ LocalPTreePtr PTreeClient::getPTree()
 //         log << logger::ERROR << "UNSUBSCRIBE REQUEST TIMEOUT";
 //     }
 //     return false;
-// }
-
-// void PTreeClient::handleUpdaNotification(protocol::Uuid uuid, Buffer&& value)
-// {
-//     log << logger::DEBUG << "Handling update for " << (uint32_t)uuid;
-//     std::lock_guard<std::mutex> lock(values.mutex);
-//     auto i = values.object.find(uuid);
-//     if (i == values.object.end())
-//     {
-//         log << logger::WARNING << "Updated value not in local values. Not updating.";
-//         return;
-//     }
-
-//     i->second->updateValue(std::move(value), true);
 // }
 
 // Buffer PTreeClient::createHeader(protocol::MessageType type, uint32_t payloadSize, uint32_t transactionId)

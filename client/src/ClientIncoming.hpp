@@ -16,7 +16,7 @@ namespace client
 class ClientIncoming
 {
 public:
-    ClientIncoming(TransactionsCV& transactionsCV, common::IEndPoint& enpoint);
+    ClientIncoming(TransactionsCV& transactionsCV, common::IEndPoint& enpoint, LocalPTree& ptree);
     ~ClientIncoming();
 private:
     void processMessage(protocol::MessageHeader& header, Buffer& message);
@@ -25,6 +25,7 @@ private:
     bool handleIncomingIsRunning;
     TransactionsCV& transactionsCV;
     common::IEndPoint& endpoint;
+    LocalPTree& ptree;
     logger::Logger log;
 };
 

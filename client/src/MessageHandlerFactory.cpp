@@ -11,26 +11,27 @@ struct MessageHandler;
 
 std::unique_ptr<MessageHandler>
     MessageHandlerFactory::
-        get(protocol::MessageType type, TransactionsCV& transactionsCV, IEndPoint& endpoint)
+        get(protocol::MessageType type, TransactionsCV& transactionsCV, LocalPTree& ptree)
 {
     logger::Logger log("MessageHandlerFactory");
-    using Enum = uint8_t;
-    switch (Enum(type))
+    switch (type)
     {
-        case (Enum) protocol::MessageType::SigninResponse:
-        case (Enum) protocol::MessageType::CreateResponse:
-        case (Enum) protocol::MessageType::GetSpecificMetaResponse:
-        case (Enum) protocol::MessageType::GetValueResponse:
-        case (Enum) protocol::MessageType::SubscribePropertyUpdateResponse:
-        case (Enum) protocol::MessageType::UnsubscribePropertyUpdateResponse:
-        case (Enum) protocol::MessageType::RpcResponse:
+        case protocol::MessageType::SigninResponse:
+        case protocol::MessageType::CreateResponse:
+        case protocol::MessageType::GetSpecificMetaResponse:
+        case protocol::MessageType::GetValueResponse:
+        case protocol::MessageType::SubscribePropertyUpdateResponse:
+        case protocol::MessageType::UnsubscribePropertyUpdateResponse:
+        case protocol::MessageType::RpcResponse:
             return std::make_unique<GenericResponseMessageHandler>(transactionsCV);
-    //     case (Enum) protocol::MessageType::PropertyUpdateNotification:
-    //         return std::make_unique<PropertyUpdateNotificationMessageHandler>(*pc.get(), *ep.get());
-    //     case (Enum) protocol::MessageType::MetaUpdateNotification:
+        case protocol::MessageType::PropertyUpdateNotification:
+            return std::make_unique<PropertyUpdateNotificationMessageHandler>(transactionsCV, ptree);
+        case protocol::MessageType::MetaUpdateNotification:
     //         return std::make_unique<MetaUpdateNotificationMessageHandler>(*pc.get(), *ep.get());
-    //     case (Enum) protocol::MessageType::HandleRpcRequest:
+        case protocol::MessageType::HandleRpcRequest:
     //         return std::make_unique<HandleRpcRequestMessageHandler>(*pc.get(), *ep.get());
+        default:
+            break;
     }
 
     log << logger::ERROR << "Unregconize message type.";

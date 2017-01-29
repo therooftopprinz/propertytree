@@ -39,11 +39,10 @@ public:
         getValue(protocol::Uuid uuid);
     std::pair<uint32_t,std::shared_ptr<TransactionCV>>
         getSpecificMeta(std::string& path);
+    std::pair<uint32_t,std::shared_ptr<TransactionCV>>
+        subscribePropertyUpdate(protocol::Uuid uuid);
     // uint32_t deleteRequest();
     // uint32_t setValueIndicationRequest();
-    // uint32_t subscribePropertyUpdateRequest();
-    // uint32_t unsubscribePropertyUpdateRequest();
-    // uint32_t getValueRequest();
     // uint32_t rpcRequest();
     // uint32_t handleRpcRequest();
 private:

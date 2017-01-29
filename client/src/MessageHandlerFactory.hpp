@@ -17,7 +17,7 @@ namespace client
 struct MessageHandlerFactory
 {
     static std::unique_ptr<MessageHandler>
-        get(protocol::MessageType, TransactionsCV&, IEndPoint&);
+        get(protocol::MessageType, TransactionsCV&, LocalPTree&);
 };
 
 } // namespace client

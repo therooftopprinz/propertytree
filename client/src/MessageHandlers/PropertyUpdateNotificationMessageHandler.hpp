@@ -1,21 +1,26 @@
-// #ifndef CLIENT_MESSAGEHANDLERS_PROPERTYUPDATENOTIFICATIONMESSAGEHANDLER_HPP_
-// #define CLIENT_MESSAGEHANDLERS_PROPERTYUPDATENOTIFICATIONMESSAGEHANDLER_HPP_
+#ifndef CLIENT_MESSAGEHANDLERS_PROPERTYUPDATENOTIFICATIONMESSAGEHANDLER_HPP_
+#define CLIENT_MESSAGEHANDLERS_PROPERTYUPDATENOTIFICATIONMESSAGEHANDLER_HPP_
 
-// #include "MessageHandler.hpp"
+#include "MessageHandler.hpp"
+#include <client/src/LocalPTree.hpp>
 
-// namespace ptree
-// {
-// namespace client
-// {
+namespace ptree
+{
+namespace client
+{
 
-// struct PropertyUpdateNotificationMessageHandler : public MessageHandler
-// {
-//     PropertyUpdateNotificationMessageHandler(PTreeClient& ps, IEndPoint& ep);
-//     void handle(protocol::MessageHeaderPtr header, BufferPtr message);
-// };
+class PropertyUpdateNotificationMessageHandler : public MessageHandler
+{
+public:
+    PropertyUpdateNotificationMessageHandler(TransactionsCV& transactionsCV, LocalPTree& ptree);
+    ~PropertyUpdateNotificationMessageHandler() = default;
+    void handle(protocol::MessageHeader& header, Buffer& message);
+private:
+    TransactionsCV& transactionsCV;
+    LocalPTree& ptree;
+    logger::Logger log;
+};
 
-
-// } // namespace client
-// } // namespace ptree
-
-// #endif  // CLIENT_MESSAGEHANDLERS_PROPERTYUPDATENOTIFICATIONMESSAGEHANDLER_HPP_
+} // namespace client
+} // namespace ptree
+#endif  // CLIENT_MESSAGEHANDLERS_PROPERTYUPDATENOTIFICATIONMESSAGEHANDLER_HPP_

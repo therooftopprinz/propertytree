@@ -69,8 +69,6 @@ private:
     // void signIn(bool enableMetaUpdate, uint32_t updateRate);
     // bool deleteProperty(std::string path);
 
-    // void handleUpdaNotification(protocol::Uuid uuid, Buffer&& value);
-
     // void handleRpcResponse(BufferPtr returnType, uint64_t calee, uint32_t transactionId);
     // // void installUpdateHandler(uint64_t id, std::function<void()> handler);
     // void notifyTransactionCV(uint32_t transactionId, BufferPtr);
@@ -114,8 +112,8 @@ private:
     server::IEndPointPtr endpoint;
     TransactionsCV transactionsCV;
     ClientOutgoing outgoing;
-    ClientIncoming incoming;
     LocalPTree ptree;
+    ClientIncoming incoming;
     logger::Logger log;
 };
 

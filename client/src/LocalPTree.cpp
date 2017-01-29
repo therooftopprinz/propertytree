@@ -213,13 +213,49 @@ ValueContainerPtr LocalPTree::getValue(std::string& path)
     {
         fillValue(value);
     }
-
     return value;
 }
 
 // RpcContainerPtr LocalPTree::getRpc(std::string&)
 // {
 // }
+
+void LocalPTree::handleUpdaNotification(protocol::Uuid uuid, Buffer&& value)
+{
+    auto found = std::dynamic_pointer_cast<ValueContainer>(getPropertyByUuid(uuid));
+    if (!found)
+    {
+        log << logger::WARNING << "Updated value not in local values. Not updating.";
+        return;
+    }
+    found->updateValue(std::move(value), true);
+}
+
+bool LocalPTree::enableAutoUpdate(ValueContainerPtr& vc)
+{
+    auto uuid = vc->getUuid();
+    auto subscribe = outgoing.subscribePropertyUpdate(uuid);
+    if (transactionsCV.waitTransactionCV(subscribe.first))
+    {
+        protocol::SubscribePropertyUpdateResponse response;
+        response.unpackFrom(subscribe.second->getBuffer());
+        if (response.response  == protocol::SubscribePropertyUpdateResponse::Response::OK)
+        {
+            vc->setAutoUpdate(true);
+            log << logger::DEBUG << "SUBSCRIBED!! " << uuid;
+            return true;
+        }
+        else
+        {
+            log << logger::ERROR << "PLEASE CHECK PATH IS CORRECT AND A VALUE.";
+        }
+    }
+    else
+    {
+        log << logger::ERROR << "SUBSCRIBE REQUEST TIMEOUT";
+    }
+    return false;
+}
 
 }
 }

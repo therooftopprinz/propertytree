@@ -21,6 +21,7 @@ typedef std::shared_ptr<ValueContainer> ValueContainerPtr;
 class RpcContainer;
 typedef std::shared_ptr<RpcContainer> RpcContainerPtr;
 
+class PropertyUpdateNotificationMessageHandler;
 class LocalPTree
 {
 public:
@@ -30,6 +31,7 @@ public:
     NodeContainerPtr createNode(std::string path);
     ValueContainerPtr getValue(std::string& path);
     RpcContainerPtr getRpc(std::string& path);
+    bool enableAutoUpdate(ValueContainerPtr& vc);
 
 private:
     IClientOutgoing& outgoing;
@@ -48,7 +50,10 @@ private:
     void fillValue(ValueContainerPtr& value);
     IPropertyPtr fetchMeta(std::string& path);
 
+    void handleUpdaNotification(protocol::Uuid uuid, Buffer&& value);
+
     logger::Logger log;
+    friend PropertyUpdateNotificationMessageHandler;
 };
 
 using LocalPTreePtr = std::shared_ptr<LocalPTree>;
