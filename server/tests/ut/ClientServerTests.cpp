@@ -92,8 +92,8 @@ struct ClientServerTests : public common::MessageCreationHelper, public ::testin
             createValueRequest2Tid, testVal, protocol::PropertyType::Value, "/Test/Value");
         createValueRequestMessageForAlreadyInvalidPath = createCreateRequestMessage(
             createValueRequestTid, testVal, protocol::PropertyType::Value, "/Test//Value");
-        deleteRequestMessageForValueMessage = createDeleteRequestMessage(deleteValueRequestTid, "/Test/Value");
-        deleteRequestMessageForTestMessage = createDeleteRequestMessage(deleteTestRequestTid, "/Test");
+        deleteRequestMessageForValueMessage = createDeleteRequestMessage(deleteValueRequestTid, 101);
+        deleteRequestMessageForTestMessage = createDeleteRequestMessage(deleteTestRequestTid, 100);
         createRpcTestMessage = createCreateRequestMessage(
             createRpcRequestTid, Buffer(), protocol::PropertyType::Rpc, "/RpcTest");
     }
@@ -396,13 +396,13 @@ TEST_F(ClientServerTests, shouldGenerateDeleteResponse)
     logger::loggerServer.waitEmpty();
 }
 
-
-TEST_F(ClientServerTests, shouldDeleteResponseNotFound)
+TEST_F(ClientServerTests, shouldDeleteResponseNotFound) // TIMEOUT
 {
     std::function<void()> testCreationAction = [this]()
     {
         this->log << logger::DEBUG << "/Test is created with uuid: " << this->testCreationMatcher->getUuidOfLastMatched();
         endpoint->queueToReceive(deleteRequestMessageForValueMessage);
+        // createDeleteRequestMessage(deleteValueRequestTid, 101);
     };
 
     std::function<void()> valueDeletionAction = [this]()

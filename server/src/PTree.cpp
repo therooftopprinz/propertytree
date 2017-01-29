@@ -119,16 +119,12 @@ void Node::deleteProperty(PropertyMap::iterator found)
     if (found != properties->end())
     {
         auto asNode = std::dynamic_pointer_cast<Node>(found->second);
-        auto asValue = std::dynamic_pointer_cast<Value>(found->second);
 
-        if (asValue)
-        {
-            properties->erase(found);
-        }
-        else if (asNode)
+        if (asNode)
         {
             if (!asNode->numberOfChildren())
             {
+                log << logger::WARNING << "Deleting node.";
                 properties->erase(found);
             }
             else
@@ -136,6 +132,11 @@ void Node::deleteProperty(PropertyMap::iterator found)
                 log << logger::ERROR << "Delete: Node not empty!";
                 throw NotEmpty();
             }
+        }
+        else
+        {
+            log << logger::WARNING << "Deleting non-node.";
+            properties->erase(found);
         }
     }
     else
@@ -145,17 +146,9 @@ void Node::deleteProperty(PropertyMap::iterator found)
     }
 }
 
-void Node::deleteProperty(std::string name)
-{
-    log << logger::ERROR << "Deleting: " << name;
-    std::lock_guard<std::mutex> guard(propertiesMutex);
-    auto found = properties->find(name);
-    deleteProperty(found);
-}
-
 void Node::deleteProperty(protocol::Uuid uuid)
 {
-    log << logger::ERROR << "Deleting: " << uuid;
+    log << logger::DEBUG << "Deleting: " << uuid;
     std::lock_guard<std::mutex> guard(propertiesMutex);
     auto found = std::find_if(properties->begin(), properties->end(), [&uuid](const auto& i) {
             return i.second->getUuid() == uuid;
@@ -323,31 +316,7 @@ std::list<std::tuple<std::string, protocol::Uuid, protocol::PropertyType>> PTree
     return infolist;
 }
 
-
-uint32_t PTree::deleteProperty(std::string path)
-{
-    std::lock_guard<std::mutex> treeguard(ptree);
-    log << logger::DEBUG << "PTree deleting: " << path;
-    auto names = utils::getParentAndChildNames(path);
-    NodePtr parentNode = getNodeByPath(names.first);
-
-    auto property = getPropertyByPath<IProperty>(path);
-    uint32_t uuid = props[property];
-    log << logger::DEBUG << "uuid: " << uuid;
-
-    parentNode->deleteProperty(names.second);
-
-    std::lock_guard<std::mutex> guard(uuidpropMutex);
-    auto deleteItProp = props.find(property);
-    auto deleteItUuid = uuids.find(uuid);
-
-    props.erase(deleteItProp);
-    uuids.erase(deleteItUuid);
-
-    return uuid;
-}
-
-bool PTree::deleteProperty(protocol::Uuid uuid)
+void PTree::deleteProperty(protocol::Uuid uuid)
 {
     std::lock_guard<std::mutex> treeguard(ptree);
     log << logger::DEBUG << "PTree deleting: " << uuid;
@@ -356,11 +325,12 @@ bool PTree::deleteProperty(protocol::Uuid uuid)
     auto deleteItProp = uuids.find(uuid);
     if (deleteItProp != uuids.end())
     {
-        // NOTE: should not happen to be null
         auto parent = deleteItProp->second->getParent().lock();
         parent->deleteProperty(uuid);
+        return;
     }
-    return false;
+    log << logger::ERROR << "Delete: Not found!";
+    throw ObjectNotFound();
 }
 
 IdGenerator::IdGenerator():

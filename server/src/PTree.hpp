@@ -104,7 +104,7 @@ class Node : public IProperty, public std::enable_shared_from_this<Node>
 public:
     Node(protocol::Uuid uuid, NodeWkPtr parent);
 
-    void deleteProperty(std::string name);
+    // void deleteProperty(std::string name);
     void deleteProperty(protocol::Uuid uuid);
 
     template<class T>
@@ -198,8 +198,8 @@ public:
     }
 
     std::list<std::tuple<std::string, protocol::Uuid, protocol::PropertyType>> getPTreeInfo();
-    uint32_t deleteProperty(std::string path);
-    bool deleteProperty(protocol::Uuid uuid);
+    // uint32_t deleteProperty(std::string path);
+    void deleteProperty(protocol::Uuid uuid);
 private:
     NodePtr root;
     UuidPropertyMap uuids;

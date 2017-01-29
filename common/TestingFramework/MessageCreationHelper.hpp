@@ -68,10 +68,10 @@ struct MessageCreationHelper
         return message;
     }
 
-    inline Buffer createDeleteRequestMessage(uint32_t transactionId, std::string path)
+    inline Buffer createDeleteRequestMessage(uint32_t transactionId, protocol::Uuid uuid)
     {
         protocol::DeleteRequest deleteReq;
-        deleteReq.path = path;
+        deleteReq.uuid = uuid;
 
         uint32_t sz = deleteReq.size() + sizeof(protocol::MessageHeader);
 

@@ -159,8 +159,8 @@ struct MetaUpdateNotification: public Message
 
 struct DeleteRequest
 {
-    std::string path;
-    MESSAGE_FIELDS(path);
+    protocol::Uuid uuid;
+    MESSAGE_FIELDS(uuid);
 };
 
 struct DeleteResponse: public Message
