@@ -35,13 +35,8 @@ void ValueContainer::setAutoUpdate(bool b)
     autoUpdate = b;
 }
 
-void ValueContainer::updateValue(Buffer&& value, bool triggerHandler)
+void ValueContainer::updateValue(bool triggerHandler)
 {
-    {
-        std::lock_guard<std::mutex> lockValue(valueMutex);
-        this->value = std::move(value);
-    }
-
     if (!triggerHandler)
     {
         return;
@@ -55,6 +50,27 @@ void ValueContainer::updateValue(Buffer&& value, bool triggerHandler)
         t.detach();
     }
 }
+
+void ValueContainer::updateValue(Buffer&& value, bool triggerHandler)
+{
+    {
+        std::lock_guard<std::mutex> lockValue(valueMutex);
+        this->value = std::move(value);
+    }
+    updateValue(triggerHandler);
+
+}
+
+void ValueContainer::updateValue(Buffer& value, bool triggerHandler)
+{
+    {
+        std::lock_guard<std::mutex> lockValue(valueMutex);
+        this->value = value;
+    }
+    updateValue(triggerHandler);
+}
+
+
 
 void ValueContainer::addWatcher(std::shared_ptr<IValueWatcher> watcher)
 {

@@ -43,6 +43,7 @@ public:
         subscribePropertyUpdate(protocol::Uuid uuid);
     std::pair<uint32_t,std::shared_ptr<TransactionCV>>
         unsubscribePropertyUpdate(protocol::Uuid uuid);
+    void setValueIndication(protocol::Uuid uuid, Buffer&& data);
     // uint32_t deleteRequest();
     // uint32_t setValueIndicationRequest();
     // uint32_t rpcRequest();

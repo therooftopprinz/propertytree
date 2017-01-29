@@ -70,8 +70,10 @@ public:
 private:
     bool isAutoUpdate();
     void setAutoUpdate(bool autoUpdate);
-    void updateValue(Buffer&& value, bool triggerHandler);
 
+    void updateValue(bool triggerHandler);
+    void updateValue(Buffer&& value, bool triggerHandler);
+    void updateValue(Buffer& value, bool triggerHandler);
     /** TODO: use std::function **/
     std::set<std::shared_ptr<IValueWatcher>> watchers;
     std::mutex watcherMutex;

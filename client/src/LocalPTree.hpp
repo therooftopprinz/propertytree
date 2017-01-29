@@ -38,6 +38,24 @@ public:
     void addMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
     void deleteMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
 
+    template <typename T>
+    void setValue(ValueContainerPtr& vc, T&& value)
+    {
+        if (!vc->isOwned())
+        {
+            return;
+        }
+
+        auto uuid = vc->getUuid();
+        log << logger::DEBUG << "SEND VALUE (" << uuid << ")";
+
+        Buffer tmv(sizeof(T));
+        std::memcpy(tmv.data(), &value, sizeof(T));
+        vc->updateValue(tmv, true);
+
+        outgoing.setValueIndication(uuid, std::move(tmv));
+    }
+
 private:
     IClientOutgoing& outgoing;
     TransactionsCV& transactionsCV;
@@ -74,7 +92,6 @@ struct IMetaUpdateHandler
     virtual void handleCreation(protocol::Uuid uuid, std::string path, protocol::PropertyType propertyType) = 0;
     virtual void handleDeletion(protocol::Uuid) = 0;
 };
-
 
 }
 }

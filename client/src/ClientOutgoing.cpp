@@ -111,5 +111,15 @@ std::pair<uint32_t,std::shared_ptr<TransactionCV>>
     return std::make_pair(tid, tcv);
 }
 
+void ClientOutgoing::setValueIndication(protocol::Uuid uuid, Buffer&& data)
+{
+    protocol::SetValueIndication indication;
+    indication.uuid = uuid;
+    indication.data = std::move(data);
+    auto tid = transactionIdGenerator.get();
+    sendToClient(tid, protocol::MessageType::SetValueIndication, indication);
+}
+
+
 } // namespace client
 } // namespace ptree

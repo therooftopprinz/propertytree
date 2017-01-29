@@ -72,29 +72,6 @@ LocalPTreePtr PTreeClient::getPTree()
 //     return RpcContainerPtr();
 // }
 
-// void PTreeClient::setValue(ValueContainerPtr& vc, Buffer& data)
-// {
-//     auto uuid = vc->getUuid();
-//     log << logger::DEBUG << "SEND VALUE (" << uuid << ")";
-
-//     Buffer tmv = data;
-//     vc->updateValue(std::move(tmv), true);
-
-//     sendSetValue(vc);
-// }
-
-// void PTreeClient::sendSetValue(ValueContainerPtr& vc)
-// {
-//     auto uuid = vc->getUuid();
-//     log << logger::DEBUG << "SEND VALUE (" << uuid << ")";
-
-//     protocol::SetValueIndication indication;
-//     indication.uuid = uuid;
-//     indication.data = vc->get();
-//     auto tid = getTransactionId();
-//     messageSender(tid, protocol::MessageType::SetValueIndication, indication);
-// }
-
 // RpcContainerPtr PTreeClient::getRpc(std::string& path)
 // {
 //     auto uuid = getUuid(path);
