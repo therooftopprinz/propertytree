@@ -21,7 +21,9 @@ typedef std::shared_ptr<ValueContainer> ValueContainerPtr;
 class RpcContainer;
 typedef std::shared_ptr<RpcContainer> RpcContainerPtr;
 
+struct IMetaUpdateHandler;
 class PropertyUpdateNotificationMessageHandler;
+class MetaUpdateNotificationMessageHandler;
 class LocalPTree
 {
 public:
@@ -32,6 +34,9 @@ public:
     ValueContainerPtr getValue(std::string& path);
     RpcContainerPtr getRpc(std::string& path);
     bool enableAutoUpdate(ValueContainerPtr& vc);
+    bool disableAutoUpdate(ValueContainerPtr& vc);
+    void addMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
+    void deleteMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
 
 private:
     IClientOutgoing& outgoing;
@@ -51,12 +56,26 @@ private:
     IPropertyPtr fetchMeta(std::string& path);
 
     void handleUpdaNotification(protocol::Uuid uuid, Buffer&& value);
+    MutexedObject<std::list<std::shared_ptr<IMetaUpdateHandler>>> metaUpdateHandlers;
+    void triggerMetaUpdateWatchersCreate(protocol::Uuid uuid, std::string& path, protocol::PropertyType propertyType);
+    void triggerMetaUpdateWatchersDelete(protocol::Uuid path);
 
     logger::Logger log;
     friend PropertyUpdateNotificationMessageHandler;
+    friend MetaUpdateNotificationMessageHandler;
 };
 
 using LocalPTreePtr = std::shared_ptr<LocalPTree>;
+
+struct IMetaUpdateHandler
+{
+    IMetaUpdateHandler() = default;
+    virtual ~IMetaUpdateHandler() = default;
+    virtual void handleCreation(protocol::Uuid uuid, std::string path, protocol::PropertyType propertyType) = 0;
+    virtual void handleDeletion(protocol::Uuid) = 0;
+};
+
+
 }
 }
 #endif  // CLIENT_LOCALPTREE_HPP_

@@ -28,7 +28,7 @@ struct HandlerMock : public IValueWatcher
 
 struct MetaUpdateHandlerMock : public IMetaUpdateHandler
 {
-    MOCK_METHOD2(handleCreation,void(std::string, protocol::PropertyType));
+    MOCK_METHOD3(handleCreation,void(protocol::Uuid, std::string, protocol::PropertyType));
     MOCK_METHOD1(handleDeletion,void(protocol::Uuid));
 };
 
@@ -265,7 +265,6 @@ TEST_F(ClientTests, shouldReceiveUpdateNotificationAndRunHandler)
     endpoint->expectSend(4, 3, false, 1, subscribeUpdateNotificationRequestMessageMatcher.get(), subscribeUpdateNotificatioRequestAction);
 
     using namespace std::chrono_literals;
-
     {
         auto ptc = std::make_shared<PTreeClient>(endpoint);
         auto ptree = ptc->getPTree();
@@ -287,78 +286,81 @@ TEST_F(ClientTests, shouldReceiveUpdateNotificationAndRunHandler)
     logger::loggerServer.waitEmpty();
 }
 
-// TEST_F(ClientTests, shouldUnsubscribe)
-// {
-//     auto newValue = utils::buildBufferedValue<uint32_t>(69u);
-//     MessageMatcher unsubscribeUpdateNotificationRequestMessageMatcher = createUnsubscribePropertyUpdateRequestMessage(3, protocol::Uuid(100));
-//     MessageMatcher getValueRequestMessageMatcher2 = createGetValueRequestMessage(4, protocol::Uuid(100));
+TEST_F(ClientTests, shouldUnsubscribe)
+{
+    auto newValue = utils::buildBufferedValue<uint32_t>(69u);
+    MessageMatcher unsubscribeUpdateNotificationRequestMessageMatcher = createUnsubscribePropertyUpdateRequestMessage(4, protocol::Uuid(100));
+    MessageMatcher getValueRequestMessageMatcher2 = createGetValueRequestMessage(5, protocol::Uuid(100));
 
-//     std::function<void()> unsubscribeUpdateNotificatioRequestAction = [this]()
-//     {
-//         this->endpoint->queueToReceive(createCommonResponse<
-//             protocol::UnsubscribePropertyUpdateResponse,
-//             protocol::MessageType::UnsubscribePropertyUpdateResponse,
-//             protocol::UnsubscribePropertyUpdateResponse::Response>
-//             (3, protocol::UnsubscribePropertyUpdateResponse::Response::OK));
-//     };
+    std::function<void()> unsubscribeUpdateNotificatioRequestAction = [this]()
+    {
+        this->endpoint->queueToReceive(createCommonResponse<
+            protocol::UnsubscribePropertyUpdateResponse,
+            protocol::MessageType::UnsubscribePropertyUpdateResponse,
+            protocol::UnsubscribePropertyUpdateResponse::Response>
+            (4, protocol::UnsubscribePropertyUpdateResponse::Response::OK));
+    };
 
-//     std::function<void()> getValueRequestAction2 = [this, &newValue]()
-//     {
-//         this->endpoint->queueToReceive(createGetValueResponseMessage(4, newValue));
-//     };
+    std::function<void()> getValueRequestAction2 = [this, &newValue]()
+    {
+        this->endpoint->queueToReceive(createGetValueResponseMessage(5, newValue));
+    };
 
-//     EXPECT_CALL(*handlerMock, handle(ValueContainerHas(newValue))).Times(0);
+    EXPECT_CALL(*handlerMock, handle(ValueContainerHas(newValue))).Times(0);
 
-//     endpoint->expectSend(1, 0, false, 1, getSpecificMetaRequestMessageMatcher.get(), getSpecificMetaRequestAction);
-//     endpoint->expectSend(2, 1, false, 1, getValueRequestMessageMatcher.get(), getValueRequestAction);
-//     endpoint->expectSend(3, 2, false, 1, subscribeUpdateNotificationRequestMessageMatcher.get(), subscribeUpdateNotificatioRequestAction);
-//     endpoint->expectSend(4, 3, false, 1, unsubscribeUpdateNotificationRequestMessageMatcher.get(), unsubscribeUpdateNotificatioRequestAction);
-//     endpoint->expectSend(5, 4, false, 1, getValueRequestMessageMatcher2.get(), getValueRequestAction2);
+    endpoint->expectSend(1, 0, false, 1, signinRequestMessageMatcher.get(), signinRequestAction);
+    endpoint->expectSend(2, 1, false, 1, getSpecificMetaRequestMessageMatcher.get(), getSpecificMetaRequestAction);
+    endpoint->expectSend(3, 2, false, 1, getValueRequestMessageMatcher.get(), getValueRequestAction);
+    endpoint->expectSend(4, 3, false, 1, subscribeUpdateNotificationRequestMessageMatcher.get(), subscribeUpdateNotificatioRequestAction);
+    endpoint->expectSend(5, 4, false, 1, unsubscribeUpdateNotificationRequestMessageMatcher.get(), unsubscribeUpdateNotificatioRequestAction);
+    endpoint->expectSend(6, 5, false, 1, getValueRequestMessageMatcher2.get(), getValueRequestAction2);
 
-//     using namespace std::chrono_literals;
+    using namespace std::chrono_literals;
+    {
+        auto ptc = std::make_shared<PTreeClient>(endpoint);
+        auto ptree = ptc->getPTree();
+        std::string valuePath = "/Value";
+        auto value = ptree->getValue(valuePath);
+        value->addWatcher(handlerMock);
 
-//     ptc = std::make_shared<PTreeClient>(endpoint);
+        ptree->enableAutoUpdate(value);
+        ptree->disableAutoUpdate(value);
 
-//     std::string valuePath = "/Value";
-//     auto value = ptc->getValue(valuePath);
-//     value->addWatcher(handlerMock);
+        auto value2 = ptree->getValue(valuePath);
+        EXPECT_EQ(value->get<uint32_t>(), 69u);
+        EXPECT_EQ(value2->get<uint32_t>(), 69u);
+    }
 
-//     ptc->enableAutoUpdate(value);
-//     ptc->disableAutoUpdate(value);
+    std::this_thread::sleep_for(100ms);
+    endpoint->waitForAllSending(2500.0);
+    logger::loggerServer.waitEmpty();
+}
 
-//     auto value2 = ptc->getValue(valuePath);
-//     EXPECT_EQ(value->get<uint32_t>(), 69u);
-//     EXPECT_EQ(value2->get<uint32_t>(), 69u);
+TEST_F(ClientTests, shouldReceiveMetaUpdateNotificationAndRunHandler)
+{
+    using namespace std::chrono_literals;
 
-//     std::this_thread::sleep_for(100ms);
-//     endpoint->waitForAllSending(2500.0);
-//     logger::loggerServer.waitEmpty();
-// }
+    EXPECT_CALL(*metaHandlerMock, handleCreation(_, "/Test", protocol::PropertyType::Node));
+    EXPECT_CALL(*metaHandlerMock, handleCreation(_, "/Test/Value", protocol::PropertyType::Value));
+    EXPECT_CALL(*metaHandlerMock, handleDeletion(protocol::Uuid(100)));
 
-// TEST_F(ClientTests, shouldReceiveMetaUpdateNotificationAndRunHandler)
-// {
-//     using namespace std::chrono_literals;
+    {
+        auto ptc = std::make_shared<PTreeClient>(endpoint);
+        auto ptree = ptc->getPTree();
+        ptree->addMetaWatcher(metaHandlerMock);
+        std::list<protocol::MetaCreate> createUpdates;
+        std::list<protocol::MetaDelete> deleteUpdates;
+        createUpdates.emplace_back(101, protocol::PropertyType::Node,"/Test");
+        createUpdates.emplace_back(102, protocol::PropertyType::Value,"/Test/Value");
+        deleteUpdates.emplace_back(100);
 
-//     ptc = std::make_shared<PTreeClient>(endpoint);
-
-//     ptc->addMetaWatcher(metaHandlerMock);
-
-//     EXPECT_CALL(*metaHandlerMock, handleCreation("/Test", protocol::PropertyType::Node));
-//     EXPECT_CALL(*metaHandlerMock, handleCreation("/Test/Value", protocol::PropertyType::Value));
-//     EXPECT_CALL(*metaHandlerMock, handleDeletion(protocol::Uuid(100)));
-
-//     std::list<protocol::MetaCreate> createUpdates;
-//     std::list<protocol::MetaDelete> deleteUpdates;
-//     createUpdates.emplace_back(101, protocol::PropertyType::Node,"/Test");
-//     createUpdates.emplace_back(102, protocol::PropertyType::Value,"/Test/Value");
-//     deleteUpdates.emplace_back(100);
-
-//     auto updateNotifMsg = createMetaUpdateNotificationMessage(3, createUpdates, deleteUpdates);
-//     this->endpoint->queueToReceive(updateNotifMsg);
-//     std::this_thread::sleep_for(100ms);
-//     endpoint->waitForAllSending(2500.0);
-//     logger::loggerServer.waitEmpty();
-// }
+        auto updateNotifMsg = createMetaUpdateNotificationMessage(3, createUpdates, deleteUpdates);
+        this->endpoint->queueToReceive(updateNotifMsg);
+    }
+    std::this_thread::sleep_for(100ms);
+    endpoint->waitForAllSending(2500.0);
+    logger::loggerServer.waitEmpty();
+}
 
 // TEST_F(ClientTests, shouldSendSetValueIndication)
 // {

@@ -100,5 +100,16 @@ std::pair<uint32_t,std::shared_ptr<TransactionCV>>
     return std::make_pair(tid, tcv);
 }
 
+std::pair<uint32_t,std::shared_ptr<TransactionCV>>
+    ClientOutgoing::unsubscribePropertyUpdate(protocol::Uuid uuid)
+{
+    protocol::UnsubscribePropertyUpdateRequest request;
+    request.uuid = uuid;
+    auto tid = transactionIdGenerator.get();
+    sendToClient(tid, protocol::MessageType::UnsubscribePropertyUpdateRequest, request);
+    auto tcv = transactionsCV.addTransactionCV(tid);
+    return std::make_pair(tid, tcv);
 }
-}
+
+} // namespace client
+} // namespace ptree

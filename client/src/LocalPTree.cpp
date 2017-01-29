@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <client/src/LocalPTree.hpp>
 
 namespace ptree
@@ -247,7 +248,7 @@ bool LocalPTree::enableAutoUpdate(ValueContainerPtr& vc)
         }
         else
         {
-            log << logger::ERROR << "PLEASE CHECK PATH IS CORRECT AND A VALUE.";
+            log << logger::ERROR << "SUBSCRIBE: PLEASE CHECK PATH IS CORRECT AND A VALUE.";
         }
     }
     else
@@ -255,6 +256,71 @@ bool LocalPTree::enableAutoUpdate(ValueContainerPtr& vc)
         log << logger::ERROR << "SUBSCRIBE REQUEST TIMEOUT";
     }
     return false;
+}
+
+bool LocalPTree::disableAutoUpdate(ValueContainerPtr& vc)
+{
+    auto uuid = vc->getUuid();
+    auto unsubscribe = outgoing.unsubscribePropertyUpdate(uuid);
+    if (transactionsCV.waitTransactionCV(unsubscribe.first))
+    {
+        protocol::UnsubscribePropertyUpdateResponse response;
+        response.unpackFrom(unsubscribe.second->getBuffer());
+        if (response.response  == protocol::UnsubscribePropertyUpdateResponse::Response::OK)
+        {
+            vc->setAutoUpdate(false);
+            log << logger::DEBUG << "UNSUBSCRIBED!! " << uuid;
+            return true;
+        }
+        else
+        {
+            log << logger::ERROR << "UNSUBSCRIBE: PLEASE CHECK PATH IS CORRECT AND A VALUE.";
+        }
+    }
+    else
+    {
+        log << logger::ERROR << "UNSUBSCRIBE REQUEST TIMEOUT";
+    }
+    return false;
+}
+
+void LocalPTree::addMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler)
+{
+    std::lock_guard<std::mutex> lock(metaUpdateHandlers.mutex);
+    auto i = std::find(metaUpdateHandlers.object.begin(), metaUpdateHandlers.object.end(), handler);
+    if (i == metaUpdateHandlers.object.end())
+    {
+        metaUpdateHandlers.object.emplace_back(handler);
+    }
+}
+
+void LocalPTree::deleteMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler)
+{
+    std::lock_guard<std::mutex> lock(metaUpdateHandlers.mutex);
+    auto i = std::find(metaUpdateHandlers.object.begin(), metaUpdateHandlers.object.end(), handler);
+    if (i == metaUpdateHandlers.object.end())
+    {
+        return;
+    }
+    metaUpdateHandlers.object.erase(i);
+}
+
+void LocalPTree::triggerMetaUpdateWatchersCreate(protocol::Uuid uuid, std::string& path, protocol::PropertyType propertyType)
+{
+    std::lock_guard<std::mutex> lock(metaUpdateHandlers.mutex);
+    for (auto& i : metaUpdateHandlers.object)
+    {
+        i->handleCreation(uuid, path, propertyType);
+    }
+}
+
+void LocalPTree::triggerMetaUpdateWatchersDelete(protocol::Uuid uuid)
+{
+    std::lock_guard<std::mutex> lock(metaUpdateHandlers.mutex);
+    for (auto& i : metaUpdateHandlers.object)
+    {
+        i->handleDeletion(uuid);
+    }
 }
 
 }

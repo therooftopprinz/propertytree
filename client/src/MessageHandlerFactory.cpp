@@ -27,7 +27,7 @@ std::unique_ptr<MessageHandler>
         case protocol::MessageType::PropertyUpdateNotification:
             return std::make_unique<PropertyUpdateNotificationMessageHandler>(transactionsCV, ptree);
         case protocol::MessageType::MetaUpdateNotification:
-    //         return std::make_unique<MetaUpdateNotificationMessageHandler>(*pc.get(), *ep.get());
+            return std::make_unique<MetaUpdateNotificationMessageHandler>(transactionsCV, ptree);
         case protocol::MessageType::HandleRpcRequest:
     //         return std::make_unique<HandleRpcRequestMessageHandler>(*pc.get(), *ep.get());
         default:

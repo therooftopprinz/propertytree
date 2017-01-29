@@ -1,4 +1,5 @@
 #include "PropertyUpdateNotificationMessageHandler.hpp"
+#include <client/src/LocalPTree.hpp>
 
 namespace ptree
 {

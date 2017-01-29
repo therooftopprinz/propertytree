@@ -24,6 +24,8 @@ struct IClientOutgoing
         getSpecificMeta(std::string& path) = 0;
     virtual std::pair<uint32_t,std::shared_ptr<TransactionCV>>
         subscribePropertyUpdate(protocol::Uuid uuid) = 0;
+    virtual std::pair<uint32_t,std::shared_ptr<TransactionCV>>
+        unsubscribePropertyUpdate(protocol::Uuid uuid) = 0;
     // virtual uint32_t deleteRequest() = 0;
     // virtual uint32_t setValueIndicationRequest() = 0;
     // virtual uint32_t subscribePropertyUpdateRequest() = 0;

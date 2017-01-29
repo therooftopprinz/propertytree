@@ -118,46 +118,6 @@ LocalPTreePtr PTreeClient::getPTree()
 //     return rc;
 // }
 
-
-// void PTreeClient::addMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler)
-// {
-//     std::lock_guard<std::mutex> lock(metaUpdateHandlers.mutex);
-//     auto i = std::find(metaUpdateHandlers.object.begin(), metaUpdateHandlers.object.end(), handler);
-//     if (i == metaUpdateHandlers.object.end())
-//     {
-//         metaUpdateHandlers.object.emplace_back(handler);
-//     }
-// }
-
-// void PTreeClient::deleteMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler)
-// {
-//     std::lock_guard<std::mutex> lock(metaUpdateHandlers.mutex);
-//     auto i = std::find(metaUpdateHandlers.object.begin(), metaUpdateHandlers.object.end(), handler);
-//     if (i == metaUpdateHandlers.object.end())
-//     {
-//         return;
-//     }
-//     metaUpdateHandlers.object.erase(i);
-// }
-
-// void PTreeClient::triggerMetaUpdateWatchersCreate(std::string& path, protocol::PropertyType propertyType)
-// {
-//     std::lock_guard<std::mutex> lock(metaUpdateHandlers.mutex);
-//     for (auto& i : metaUpdateHandlers.object)
-//     {
-//         i->handleCreation(path, propertyType);
-//     }
-// }
-
-// void PTreeClient::triggerMetaUpdateWatchersDelete(protocol::Uuid uuid)
-// {
-//     std::lock_guard<std::mutex> lock(metaUpdateHandlers.mutex);
-//     for (auto& i : metaUpdateHandlers.object)
-//     {
-//         i->handleDeletion(uuid);
-//     }
-// }
-
 // bool PTreeClient::createNode(std::string path)
 // {
 //     protocol::CreateRequest request;
@@ -187,47 +147,6 @@ LocalPTreePtr PTreeClient::getPTree()
 //     return false;
 // }
 
-
-// bool PTreeClient::disableAutoUpdate(ValueContainerPtr& vc)
-// {
-//     auto uuid = vc->getUuid();
-//     protocol::UnsubscribePropertyUpdateRequest request;
-//     request.uuid = uuid;
-//     auto tid = getTransactionId();
-//     messageSender(tid, protocol::MessageType::UnsubscribePropertyUpdateRequest, request);
-//     auto tcv = addTransactionCV(tid);
-//     if (waitTransactionCV(tid))
-//     {
-//         protocol::UnsubscribePropertyUpdateResponse response;
-//         response.unpackFrom(tcv->value);
-//         if (response.response  == protocol::UnsubscribePropertyUpdateResponse::Response::OK)
-//         {
-//             vc->setAutoUpdate(false);
-//             log << logger::DEBUG << "UNSUBSCRIBED!! " << uuid;
-//             return true;
-//         }
-//         else
-//         {
-//             log << logger::ERROR << "PLEASE CHECK PATH IS CORRECT AND A VALUE.";
-//         }
-//     }
-//     else
-//     {
-//         log << logger::ERROR << "UNSUBSCRIBE REQUEST TIMEOUT";
-//     }
-//     return false;
-// }
-
-// Buffer PTreeClient::createHeader(protocol::MessageType type, uint32_t payloadSize, uint32_t transactionId)
-// {
-//     Buffer header(sizeof(protocol::MessageHeader));
-//     protocol::MessageHeader& headerRaw = *((protocol::MessageHeader*)header.data());
-//     headerRaw.type = type;
-//     headerRaw.size = payloadSize+sizeof(protocol::MessageHeader);
-//     headerRaw.transactionId = transactionId;
-//     return header;
-// }
-
 // Buffer PTreeClient::callRpc(protocol::Uuid uuid, Buffer& parameter)
 // {
 //     auto rpc = getLocalRpc(uuid);
@@ -236,70 +155,6 @@ LocalPTreePtr PTreeClient::getPTree()
 //         return rpc->handler(parameter);
 //     }
 //     return Buffer();
-// }
-
-// std::shared_ptr<PTreeClient::TransactionCV> PTreeClient::addTransactionCV(uint32_t transactionId)
-// {
-//     std::lock_guard<std::mutex> guard(transactionIdCV.mutex);
-//     // TODO: emplace
-//     transactionIdCV.object[transactionId] = std::make_shared<PTreeClient::TransactionCV>();
-//     return transactionIdCV.object[transactionId];
-// }
-
-// void PTreeClient::notifyTransactionCV(uint32_t transactionId, BufferPtr value)
-// {
-//     std::shared_ptr<TransactionCV> tcv;
-//     {
-//         std::lock_guard<std::mutex> guard(transactionIdCV.mutex);
-//         auto it = transactionIdCV.object.find(transactionId);
-//         if (it == transactionIdCV.object.end())
-//         {
-//             log << logger::ERROR << "transactionId not found in CV list.";
-//             return;
-//         }
-//         tcv = it->second;
-//     }
-
-//     tcv->condition = true;
-
-//     {
-//         std::lock_guard<std::mutex> guard(tcv->mutex);
-//         tcv->value = std::move(*value);
-//         tcv->cv.notify_all();
-//     }
-
-//     {
-//         std::lock_guard<std::mutex> guard(transactionIdCV.mutex);
-//         auto it = transactionIdCV.object.find(transactionId);
-//         if (it == transactionIdCV.object.end())
-//         {
-//             log << logger::ERROR << "transactionId not found in CV list.";
-//             return;
-//         }
-//         transactionIdCV.object.erase(it);
-//     }
-// }
-
-// bool PTreeClient::waitTransactionCV(uint32_t transactionId)
-// {
-//     std::shared_ptr<TransactionCV> tcv;
-//     {
-//         std::lock_guard<std::mutex> guard(transactionIdCV.mutex);
-//         auto it = transactionIdCV.object.find(transactionId);
-//         if (it == transactionIdCV.object.end())
-//         {
-//             log << logger::ERROR << "transactionId not found in CV list.";
-//             return false;
-//         }
-//         tcv = it->second;
-//     }
-
-//     {
-//         std::unique_lock<std::mutex> guard(tcv->mutex);
-//         using namespace std::chrono_literals;
-//         tcv->cv.wait_for(guard, 1s,[&tcv](){return bool(tcv->condition);});
-//         return tcv->condition;
-//     }
 // }
 
 // Buffer PTreeClient::rpcRequest(RpcContainerPtr& rpc, Buffer& parameter)
