@@ -16,7 +16,7 @@ namespace client
 class ClientIncoming
 {
 public:
-    ClientIncoming(TransactionsCV& transactionsCV, common::IEndPoint& enpoint, LocalPTree& ptree);
+    ClientIncoming(TransactionsCV& transactionsCV, common::IEndPoint& enpoint, LocalPTree& ptree, IClientOutgoing& outgoing);
     ~ClientIncoming();
 private:
     void processMessage(protocol::MessageHeader& header, Buffer& message);
@@ -26,6 +26,7 @@ private:
     TransactionsCV& transactionsCV;
     common::IEndPoint& endpoint;
     LocalPTree& ptree;
+    IClientOutgoing& outgoing;
     logger::Logger log;
 };
 

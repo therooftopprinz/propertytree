@@ -28,6 +28,7 @@ struct MessageHandlerDummy: public MessageHandler
 
 struct MessageHandlerFactory
 {
+    /** TODO: avoid heap allocation!! **/
     static std::unique_ptr<MessageHandler>
         get(uint64_t clientServerId, protocol::MessageType type, ClientServerConfig& config, IPTreeOutgoingPtr& outgoing, core::PTreePtr& pt, IClientNotifierPtr& notifier);
 };

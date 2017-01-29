@@ -4,10 +4,11 @@ namespace ptree
 {
 namespace client
 {
-ClientIncoming::ClientIncoming(TransactionsCV& transactionsCV, common::IEndPoint& endpoint, LocalPTree& ptree):
+ClientIncoming::ClientIncoming(TransactionsCV& transactionsCV, common::IEndPoint& endpoint, LocalPTree& ptree, IClientOutgoing& outgoing):
     transactionsCV(transactionsCV),
     endpoint(endpoint),
     ptree(ptree),
+    outgoing(outgoing),
     log("ClientIncoming")
 {
     std::function<void()> incoming = std::bind(&ClientIncoming::handleIncoming, this);
@@ -39,7 +40,7 @@ void ClientIncoming::processMessage(protocol::MessageHeader& header, Buffer& mes
 {
     log << logger::DEBUG << "processMessage()";
 
-    auto h = MessageHandlerFactory::get(header.type, transactionsCV, ptree);
+    auto h = MessageHandlerFactory::get(header.type, transactionsCV, ptree, outgoing);
     if (h)
     {
         h->handle(header, message);

@@ -21,7 +21,7 @@ namespace ptree
 {
 namespace client
 {
-
+class LocalPTree;
 class RpcContainer : public IProperty, public std::enable_shared_from_this<RpcContainer>
 {
 public:
@@ -37,6 +37,8 @@ private:
     std::function<Buffer(Buffer&)> handler;
     std::function<void(Buffer&)> voidHandler;
     logger::Logger log;
+
+    friend LocalPTree;
 };
 
 }

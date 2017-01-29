@@ -1,6 +1,7 @@
 #include "MessageHandlerFactory.hpp"
 #include <common/src/Logger.hpp>
 #include <client/src/TransactionsCV.hpp>
+#include <client/src/IClientOutgoing.hpp>
 
 namespace ptree
 {
@@ -11,7 +12,7 @@ struct MessageHandler;
 
 std::unique_ptr<MessageHandler>
     MessageHandlerFactory::
-        get(protocol::MessageType type, TransactionsCV& transactionsCV, LocalPTree& ptree)
+        get(protocol::MessageType type, TransactionsCV& transactionsCV, LocalPTree& ptree, IClientOutgoing& outgoing)
 {
     logger::Logger log("MessageHandlerFactory");
     switch (type)
@@ -29,7 +30,7 @@ std::unique_ptr<MessageHandler>
         case protocol::MessageType::MetaUpdateNotification:
             return std::make_unique<MetaUpdateNotificationMessageHandler>(transactionsCV, ptree);
         case protocol::MessageType::HandleRpcRequest:
-    //         return std::make_unique<HandleRpcRequestMessageHandler>(*pc.get(), *ep.get());
+            return std::make_unique<HandleRpcRequestMessageHandler>(transactionsCV, ptree, outgoing);
         default:
             break;
     }

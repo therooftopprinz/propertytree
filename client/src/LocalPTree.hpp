@@ -38,6 +38,8 @@ public:
     void addMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
     void deleteMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
 
+    /** TODO: Move to respective containers: setValue, rpcRequest, **/
+
     template <typename T>
     void setValue(ValueContainerPtr& vc, T&& value)
     {
@@ -56,11 +58,33 @@ public:
         outgoing.setValueIndication(uuid, std::move(tmv));
     }
 
+    Buffer handleIncomingRpc(protocol::Uuid uuid, Buffer& parameter);
+
+    template <typename T>
+    Buffer rpcRequest(RpcContainerPtr& rpc, T&& parameter)
+    {
+        Buffer tmv(sizeof(T));
+        std::memcpy(tmv.data(), &parameter, sizeof(T));
+        auto rpcRequest = outgoing.rpcRequest(rpc->getUuid(), std::move(tmv));
+        if (transactionsCV.waitTransactionCV(rpcRequest.first))
+        {
+            protocol::RpcResponse response;
+            response.unpackFrom(rpcRequest.second->getBuffer());
+            return response.returnValue;
+        }
+        else
+        {
+            log << logger::ERROR << "RPC REQUEST TIMEOUT";
+        }
+        return Buffer();
+    }
+
 private:
     IClientOutgoing& outgoing;
     TransactionsCV& transactionsCV;
 
     std::map<protocol::Uuid, IPropertyPtr> uuidPropertyMap;
+    /** TODO: remove pathPropertyMap and path in IPropertyPtr**/
     std::map<std::string, IPropertyPtr> pathPropertyMap;
     std::mutex propertyMapMutex;
 

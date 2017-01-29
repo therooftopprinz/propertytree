@@ -123,14 +123,34 @@ NodeContainerPtr LocalPTree::createNode(std::string path)
     return NodeContainerPtr();
 }
 
-// RpcContainerPtr LocalPTree::createRpc(std::string, std::function<Buffer(Buffer&)>, std::function<void(Buffer&)>)
-// {
-// }
+RpcContainerPtr LocalPTree::createRpc(std::string path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler)
+{
+    Buffer empty;
+    auto created  = outgoing.createRequest(path, protocol::PropertyType::Rpc, empty);
 
-// bool LocalPTree::createNode(std::string)
-// {
-// }
-
+    if (transactionsCV.waitTransactionCV(created.first))
+    {
+        protocol::CreateResponse response;
+        response.unpackFrom(created.second->getBuffer());
+        if ( response.response  == protocol::CreateResponse::Response::OK)
+        {
+            log << logger::DEBUG << "RPC CREATED WITH UUID " << response.uuid;
+            auto rc = std::make_shared<RpcContainer>(response.uuid, path, handler, voidHandler, true);
+            auto irc = std::dynamic_pointer_cast<IProperty>(rc);
+            addToPropertyMap(path, response.uuid, irc);
+            return rc;
+        }
+        else
+        {
+            log << logger::ERROR << "RPC CREATE RPC NOT OK";
+        }
+    }
+    else
+    {
+        log << logger::ERROR << "RPC CREATE RPC TIMEOUT";
+    }
+    return RpcContainerPtr();
+}
 
 void LocalPTree::fillValue(ValueContainerPtr& value)
 {
@@ -194,6 +214,10 @@ IPropertyPtr LocalPTree::fetchMeta(std::string& path)
                 }
             }
         }
+        else
+        {
+            log << logger::DEBUG << "META FOR: " << path << " IS NOT FOUND!";
+        }
     }
     else
     {
@@ -217,9 +241,17 @@ ValueContainerPtr LocalPTree::getValue(std::string& path)
     return value;
 }
 
-// RpcContainerPtr LocalPTree::getRpc(std::string&)
-// {
-// }
+RpcContainerPtr LocalPTree::getRpc(std::string& path)
+{
+    auto rpc = std::dynamic_pointer_cast<RpcContainer>(fetchMeta(path));
+    if (!rpc)
+    {
+        return rpc;
+    }
+
+    log << logger::DEBUG << "RPC FETCHED WITH UUID " << rpc->getUuid();
+    return rpc;
+}
 
 void LocalPTree::handleUpdaNotification(protocol::Uuid uuid, Buffer&& value)
 {
@@ -321,6 +353,16 @@ void LocalPTree::triggerMetaUpdateWatchersDelete(protocol::Uuid uuid)
     {
         i->handleDeletion(uuid);
     }
+}
+
+Buffer LocalPTree::handleIncomingRpc(protocol::Uuid uuid, Buffer& parameter)
+{
+    auto rpc = std::dynamic_pointer_cast<RpcContainer>(getPropertyByUuid(uuid));
+    if (rpc && rpc->handler)
+    {
+        return rpc->handler(parameter);
+    }
+    return Buffer();
 }
 
 }

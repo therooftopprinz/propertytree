@@ -26,6 +26,7 @@ private:
     std::atomic<uint32_t> id;
 };
 
+
 class ClientOutgoing : public IClientOutgoing
 {
 public:
@@ -44,14 +45,15 @@ public:
     std::pair<uint32_t,std::shared_ptr<TransactionCV>>
         unsubscribePropertyUpdate(protocol::Uuid uuid);
     void setValueIndication(protocol::Uuid uuid, Buffer&& data);
+    void handleRpcResponse(uint32_t transactionId, protocol::Message& msg);
     // uint32_t deleteRequest();
-    // uint32_t setValueIndicationRequest();
-    // uint32_t rpcRequest();
-    // uint32_t handleRpcRequest();
+    std::pair<uint32_t,std::shared_ptr<TransactionCV>>
+        rpcRequest(protocol::Uuid uuid, protocol::Buffer&& parameter);
+
 private:
     Buffer createHeader(protocol::MessageType type, uint32_t payloadSize, uint32_t transactionId);
-    void sendToClient(uint32_t tid, protocol::MessageType mtype, protocol::Message& msg);
     std::mutex sendLock;
+    void sendToServer(uint32_t tid, protocol::MessageType mtype, protocol::Message& msg);
 
     TransactionsCV& transactionsCV;
     common::IEndPoint& endpoint;
