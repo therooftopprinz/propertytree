@@ -1,6 +1,7 @@
 #ifndef CLIENT_IPROPERTY_HPP_
 #define CLIENT_IPROPERTY_HPP_
 
+#include <memory>
 #include <string>
 #include <interface/protocol.hpp>
 
@@ -9,11 +10,15 @@ namespace ptree
 namespace client
 {
 
-struct IProperty
+class IProperty
 {
 public:
     IProperty(protocol::Uuid uuid, std::string path, protocol::PropertyType type, bool owned):
         uuid(uuid), path(path), type(type), owned(owned)
+    {
+    }
+
+    virtual ~IProperty()
     {
     }
 
@@ -42,6 +47,8 @@ private:
     protocol::PropertyType type;
     bool owned;
 };
+
+using IPropertyPtr = std::shared_ptr<IProperty>;
 
 }
 }

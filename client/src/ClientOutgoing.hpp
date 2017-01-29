@@ -35,6 +35,10 @@ public:
         signinRequest(int refreshRate, const std::list<protocol::SigninRequest::FeatureFlag> features);
     std::pair<uint32_t,std::shared_ptr<TransactionCV>>
         createRequest(std::string path, protocol::PropertyType type, Buffer& value);
+    std::pair<uint32_t,std::shared_ptr<TransactionCV>>
+        getValue(protocol::Uuid uuid);
+    std::pair<uint32_t,std::shared_ptr<TransactionCV>>
+        getSpecificMeta(std::string& path);
     // uint32_t deleteRequest();
     // uint32_t setValueIndicationRequest();
     // uint32_t subscribePropertyUpdateRequest();
@@ -42,7 +46,6 @@ public:
     // uint32_t getValueRequest();
     // uint32_t rpcRequest();
     // uint32_t handleRpcRequest();
-    // uint32_t getSpecificMetaRequest();
 private:
     Buffer createHeader(protocol::MessageType type, uint32_t payloadSize, uint32_t transactionId);
     void sendToClient(uint32_t tid, protocol::MessageType mtype, protocol::Message& msg);

@@ -67,5 +67,27 @@ std::pair<uint32_t,std::shared_ptr<TransactionCV>>
     return std::make_pair(tid, tcv);
 }
 
+std::pair<uint32_t,std::shared_ptr<TransactionCV>>
+    ClientOutgoing::getValue(protocol::Uuid uuid)
+{
+    protocol::GetValueRequest request;
+    request.uuid = uuid;
+    auto tid = transactionIdGenerator.get();
+    sendToClient(tid, protocol::MessageType::GetValueRequest, request);
+    auto tcv = transactionsCV.addTransactionCV(tid);
+    return std::make_pair(tid, tcv);
+}
+
+std::pair<uint32_t,std::shared_ptr<TransactionCV>>
+    ClientOutgoing::getSpecificMeta(std::string& path)
+{
+    protocol::GetSpecificMetaRequest request;
+    request.path = path;
+    auto tid = transactionIdGenerator.get();
+    sendToClient(tid, protocol::MessageType::GetSpecificMetaRequest, request);
+    auto tcv = transactionsCV.addTransactionCV(tid);
+    return std::make_pair(tid, tcv);
+}
+
 }
 }

@@ -18,14 +18,16 @@ struct IClientOutgoing
         signinRequest(int refreshRate, const std::list<protocol::SigninRequest::FeatureFlag> features) = 0;
     virtual std::pair<uint32_t,std::shared_ptr<TransactionCV>>
         createRequest(std::string path, protocol::PropertyType type, Buffer& value) = 0;
+    virtual std::pair<uint32_t,std::shared_ptr<TransactionCV>>
+        getValue(protocol::Uuid uuid) = 0;
+    virtual std::pair<uint32_t,std::shared_ptr<TransactionCV>>
+        getSpecificMeta(std::string& path) = 0;
     // virtual uint32_t deleteRequest() = 0;
     // virtual uint32_t setValueIndicationRequest() = 0;
     // virtual uint32_t subscribePropertyUpdateRequest() = 0;
     // virtual uint32_t unsubscribePropertyUpdateRequest() = 0;
-    // virtual uint32_t getValueRequest() = 0;
     // virtual uint32_t rpcRequest() = 0;
     // virtual uint32_t handleRpcRequest() = 0;
-    // virtual uint32_t getSpecificMetaRequest() = 0;
 };
 }
 }

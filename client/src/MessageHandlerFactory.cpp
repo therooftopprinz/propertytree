@@ -15,7 +15,7 @@ std::unique_ptr<MessageHandler>
 {
     logger::Logger log("MessageHandlerFactory");
     using Enum = uint8_t;
-    switch (uint8_t(type))
+    switch (Enum(type))
     {
         case (Enum) protocol::MessageType::SigninResponse:
         case (Enum) protocol::MessageType::CreateResponse:

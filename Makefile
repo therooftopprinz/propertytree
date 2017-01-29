@@ -165,6 +165,9 @@ client_ut_run: client_ut
 client_ut_valgrind_run: client_ut
 	valgrind --leak-check=full --show-leak-kinds=all -v $(CLIENT_TARGET)/client_ut $(TESTFLAG)
 
+client_ut_valgrind_run_detailed: client_ut
+	valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all -v $(CLIENT_TARGET)/client_ut $(TESTFLAG)
+
 $(CLIENT_TESTS_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
 	@mkdir -p $(@D)
 	@echo "Building TEST" $@

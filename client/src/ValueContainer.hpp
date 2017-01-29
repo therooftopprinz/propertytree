@@ -80,7 +80,7 @@ private:
     std::mutex valueMutex;
     logger::Logger log;
 
-    friend class PTreeClient;
+    friend class LocalPTree;
 };
 
 }

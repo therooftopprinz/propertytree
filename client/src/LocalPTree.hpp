@@ -30,12 +30,28 @@ public:
     NodeContainerPtr createNode(std::string path);
     ValueContainerPtr getValue(std::string& path);
     RpcContainerPtr getRpc(std::string& path);
+
 private:
     IClientOutgoing& outgoing;
     TransactionsCV& transactionsCV;
-    std::map<protocol::Uuid, IProperty> propertyMap;
+
+    std::map<protocol::Uuid, IPropertyPtr> uuidPropertyMap;
+    std::map<std::string, IPropertyPtr> pathPropertyMap;
+    std::mutex propertyMapMutex;
+
+    void addToPropertyMap(std::string& path, protocol::Uuid uuid, IPropertyPtr& property);
+    void removeFromPropertyMap(std::string& path);
+    void removeFromPropertyMap(protocol::Uuid uuid);
+    IPropertyPtr getPropertyByUuid(protocol::Uuid uuid);
+    IPropertyPtr getPropertyByPath(std::string path);
+
+    void fillValue(ValueContainerPtr& value);
+    IPropertyPtr fetchMeta(std::string& path);
+
     logger::Logger log;
 };
+
+using LocalPTreePtr = std::shared_ptr<LocalPTree>;
 }
 }
 #endif  // CLIENT_LOCALPTREE_HPP_

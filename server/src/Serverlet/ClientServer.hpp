@@ -69,8 +69,8 @@ public:
         cs->init();
         return cs;
     }
-
-    ClientServer(IEndPointPtr endpoint, core::PTreePtr ptree, IClientNotifierPtr notifier);
+    /** TODO: Privatize **/
+    ClientServer(IEndPointPtr endpoint, core::PTreePtr ptree, IClientNotifierPtr notifirer);
 private:
     void init();
     void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);

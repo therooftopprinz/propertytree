@@ -36,9 +36,9 @@ PTreeClient::~PTreeClient()
     log << logger::DEBUG << "~PTreeClient";
 }
 
-LocalPTree& PTreeClient::getPTree()
+LocalPTreePtr PTreeClient::getPTree()
 {
-    return ptree;
+    return std::shared_ptr<LocalPTree>(shared_from_this(), &ptree);
 }
 
 // RpcContainerPtr PTreeClient::createRpc(std::string path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler)
@@ -72,95 +72,6 @@ LocalPTree& PTreeClient::getPTree()
 //     return RpcContainerPtr();
 // }
 
-// ValueContainerPtr PTreeClient::sendGetValue(protocol::Uuid uuid, ValueContainerPtr& vc)
-// {
-//     protocol::GetValueRequest request;
-//     request.uuid = uuid;
-//     auto tid = getTransactionId();
-//     messageSender(tid, protocol::MessageType::GetValueRequest, request);
-//     auto tcv = addTransactionCV(tid);
-
-//     if (waitTransactionCV(tid))
-//     {
-//         protocol::GetValueResponse response;
-//         response.unpackFrom(tcv->value);
-//         if (response.data.size())
-//         {
-//             if (!vc)
-//             {
-//                 vc = std::make_shared<ValueContainer>(uuid, std::move(response.data), false);
-//                 insertLocalValue(uuid, vc);
-//             }
-//             else
-//             {
-//                 vc->updateValue(std::move(response.data), false);
-//             }
-
-//             return vc;
-//         }
-//         else
-//         {
-//             return ValueContainerPtr();
-//         }
-//     }
-//     else
-//     {
-//         log << logger::ERROR << "GET VALUE REQUEST TIMEOUT";
-//         return ValueContainerPtr();
-//     }
-// }
-
-
-// /** TODO: reuse fetchMeta **/
-// protocol::Uuid PTreeClient::fetchMetaAndAddToLocal(std::string& path)
-// {
-//     protocol::GetSpecificMetaRequest request;
-//     request.path = path;
-//     auto tid = getTransactionId();
-//     messageSender(tid, protocol::MessageType::GetSpecificMetaRequest, request);
-//     auto tcv = addTransactionCV(tid);
-//     if (waitTransactionCV(tid))
-//     {
-//         protocol::GetSpecificMetaResponse response;
-//         response.unpackFrom(tcv->value);
-//         log << logger::DEBUG << "UUID FOR " << path << " IS " << (uint32_t)response.meta.uuid;
-//         if (response.meta.uuid != static_cast<protocol::Uuid>(-1))
-//         {
-//             addMeta(response.meta.uuid, response.meta.path, response.meta.propertyType);
-//             return response.meta.uuid;
-//         }
-//     }
-//     else
-//     {
-//         log << logger::ERROR << "GET SPECIFIC META REQUEST TIMEOUT";
-//     }
-//     return static_cast<protocol::Uuid>(-1);
-// }
-
-// std::tuple<protocol::Uuid, protocol::PropertyType> PTreeClient::fetchMeta(std::string& path)
-// {
-//     protocol::GetSpecificMetaRequest request;
-//     request.path = path;
-//     auto tid = getTransactionId();
-//     messageSender(tid, protocol::MessageType::GetSpecificMetaRequest, request);
-//     auto tcv = addTransactionCV(tid);
-//     if (waitTransactionCV(tid))
-//     {
-//         protocol::GetSpecificMetaResponse response;
-//         response.unpackFrom(tcv->value);
-//         log << logger::DEBUG << "UUID FOR " << path << " IS " << (uint32_t)response.meta.uuid;
-//         if (response.meta.uuid != static_cast<protocol::Uuid>(-1))
-//         {
-//             return std::make_tuple(response.meta.uuid, response.meta.propertyType);
-//         }
-//     }
-//     else
-//     {
-//         log << logger::ERROR << "GET SPECIFIC META REQUEST TIMEOUT";
-//     }
-//     return std::make_tuple(static_cast<protocol::Uuid>(-1), static_cast<protocol::PropertyType>(-1));
-// }
-
 // void PTreeClient::setValue(ValueContainerPtr& vc, Buffer& data)
 // {
 //     auto uuid = vc->getUuid();
@@ -182,27 +93,6 @@ LocalPTree& PTreeClient::getPTree()
 //     indication.data = vc->get();
 //     auto tid = getTransactionId();
 //     messageSender(tid, protocol::MessageType::SetValueIndication, indication);
-// }
-
-
-// ValueContainerPtr PTreeClient::getValue(std::string& path)
-// {
-//     auto uuid = getUuid(path);
-
-//     log << logger::DEBUG << "GET VALUE (" << uuid << ")" << path;
-
-//     if (uuid == static_cast<protocol::Uuid>(-1) && (uuid = fetchMetaAndAddToLocal(path)) == static_cast<protocol::Uuid>(-1))
-//     {
-//         return ValueContainerPtr();
-//     }
-
-//     auto vc = getLocalValue(uuid);
-//     if (vc && ((vc->isAutoUpdate()) || vc->isOwned()))
-//     {
-//         return vc;
-//     }
-
-//     return sendGetValue(uuid, vc);
 // }
 
 // RpcContainerPtr PTreeClient::getRpc(std::string& path)

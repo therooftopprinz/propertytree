@@ -34,14 +34,10 @@ struct IMetaUpdateHandler;
 class PTreeClient : public std::enable_shared_from_this<PTreeClient>
 {
 public:
-    PTreeClient(common::IEndPointPtr endpoint);
     ~PTreeClient();
 
-    // void signIn();
-    // ValueContainerPtr createValue(std::string path, Buffer value);
+
     // RpcContainerPtr createRpc(std::string path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler);
-    // bool createNode(std::string path);
-    // ValueContainerPtr getValue(std::string& path);
     // RpcContainerPtr getRpc(std::string& path);
     // void addMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
     // void deleteMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
@@ -65,7 +61,9 @@ public:
     // }
 
     // Buffer rpcRequest(RpcContainerPtr& rpc, Buffer& argument);
-    LocalPTree& getPTree();
+    LocalPTreePtr getPTree();
+
+    PTreeClient(common::IEndPointPtr endpoint);
 
 private:
     // void signIn(bool enableMetaUpdate, uint32_t updateRate);
@@ -84,9 +82,6 @@ private:
     // void handleIncoming();
 
     // void sendSignIn(int refreshRate, const std::list<protocol::SigninRequest::FeatureFlag> features);
-    // ValueContainerPtr sendGetValue(protocol::Uuid uuid, ValueContainerPtr& vc);
-    // std::tuple<protocol::Uuid, protocol::PropertyType> fetchMeta(std::string& path);
-    // protocol::Uuid fetchMetaAndAddToLocal(std::string& path);
     // void sendSetValue(ValueContainerPtr& vc);
     // /*** TODO: Commonize these with message handler***/
     // Buffer createHeader(protocol::MessageType type, uint32_t payloadSize, uint32_t transactionId);
