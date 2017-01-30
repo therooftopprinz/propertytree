@@ -192,7 +192,7 @@ TEST_F(ClientTests, shouldCreateValueAndDeleteAfter)
         auto ptree = ptc->getPTree();
         auto value = ptree->createValue("/Value", expectedVal);
         ASSERT_TRUE(value);
-        auto ivalue = std::dynamic_pointer_cast<IProperty>(value);
+        auto ivalue = std::static_pointer_cast<IProperty>(value);
         ASSERT_TRUE(ivalue);
         EXPECT_TRUE(ptree->deleteProperty(ivalue));
     }

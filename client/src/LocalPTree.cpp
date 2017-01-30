@@ -79,7 +79,7 @@ ValueContainerPtr LocalPTree::createValue(std::string path, Buffer& value)
         {
             log << logger::DEBUG << "VALUE CREATED WITH UUID " << response.uuid;
             auto vc = std::make_shared<ValueContainer>(response.uuid, path, value, true);
-            auto ivc = std::dynamic_pointer_cast<IProperty>(vc);
+            auto ivc = std::static_pointer_cast<IProperty>(vc);
             addToPropertyMap(path, response.uuid, ivc);
             return vc;
         }
@@ -107,7 +107,7 @@ NodeContainerPtr LocalPTree::createNode(std::string path)
         {
             log << logger::DEBUG << "NODE CREATED WITH UUID " << response.uuid;
             auto vc = std::make_shared<NodeContainer>(response.uuid, path, true);
-            auto ivc = std::dynamic_pointer_cast<IProperty>(vc);
+            auto ivc = std::static_pointer_cast<IProperty>(vc);
             addToPropertyMap(path, response.uuid, ivc);
             return vc;
         }
@@ -136,7 +136,7 @@ RpcContainerPtr LocalPTree::createRpc(std::string path, std::function<Buffer(Buf
         {
             log << logger::DEBUG << "RPC CREATED WITH UUID " << response.uuid;
             auto rc = std::make_shared<RpcContainer>(response.uuid, path, handler, voidHandler, true);
-            auto irc = std::dynamic_pointer_cast<IProperty>(rc);
+            auto irc = std::static_pointer_cast<IProperty>(rc);
             addToPropertyMap(path, response.uuid, irc);
             return rc;
         }
@@ -192,7 +192,7 @@ IPropertyPtr LocalPTree::fetchMeta(std::string& path)
                 {
                     log << logger::DEBUG << path << " is a Value";
                     auto value = std::make_shared<ValueContainer>(response.meta.uuid, path, Buffer(), false);
-                    auto ivc = std::dynamic_pointer_cast<IProperty>(value);
+                    auto ivc = std::static_pointer_cast<IProperty>(value);
                     addToPropertyMap(path, response.meta.uuid, ivc);
                     return value;
                 }
@@ -200,7 +200,7 @@ IPropertyPtr LocalPTree::fetchMeta(std::string& path)
                 {
                     log << logger::DEBUG << path << " is a Node";
                     auto node = std::make_shared<NodeContainer>(response.meta.uuid, path, false);
-                    auto inc = std::dynamic_pointer_cast<IProperty>(node);
+                    auto inc = std::static_pointer_cast<IProperty>(node);
                     addToPropertyMap(path, response.meta.uuid, inc);
                     return node;
                 }
@@ -208,7 +208,7 @@ IPropertyPtr LocalPTree::fetchMeta(std::string& path)
                 {
                     log << logger::DEBUG << path << " is an Rpc";
                     auto rpc = std::make_shared<RpcContainer>(response.meta.uuid, path, false);
-                    auto ipc = std::dynamic_pointer_cast<IProperty>(rpc);
+                    auto ipc = std::static_pointer_cast<IProperty>(rpc);
                     addToPropertyMap(path, response.meta.uuid, ipc);
                     return rpc;
                 }

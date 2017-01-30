@@ -168,6 +168,11 @@ client_ut_valgrind_run: client_ut
 client_ut_valgrind_run_detailed: client_ut
 	valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all -v $(CLIENT_TARGET)/client_ut $(TESTFLAG)
 
+client: $(CLIENT_OBJECTS) $(COMMON_TARGET)/common.a
+	@mkdir -p $(CLIENT_TARGET)
+	@echo Archiving $(CLIENT_TARGET)/client.a
+	@$(AR) rcs $(CLIENT_TARGET)/client.a $(CLIENT_OBJECTS) $(COMMON_TARGET)/common.a
+
 $(CLIENT_TESTS_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
 	@mkdir -p $(@D)
 	@echo "Building TEST" $@
