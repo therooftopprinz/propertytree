@@ -157,7 +157,7 @@ struct MetaUpdateNotification: public Message
     MESSAGE_FIELDS(BLOCK creations, BLOCK deletions);
 };
 
-struct DeleteRequest
+struct DeleteRequest: public Message
 {
     protocol::Uuid uuid;
     MESSAGE_FIELDS(uuid);

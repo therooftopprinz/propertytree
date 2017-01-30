@@ -33,11 +33,11 @@ public:
     NodeContainerPtr createNode(std::string path);
     ValueContainerPtr getValue(std::string& path);
     RpcContainerPtr getRpc(std::string& path);
+    bool deleteProperty(IPropertyPtr& property);
     bool enableAutoUpdate(ValueContainerPtr& vc);
     bool disableAutoUpdate(ValueContainerPtr& vc);
     void addMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
     void deleteMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
-
     /** TODO: Move to respective containers: setValue, rpcRequest, **/
 
     template <typename T>
@@ -84,7 +84,7 @@ private:
     TransactionsCV& transactionsCV;
 
     std::map<protocol::Uuid, IPropertyPtr> uuidPropertyMap;
-    /** TODO: remove pathPropertyMap and path in IPropertyPtr**/
+    /** TODO: choose between completely path free client or low bandwith. **/
     std::map<std::string, IPropertyPtr> pathPropertyMap;
     std::mutex propertyMapMutex;
 

@@ -19,6 +19,7 @@ std::unique_ptr<MessageHandler>
     {
         case protocol::MessageType::SigninResponse:
         case protocol::MessageType::CreateResponse:
+        case protocol::MessageType::DeleteResponse:
         case protocol::MessageType::GetSpecificMetaResponse:
         case protocol::MessageType::GetValueResponse:
         case protocol::MessageType::SubscribePropertyUpdateResponse:

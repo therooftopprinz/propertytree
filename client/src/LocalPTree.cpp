@@ -253,6 +253,32 @@ RpcContainerPtr LocalPTree::getRpc(std::string& path)
     return rpc;
 }
 
+bool LocalPTree::deleteProperty(IPropertyPtr& property)
+{
+    auto created  = outgoing.deleteRequest(property->getUuid());
+
+    if (transactionsCV.waitTransactionCV(created.first))
+    {
+        protocol::DeleteResponse response;
+        response.unpackFrom(created.second->getBuffer());
+        if ( response.response  == protocol::DeleteResponse::Response::OK)
+        {
+            log << logger::DEBUG << "PROPERTY WITH UUID " << property->getUuid() << " DELETED.";
+            removeFromPropertyMap(property->getUuid());
+            return true;
+        }
+        else
+        {
+            log << logger::ERROR << "DELETE NOT OK";
+        }
+    }
+    else
+    {
+        log << logger::ERROR << "DELETE TIMEOUT";
+    }
+    return false;
+}
+
 void LocalPTree::handleUpdaNotification(protocol::Uuid uuid, Buffer&& value)
 {
     auto found = std::dynamic_pointer_cast<ValueContainer>(getPropertyByUuid(uuid));
@@ -267,6 +293,12 @@ void LocalPTree::handleUpdaNotification(protocol::Uuid uuid, Buffer&& value)
 bool LocalPTree::enableAutoUpdate(ValueContainerPtr& vc)
 {
     auto uuid = vc->getUuid();
+    auto found = std::dynamic_pointer_cast<ValueContainer>(getPropertyByUuid(uuid));
+    if (!found)
+    {
+        log << logger::ERROR << "Value is not on LocalPTree.";
+        return false;
+    }
     auto subscribe = outgoing.subscribePropertyUpdate(uuid);
     if (transactionsCV.waitTransactionCV(subscribe.first))
     {
@@ -306,7 +338,7 @@ bool LocalPTree::disableAutoUpdate(ValueContainerPtr& vc)
         }
         else
         {
-            log << logger::ERROR << "UNSUBSCRIBE: PLEASE CHECK PATH IS CORRECT AND A VALUE.";
+            log << logger::ERROR << "UNSUBSCRIBE: PLEASE CHECK UUID IS CORRECT AND A VALUE.";
         }
     }
     else

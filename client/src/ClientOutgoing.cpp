@@ -126,6 +126,17 @@ void ClientOutgoing::handleRpcResponse(uint32_t transactionId, protocol::Message
 }
 
 std::pair<uint32_t,std::shared_ptr<TransactionCV>>
+    ClientOutgoing::deleteRequest(protocol::Uuid uuid)
+{
+    protocol::DeleteRequest request;
+    request.uuid = uuid;
+    auto tid = transactionIdGenerator.get();
+    sendToServer(tid, protocol::MessageType::DeleteRequest, request);
+    auto tcv = transactionsCV.addTransactionCV(tid);
+    return std::make_pair(tid, tcv);
+}
+
+std::pair<uint32_t,std::shared_ptr<TransactionCV>>
     ClientOutgoing::rpcRequest(protocol::Uuid uuid, protocol::Buffer&& parameter)
 {
     protocol::RpcRequest request;

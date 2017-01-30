@@ -162,6 +162,48 @@ TEST_F(ClientTests, shouldCreateValue)
     logger::loggerServer.waitEmpty();
 }
 
+TEST_F(ClientTests, shouldCreateValueAndDeleteAfter)
+{
+    MessageMatcher createRequestMessageMatcher(createCreateRequestMessage(1, expectedVal, protocol::PropertyType::Value,
+        "/Value"));
+    MessageMatcher deleteRequestMessageMatcher(createDeleteRequestMessage(2, 100));
+
+    std::function<void()> createValueRequestAction = [this]()
+    {
+        endpoint->queueToReceive(createCreateResponseMessage(1, protocol::CreateResponse::Response::OK,
+            protocol::Uuid(100)));
+    };
+
+    std::function<void()> deleteValueRequestAction = [this]()
+    {
+        endpoint->queueToReceive(createCommonResponse<
+            protocol::DeleteResponse,
+            protocol::MessageType::DeleteResponse,
+            protocol::DeleteResponse::Response>
+                (2, protocol::DeleteResponse::Response::OK));
+    };
+
+    endpoint->expectSend(1, 0, false, 1, signinRequestMessageMatcher.get(), signinRequestAction);
+    endpoint->expectSend(2, 1, false, 1, createRequestMessageMatcher.get(), createValueRequestAction);
+    endpoint->expectSend(3, 2, false, 1, deleteRequestMessageMatcher.get(), deleteValueRequestAction);
+
+    {
+        auto ptc = std::make_shared<PTreeClient>(endpoint);
+        auto ptree = ptc->getPTree();
+        auto value = ptree->createValue("/Value", expectedVal);
+        ASSERT_TRUE(value);
+        auto ivalue = std::dynamic_pointer_cast<IProperty>(value);
+        ASSERT_TRUE(ivalue);
+        EXPECT_TRUE(ptree->deleteProperty(ivalue));
+    }
+
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(100ms);
+    endpoint->waitForAllSending(2500.0);
+    logger::loggerServer.waitEmpty();
+}
+
+
 TEST_F(ClientTests, shouldFetchValueWithGetSpecificMetaWhenNotAutoUpdate)
 {
     MessageMatcher getValueRequestMessageMatcher2 = createGetValueRequestMessage(3, protocol::Uuid(100));
