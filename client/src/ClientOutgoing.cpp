@@ -49,8 +49,8 @@ std::pair<uint32_t,std::shared_ptr<TransactionCV>>
         signIn.setFeature(i);
     }
     auto tid = transactionIdGenerator.get();
-    sendToServer(tid, protocol::MessageType::SigninRequest, signIn);
     auto tcv = transactionsCV.addTransactionCV(tid);
+    sendToServer(tid, protocol::MessageType::SigninRequest, signIn);
     return std::make_pair(tid, tcv);
 }
 
@@ -62,8 +62,8 @@ std::pair<uint32_t,std::shared_ptr<TransactionCV>>
     request.data = value;
     request.type = type;
     auto tid = transactionIdGenerator.get();
-    sendToServer(tid, protocol::MessageType::CreateRequest, request);
     auto tcv = transactionsCV.addTransactionCV(tid);
+    sendToServer(tid, protocol::MessageType::CreateRequest, request);
     return std::make_pair(tid, tcv);
 }
 
@@ -73,8 +73,8 @@ std::pair<uint32_t,std::shared_ptr<TransactionCV>>
     protocol::GetValueRequest request;
     request.uuid = uuid;
     auto tid = transactionIdGenerator.get();
-    sendToServer(tid, protocol::MessageType::GetValueRequest, request);
     auto tcv = transactionsCV.addTransactionCV(tid);
+    sendToServer(tid, protocol::MessageType::GetValueRequest, request);
     return std::make_pair(tid, tcv);
 }
 
@@ -84,8 +84,8 @@ std::pair<uint32_t,std::shared_ptr<TransactionCV>>
     protocol::GetSpecificMetaRequest request;
     request.path = path;
     auto tid = transactionIdGenerator.get();
-    sendToServer(tid, protocol::MessageType::GetSpecificMetaRequest, request);
     auto tcv = transactionsCV.addTransactionCV(tid);
+    sendToServer(tid, protocol::MessageType::GetSpecificMetaRequest, request);
     return std::make_pair(tid, tcv);
 }
 
@@ -95,8 +95,8 @@ std::pair<uint32_t,std::shared_ptr<TransactionCV>>
     protocol::SubscribePropertyUpdateRequest request;
     request.uuid = uuid;
     auto tid = transactionIdGenerator.get();
-    sendToServer(tid, protocol::MessageType::SubscribePropertyUpdateRequest, request);
     auto tcv = transactionsCV.addTransactionCV(tid);
+    sendToServer(tid, protocol::MessageType::SubscribePropertyUpdateRequest, request);
     return std::make_pair(tid, tcv);
 }
 
@@ -106,8 +106,8 @@ std::pair<uint32_t,std::shared_ptr<TransactionCV>>
     protocol::UnsubscribePropertyUpdateRequest request;
     request.uuid = uuid;
     auto tid = transactionIdGenerator.get();
-    sendToServer(tid, protocol::MessageType::UnsubscribePropertyUpdateRequest, request);
     auto tcv = transactionsCV.addTransactionCV(tid);
+    sendToServer(tid, protocol::MessageType::UnsubscribePropertyUpdateRequest, request);
     return std::make_pair(tid, tcv);
 }
 
@@ -131,8 +131,8 @@ std::pair<uint32_t,std::shared_ptr<TransactionCV>>
     protocol::DeleteRequest request;
     request.uuid = uuid;
     auto tid = transactionIdGenerator.get();
-    sendToServer(tid, protocol::MessageType::DeleteRequest, request);
     auto tcv = transactionsCV.addTransactionCV(tid);
+    sendToServer(tid, protocol::MessageType::DeleteRequest, request);
     return std::make_pair(tid, tcv);
 }
 
@@ -143,8 +143,8 @@ std::pair<uint32_t,std::shared_ptr<TransactionCV>>
     request.uuid = uuid;
     request.parameter = std::move(parameter);
     auto tid = transactionIdGenerator.get();
-    sendToServer(tid, protocol::MessageType::RpcRequest, request);
     auto tcv = transactionsCV.addTransactionCV(tid);
+    sendToServer(tid, protocol::MessageType::RpcRequest, request);
     return std::make_pair(tid, tcv);
 }
 

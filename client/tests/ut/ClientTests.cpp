@@ -223,7 +223,9 @@ TEST_F(ClientTests, shouldFetchValueWithGetSpecificMetaWhenNotAutoUpdate)
         std::string valuePath = "/Value";
         auto value = ptree->getValue(valuePath);
         ASSERT_TRUE(value);
+        ASSERT_TRUE(value);
         auto value2 = ptree->getValue(valuePath);
+        ASSERT_TRUE(value2);
         EXPECT_EQ(value, value2);
         EXPECT_EQ(value->get<uint32_t>(), 42u);
     }
@@ -246,8 +248,10 @@ TEST_F(ClientTests, shouldSubscribeUpdateNotification)
         auto ptree = ptc->getPTree();
         std::string valuePath = "/Value";
         auto value = ptree->getValue(valuePath);
+        ASSERT_TRUE(value);
         EXPECT_TRUE(ptree->enableAutoUpdate(value));
         auto value2 = ptree->getValue(valuePath);
+        ASSERT_TRUE(value2);
         EXPECT_EQ(value, value2);
         EXPECT_EQ(value->get<uint32_t>(), 42u);
     }
@@ -274,6 +278,7 @@ TEST_F(ClientTests, shouldReceiveUpdateNotification)
         auto ptree = ptc->getPTree();
         std::string valuePath = "/Value";
         auto value = ptree->getValue(valuePath);
+        ASSERT_TRUE(value);
         EXPECT_EQ(value->get<uint32_t>(), 42u);
         EXPECT_TRUE(ptree->enableAutoUpdate(value));
 
@@ -281,7 +286,7 @@ TEST_F(ClientTests, shouldReceiveUpdateNotification)
         updates.emplace_back(100, newValue);
         auto updateNotifMsg = createPropertyUpdateNotificationMessage(3, updates);
         this->endpoint->queueToReceive(updateNotifMsg);
-        std::this_thread::sleep_for(10ms);
+        std::this_thread::sleep_for(100ms);
         EXPECT_EQ(value->get<uint32_t>(), 69u);
     }
 
@@ -312,6 +317,7 @@ TEST_F(ClientTests, shouldReceiveUpdateNotificationAndRunHandler)
         auto ptree = ptc->getPTree();
         std::string valuePath = "/Value";
         auto value = ptree->getValue(valuePath);
+        ASSERT_TRUE(value);
         value->addWatcher(handlerMock);
         EXPECT_EQ(value->get<uint32_t>(), 42u);
         EXPECT_TRUE(ptree->enableAutoUpdate(value));
@@ -363,12 +369,14 @@ TEST_F(ClientTests, shouldUnsubscribe)
         auto ptree = ptc->getPTree();
         std::string valuePath = "/Value";
         auto value = ptree->getValue(valuePath);
+        ASSERT_TRUE(value);
         value->addWatcher(handlerMock);
 
         ptree->enableAutoUpdate(value);
         ptree->disableAutoUpdate(value);
 
         auto value2 = ptree->getValue(valuePath);
+        ASSERT_TRUE(value2);
         EXPECT_EQ(value->get<uint32_t>(), 69u);
         EXPECT_EQ(value2->get<uint32_t>(), 69u);
     }
@@ -385,6 +393,8 @@ TEST_F(ClientTests, shouldReceiveMetaUpdateNotificationAndRunHandler)
     EXPECT_CALL(*metaHandlerMock, handleCreation(_, "/Test", protocol::PropertyType::Node));
     EXPECT_CALL(*metaHandlerMock, handleCreation(_, "/Test/Value", protocol::PropertyType::Value));
     EXPECT_CALL(*metaHandlerMock, handleDeletion(protocol::Uuid(100)));
+
+     endpoint->expectSend(1, 0, false, 1, signinRequestMessageMatcher.get(), signinRequestAction);
 
     {
         auto ptc = std::make_shared<PTreeClient>(endpoint);

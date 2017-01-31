@@ -15,6 +15,7 @@ TransactionsCV::~TransactionsCV()
 
 std::shared_ptr<TransactionCV> TransactionsCV::addTransactionCV(uint32_t transactionId)
 {
+    log << logger::DEBUG << "addTransactionCV: adding: " << transactionId;
     std::lock_guard<std::mutex> guard(transactionIdCV.mutex);
     // TODO: emplace
     transactionIdCV.object[transactionId] = std::make_shared<TransactionCV>();
@@ -29,7 +30,7 @@ void TransactionsCV::notifyTransactionCV(uint32_t transactionId, Buffer& value)
         auto it = transactionIdCV.object.find(transactionId);
         if (it == transactionIdCV.object.end())
         {
-            log << logger::ERROR << "transactionId not found in CV list.";
+            log << logger::ERROR << "notifyTransactionCV: trigger: transactionId not found in CV list.";
             return;
         }
         tcv = it->second;
@@ -43,28 +44,18 @@ void TransactionsCV::notifyTransactionCV(uint32_t transactionId, Buffer& value)
         tcv->value = std::move(value);
         tcv->cv.notify_all();
     }
-
-    {
-        std::lock_guard<std::mutex> guard(transactionIdCV.mutex);
-        auto it = transactionIdCV.object.find(transactionId);
-        if (it == transactionIdCV.object.end())
-        {
-            log << logger::ERROR << "transactionId not found in CV list.";
-            return;
-        }
-        transactionIdCV.object.erase(it);
-    }
 }
 
 bool TransactionsCV::waitTransactionCV(uint32_t transactionId)
 {
+    log << logger::DEBUG << "waitTransactionCV for: " << transactionId;
     std::shared_ptr<TransactionCV> tcv;
     {
         std::lock_guard<std::mutex> guard(transactionIdCV.mutex);
         auto it = transactionIdCV.object.find(transactionId);
         if (it == transactionIdCV.object.end())
         {
-            log << logger::ERROR << "transactionId not found in CV list.";
+            log << logger::ERROR << "waitTransactionCV: wait: transactionId not found in CV list.";
             return false;
         }
         tcv = it->second;
@@ -73,9 +64,15 @@ bool TransactionsCV::waitTransactionCV(uint32_t transactionId)
     {
         std::unique_lock<std::mutex> guard(tcv->mutex);
         using namespace std::chrono_literals;
-        tcv->cv.wait_for(guard, 1s,[&tcv](){return bool(tcv->condition);});
-        return tcv->condition;
+        tcv->cv.wait_for(guard, 5s,[&tcv](){return bool(tcv->condition);});
     }
+
+    {
+        std::lock_guard<std::mutex> guard(transactionIdCV.mutex);
+        auto it = transactionIdCV.object.find(transactionId);
+        transactionIdCV.object.erase(it);
+    }
+    return tcv->condition;
 }
 }
 }
