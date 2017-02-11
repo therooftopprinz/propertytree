@@ -34,28 +34,13 @@ public:
     ValueContainerPtr getValue(std::string& path);
     RpcContainerPtr getRpc(std::string& path);
     bool deleteProperty(IPropertyPtr& property);
-    bool enableAutoUpdate(ValueContainerPtr& vc);
-    bool disableAutoUpdate(ValueContainerPtr& vc);
     void addMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
     void deleteMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
     /** TODO: Move to respective containers: setValue, rpcRequest, **/
 
-    template <typename T>
-    void setValue(ValueContainerPtr& vc, T&& value)
+    void setValue(protocol::Uuid uuid, Buffer&& value)
     {
-        if (!vc->isOwned())
-        {
-            return;
-        }
-
-        auto uuid = vc->getUuid();
-        log << logger::DEBUG << "SEND VALUE (" << uuid << ")";
-
-        Buffer tmv(sizeof(T));
-        std::memcpy(tmv.data(), &value, sizeof(T));
-        vc->updateValue(tmv, true);
-
-        outgoing.setValueIndication(uuid, std::move(tmv));
+        outgoing.setValueIndication(uuid, std::move(value));
     }
 
     Buffer handleIncomingRpc(protocol::Uuid uuid, Buffer& parameter);
@@ -101,10 +86,13 @@ private:
     MutexedObject<std::list<std::shared_ptr<IMetaUpdateHandler>>> metaUpdateHandlers;
     void triggerMetaUpdateWatchersCreate(protocol::Uuid uuid, std::string& path, protocol::PropertyType propertyType);
     void triggerMetaUpdateWatchersDelete(protocol::Uuid path);
+    bool enableAutoUpdate(protocol::Uuid);
+    bool disableAutoUpdate(protocol::Uuid);
 
     logger::Logger log;
     friend PropertyUpdateNotificationMessageHandler;
     friend MetaUpdateNotificationMessageHandler;
+    friend ValueContainer;
 };
 
 using LocalPTreePtr = std::shared_ptr<LocalPTree>;

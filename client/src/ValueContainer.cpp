@@ -5,12 +5,14 @@ namespace ptree
 namespace client
 {
 
-ValueContainer::ValueContainer(protocol::Uuid uuid, std::string path, Buffer &value, bool owned) :
-    IProperty(uuid, path, protocol::PropertyType::Value, owned), autoUpdate(false), value(value), log("ValueContainer")
+ValueContainer::ValueContainer(LocalPTree& ptree, protocol::Uuid uuid, std::string path, Buffer &value, bool owned) :
+    IProperty(uuid, path, protocol::PropertyType::Value, owned),
+    ptree(ptree), autoUpdate(false), value(value), log("ValueContainer")
 {
 }
-ValueContainer::ValueContainer(protocol::Uuid uuid, std::string path, Buffer &&value, bool owned) :
-    IProperty(uuid, path, protocol::PropertyType::Value, owned), autoUpdate(false), value(std::move(value)), log("ValueContainer")
+ValueContainer::ValueContainer(LocalPTree& ptree, protocol::Uuid uuid, std::string path, Buffer &&value, bool owned) :
+    IProperty(uuid, path, protocol::PropertyType::Value, owned),
+    ptree(ptree), autoUpdate(false), value(std::move(value)), log("ValueContainer")
 {
 }
 
@@ -92,7 +94,29 @@ void ValueContainer::removeWatcher(std::shared_ptr<IValueWatcher> watcher)
     }
 }
 
+bool ValueContainer::enableAutoUpdate()
+{
+    if (ptree.enableAutoUpdate(getUuid()))
+    {
+        setAutoUpdate(true);
+        return true;
+    }
+    return false;
+}
+bool ValueContainer::disableAutoUpdate()
+{
+    if (ptree.disableAutoUpdate(getUuid()))
+    {
+        setAutoUpdate(false);
+        return true;
+    }
+    return false;
+}
 
+void ValueContainer::setValue(Buffer&& value)
+{
+    ptree.setValue(getUuid(), std::move(value));
+}
 
 }
 }

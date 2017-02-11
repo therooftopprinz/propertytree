@@ -15,6 +15,7 @@
 #include <common/src/Logger.hpp>
 #include <client/src/Types.hpp>
 #include <client/src/IProperty.hpp>
+#include <client/src/LocalPTree.hpp>
 
 namespace ptree
 {
@@ -26,6 +27,7 @@ struct IValueWatcher
     virtual void handle(ValueContainerPtr vc) = 0;
 };
 
+class LocalPTree;
 class ValueContainer : public IProperty, public std::enable_shared_from_this<ValueContainer>
 {
 public:
@@ -59,22 +61,40 @@ public:
         return *(T*)(value.data());
     }
 
+    template <typename T>
+    void setValue(T&& value)
+    {
+        if (!isOwned())
+        {
+            return;
+        }
+
+        Buffer tmv(sizeof(T));
+        std::memcpy(tmv.data(), &value, sizeof(T));
+        updateValue(tmv, true);
+        setValue(std::move(tmv));
+    }
+
     void addWatcher(std::shared_ptr<IValueWatcher> watcher);
     void removeWatcher(std::shared_ptr<IValueWatcher> watcher);
+    bool enableAutoUpdate();
+    bool disableAutoUpdate();
 
     void operator = (ValueContainer&) = delete;
 
-    ValueContainer(protocol::Uuid uuid, std::string path, Buffer &value, bool owned);
-    ValueContainer(protocol::Uuid uuid, std::string path, Buffer &&value, bool owned);
+    ValueContainer(LocalPTree& ptree, protocol::Uuid uuid, std::string path, Buffer &value, bool owned);
+    ValueContainer(LocalPTree& ptree, protocol::Uuid uuid, std::string path, Buffer &&value, bool owned);
 
 private:
     bool isAutoUpdate();
     void setAutoUpdate(bool autoUpdate);
+    void setValue(Buffer&& value);
 
     void updateValue(bool triggerHandler);
     void updateValue(Buffer&& value, bool triggerHandler);
     void updateValue(Buffer& value, bool triggerHandler);
     /** TODO: use std::function **/
+    LocalPTree& ptree;
     std::set<std::shared_ptr<IValueWatcher>> watchers;
     std::mutex watcherMutex;
     bool autoUpdate;

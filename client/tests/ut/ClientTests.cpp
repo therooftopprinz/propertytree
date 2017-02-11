@@ -249,7 +249,7 @@ TEST_F(ClientTests, shouldSubscribeUpdateNotification)
         std::string valuePath = "/Value";
         auto value = ptree->getValue(valuePath);
         ASSERT_TRUE(value);
-        EXPECT_TRUE(ptree->enableAutoUpdate(value));
+        EXPECT_TRUE(value->enableAutoUpdate());
         auto value2 = ptree->getValue(valuePath);
         ASSERT_TRUE(value2);
         EXPECT_EQ(value, value2);
@@ -280,7 +280,7 @@ TEST_F(ClientTests, shouldReceiveUpdateNotification)
         auto value = ptree->getValue(valuePath);
         ASSERT_TRUE(value);
         EXPECT_EQ(value->get<uint32_t>(), 42u);
-        EXPECT_TRUE(ptree->enableAutoUpdate(value));
+        EXPECT_TRUE(value->enableAutoUpdate());
 
         std::list<protocol::PropertyUpdateNotificationEntry> updates;
         updates.emplace_back(100, newValue);
@@ -320,7 +320,7 @@ TEST_F(ClientTests, shouldReceiveUpdateNotificationAndRunHandler)
         ASSERT_TRUE(value);
         value->addWatcher(handlerMock);
         EXPECT_EQ(value->get<uint32_t>(), 42u);
-        EXPECT_TRUE(ptree->enableAutoUpdate(value));
+        EXPECT_TRUE(value->enableAutoUpdate());
 
         std::list<protocol::PropertyUpdateNotificationEntry> updates;
         updates.emplace_back(100, newValue);
@@ -372,8 +372,8 @@ TEST_F(ClientTests, shouldUnsubscribe)
         ASSERT_TRUE(value);
         value->addWatcher(handlerMock);
 
-        ptree->enableAutoUpdate(value);
-        ptree->disableAutoUpdate(value);
+        value->enableAutoUpdate();
+        value->disableAutoUpdate();
 
         auto value2 = ptree->getValue(valuePath);
         ASSERT_TRUE(value2);
@@ -438,7 +438,7 @@ TEST_F(ClientTests, shouldSendSetValueIndication)
         auto ptree = ptc->getPTree();
         auto value = ptree->createValue("/Value", expectedVal);
         ASSERT_TRUE(value);
-        ptree->setValue(value, newVal);
+        value->setValue(newVal);
     }
 
     using namespace std::chrono_literals;

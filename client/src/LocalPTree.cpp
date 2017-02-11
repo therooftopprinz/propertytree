@@ -78,7 +78,7 @@ ValueContainerPtr LocalPTree::createValue(std::string path, Buffer& value)
         if ( response.response  == protocol::CreateResponse::Response::OK)
         {
             log << logger::DEBUG << "VALUE CREATED WITH UUID " << response.uuid;
-            auto vc = std::make_shared<ValueContainer>(response.uuid, path, value, true);
+            auto vc = std::make_shared<ValueContainer>(*this, response.uuid, path, value, true);
             auto ivc = std::static_pointer_cast<IProperty>(vc);
             addToPropertyMap(path, response.uuid, ivc);
             return vc;
@@ -191,7 +191,7 @@ IPropertyPtr LocalPTree::fetchMeta(std::string& path)
                 case protocol::PropertyType::Value:
                 {
                     log << logger::DEBUG << path << " is a Value";
-                    auto value = std::make_shared<ValueContainer>(response.meta.uuid, path, Buffer(), false);
+                    auto value = std::make_shared<ValueContainer>(*this, response.meta.uuid, path, Buffer(), false);
                     auto ivc = std::static_pointer_cast<IProperty>(value);
                     addToPropertyMap(path, response.meta.uuid, ivc);
                     return value;
@@ -290,9 +290,8 @@ void LocalPTree::handleUpdaNotification(protocol::Uuid uuid, Buffer&& value)
     found->updateValue(std::move(value), true);
 }
 
-bool LocalPTree::enableAutoUpdate(ValueContainerPtr& vc)
+bool LocalPTree::enableAutoUpdate(protocol::Uuid uuid)
 {
-    auto uuid = vc->getUuid();
     auto found = std::dynamic_pointer_cast<ValueContainer>(getPropertyByUuid(uuid));
     if (!found)
     {
@@ -306,7 +305,6 @@ bool LocalPTree::enableAutoUpdate(ValueContainerPtr& vc)
         response.unpackFrom(subscribe.second->getBuffer());
         if (response.response  == protocol::SubscribePropertyUpdateResponse::Response::OK)
         {
-            vc->setAutoUpdate(true);
             log << logger::DEBUG << "SUBSCRIBED!! " << uuid;
             return true;
         }
@@ -322,9 +320,8 @@ bool LocalPTree::enableAutoUpdate(ValueContainerPtr& vc)
     return false;
 }
 
-bool LocalPTree::disableAutoUpdate(ValueContainerPtr& vc)
+bool LocalPTree::disableAutoUpdate(protocol::Uuid uuid)
 {
-    auto uuid = vc->getUuid();
     auto unsubscribe = outgoing.unsubscribePropertyUpdate(uuid);
     if (transactionsCV.waitTransactionCV(unsubscribe.first))
     {
@@ -332,7 +329,6 @@ bool LocalPTree::disableAutoUpdate(ValueContainerPtr& vc)
         response.unpackFrom(unsubscribe.second->getBuffer());
         if (response.response  == protocol::UnsubscribePropertyUpdateResponse::Response::OK)
         {
-            vc->setAutoUpdate(false);
             log << logger::DEBUG << "UNSUBSCRIBED!! " << uuid;
             return true;
         }
