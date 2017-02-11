@@ -16,6 +16,7 @@
 #include <common/src/Logger.hpp>
 #include <client/src/IProperty.hpp>
 #include <client/src/Types.hpp>
+#include <client/src/LocalPTree.hpp>
 
 namespace ptree
 {
@@ -30,10 +31,20 @@ public:
     void setHandler(std::function<Buffer(Buffer&)>);
     void setVoidHandler(std::function<void(Buffer&)>);
 
-    RpcContainer(protocol::Uuid uuid, std::string path, bool owned);
-    RpcContainer(protocol::Uuid uuid, std::string path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler, bool owned);
+    template <typename T>
+    Buffer call(T&& parameter)
+    {
+        Buffer tmv(sizeof(T));
+        std::memcpy(tmv.data(), &parameter, sizeof(T));
+        return call(std::move(tmv));
+    }
+
+    RpcContainer(LocalPTree& ptree, protocol::Uuid uuid, std::string path, bool owned);
+    RpcContainer(LocalPTree& ptree, protocol::Uuid uuid, std::string path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler, bool owned);
 
 private:
+    Buffer call(Buffer&& parameter);
+    LocalPTree& ptree;
     std::function<Buffer(Buffer&)> handler;
     std::function<void(Buffer&)> voidHandler;
     logger::Logger log;

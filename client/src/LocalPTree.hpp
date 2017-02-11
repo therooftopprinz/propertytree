@@ -38,32 +38,7 @@ public:
     void deleteMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
     /** TODO: Move to respective containers: setValue, rpcRequest, **/
 
-    void setValue(protocol::Uuid uuid, Buffer&& value)
-    {
-        outgoing.setValueIndication(uuid, std::move(value));
-    }
-
     Buffer handleIncomingRpc(protocol::Uuid uuid, Buffer& parameter);
-
-    template <typename T>
-    Buffer rpcRequest(RpcContainerPtr& rpc, T&& parameter)
-    {
-        Buffer tmv(sizeof(T));
-        std::memcpy(tmv.data(), &parameter, sizeof(T));
-        auto rpcRequest = outgoing.rpcRequest(rpc->getUuid(), std::move(tmv));
-        if (transactionsCV.waitTransactionCV(rpcRequest.first))
-        {
-            protocol::RpcResponse response;
-            response.unpackFrom(rpcRequest.second->getBuffer());
-            return response.returnValue;
-        }
-        else
-        {
-            log << logger::ERROR << "RPC REQUEST TIMEOUT";
-        }
-        return Buffer();
-    }
-
 private:
     IClientOutgoing& outgoing;
     TransactionsCV& transactionsCV;
@@ -89,10 +64,14 @@ private:
     bool enableAutoUpdate(protocol::Uuid);
     bool disableAutoUpdate(protocol::Uuid);
 
+    void setValue(protocol::Uuid uuid, Buffer&& value);
+    Buffer rpcRequest(protocol::Uuid uuid, Buffer&& parameter);
+
     logger::Logger log;
     friend PropertyUpdateNotificationMessageHandler;
     friend MetaUpdateNotificationMessageHandler;
     friend ValueContainer;
+    friend RpcContainer;
 };
 
 using LocalPTreePtr = std::shared_ptr<LocalPTree>;

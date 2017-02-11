@@ -135,7 +135,7 @@ RpcContainerPtr LocalPTree::createRpc(std::string path, std::function<Buffer(Buf
         if ( response.response  == protocol::CreateResponse::Response::OK)
         {
             log << logger::DEBUG << "RPC CREATED WITH UUID " << response.uuid;
-            auto rc = std::make_shared<RpcContainer>(response.uuid, path, handler, voidHandler, true);
+            auto rc = std::make_shared<RpcContainer>(*this, response.uuid, path, handler, voidHandler, true);
             auto irc = std::static_pointer_cast<IProperty>(rc);
             addToPropertyMap(path, response.uuid, irc);
             return rc;
@@ -207,7 +207,7 @@ IPropertyPtr LocalPTree::fetchMeta(std::string& path)
                 case protocol::PropertyType::Rpc:
                 {
                     log << logger::DEBUG << path << " is an Rpc";
-                    auto rpc = std::make_shared<RpcContainer>(response.meta.uuid, path, false);
+                    auto rpc = std::make_shared<RpcContainer>(*this, response.meta.uuid, path, false);
                     auto ipc = std::static_pointer_cast<IProperty>(rpc);
                     addToPropertyMap(path, response.meta.uuid, ipc);
                     return rpc;
@@ -389,6 +389,27 @@ Buffer LocalPTree::handleIncomingRpc(protocol::Uuid uuid, Buffer& parameter)
     if (rpc && rpc->handler)
     {
         return rpc->handler(parameter);
+    }
+    return Buffer();
+}
+
+void LocalPTree::setValue(protocol::Uuid uuid, Buffer&& value)
+{
+    outgoing.setValueIndication(uuid, std::move(value));
+}
+
+Buffer LocalPTree::rpcRequest(protocol::Uuid uuid, Buffer&& parameter)
+{
+    auto rpcRequest = outgoing.rpcRequest(uuid, std::move(parameter));
+    if (transactionsCV.waitTransactionCV(rpcRequest.first))
+    {
+        protocol::RpcResponse response;
+        response.unpackFrom(rpcRequest.second->getBuffer());
+        return response.returnValue;
+    }
+    else
+    {
+        log << logger::ERROR << "RPC REQUEST TIMEOUT";
     }
     return Buffer();
 }

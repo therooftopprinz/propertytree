@@ -565,7 +565,7 @@ TEST_F(ClientTests, shouldRequestRpc)
         auto ptree = ptc->getPTree();
         auto rpc = ptree->getRpc(rpcPath);
         ASSERT_TRUE(rpc);
-        auto rval = ptree->rpcRequest(rpc, uint8_t(69u));
+        auto rval = rpc->call(uint8_t(69u));
         EXPECT_TRUE(rval.size()>0);
     }
 
