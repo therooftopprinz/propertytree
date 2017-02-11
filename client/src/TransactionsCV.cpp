@@ -17,8 +17,7 @@ std::shared_ptr<TransactionCV> TransactionsCV::addTransactionCV(uint32_t transac
 {
     log << logger::DEBUG << "addTransactionCV: adding: " << transactionId;
     std::lock_guard<std::mutex> guard(transactionIdCV.mutex);
-    // TODO: emplace
-    transactionIdCV.object[transactionId] = std::make_shared<TransactionCV>();
+    transactionIdCV.object.emplace(transactionId, std::make_shared<TransactionCV>());
     return transactionIdCV.object[transactionId];
 }
 

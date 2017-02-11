@@ -36,7 +36,6 @@ public:
     bool deleteProperty(IPropertyPtr& property);
     void addMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
     void deleteMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
-    /** TODO: Move to respective containers: setValue, rpcRequest, **/
 
     Buffer handleIncomingRpc(protocol::Uuid uuid, Buffer& parameter);
 private:
