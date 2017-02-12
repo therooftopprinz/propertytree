@@ -93,7 +93,7 @@ inline void decode(BlockBase& head, BufferView& mDecodeCursor)
 
 /***  GENERIC ARRAY CODEC ***/
 template <typename T, size_t N>
-void sizeRead(T (&head)[N], uint32_t& mCurrentSize)
+void sizeRead(T (&)[N], uint32_t& mCurrentSize)
 {
     mCurrentSize += sizeof(T)*N;
 }
@@ -118,7 +118,7 @@ void decode(T (&value)[N], BufferView& data)
 
 /***  GENERIC CODEC ***/
 template <typename T>
-void sizeRead(T& head, uint32_t& mCurrentSize)
+void sizeRead(T&, uint32_t& mCurrentSize)
 {
     mCurrentSize += sizeof(T);
 }

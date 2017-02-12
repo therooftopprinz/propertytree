@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <memory>
+#include "NewMessageCoDec.hpp"
 #include "MessageCoDec.hpp"
 #include "MessageCoDecHelpers.hpp"
 

@@ -9,7 +9,6 @@
 #include <common/src/Logger.hpp>
 #include <server/src/Types.hpp>
 
-#include "IClientServer.hpp"
 #include "ClientServerConfig.hpp"
 #include "PTreeOutgoing.hpp"
 #include "PTreeIncoming.hpp"
