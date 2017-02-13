@@ -17,14 +17,14 @@ COMMON_TARGET      := $(TLD)/libs
 SERVER_SRCDIR         := server/src
 SERVER_UTDIR          := server/tests/ut
 SERVER_INCDIR         := .
-SERVER_TESTINCDIR  	  := $(SERVER_INCDIR) $(TLD)/gtest
+SERVER_TESTINCDIR  	  := $(SERVER_INCDIR) gtest
 SERVER_UT_LD          := pthread m
 SERVER_LD          := pthread m
 
 CLIENT_SRCDIR         := client/src
 CLIENT_UTDIR          := client/tests/ut
 CLIENT_INCDIR         := .
-CLIENT_TESTINCDIR  	  := $(CLIENT_INCDIR) $(TLD)/gtest
+CLIENT_TESTINCDIR  	  := $(CLIENT_INCDIR) gtest
 CLIENT_UT_LD          := pthread m
 CLIENT_LD          := pthread m
 
@@ -32,8 +32,8 @@ COMMON_SRCDIR         := common/src
 COMMON_INCDIR         := .
 COMMON_LD          := pthread m
 COMMON_TESTING_SRCDIR         := common/TestingFramework
-COMMON_TESTING_INCDIR         := $(COMMON_INCDIR) $(TLD)/gtest
-COMMON_TESTING_TESTINCDIR     := $(COMMON_TESTING_INCDIR) $(TLD)/gtest
+COMMON_TESTING_INCDIR         := $(COMMON_INCDIR) gtest
+COMMON_TESTING_TESTINCDIR     := $(COMMON_TESTING_INCDIR) gtest
 COMMON_TESTING_UT_LD          := pthread m
 COMMON_TESTING_LD          := pthread m
 
@@ -85,7 +85,7 @@ COMMON_TESTING_LD_GCC     := $(addprefix -l, $(COMMON_TESTING_LD))
 
 $(GTEST):
 	@echo "Building gtest..."
-	$(MAKE) -C $(TLD)/gtest all
+	$(MAKE) -C gtest all
 
 ## TARGET COMMON #########################################################################
 
