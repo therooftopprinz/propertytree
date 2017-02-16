@@ -5,6 +5,7 @@
 #include <cstring>
 #include <exception>
 #include <iostream>
+#include <iomanip>
 
 namespace ptree
 {
@@ -53,6 +54,7 @@ struct BlockBase
 {
     virtual void generate(BufferView& data) = 0;
     virtual void parse(BufferView& data) = 0;
+    virtual void print(std::stringstream& output) = 0;
     virtual uint32_t size() = 0;
 };
 
@@ -75,6 +77,39 @@ inline void errorOnLimit(BufferView &data, uint32_t size, std::string fn, std::s
     }
 }
 
+template<typename T>
+inline std::string fieldToString(T& data)
+{
+    std::stringstream retVal;
+    if (1 == sizeof(T))
+    {
+        retVal << std::setfill ('0') << std::setw(2) << std::hex << *reinterpret_cast<uint8_t*>(&data);
+    }
+    else if (2 == sizeof(T))
+    {
+        retVal << "<16bit> " << std::hex << "0x" << *reinterpret_cast<uint16_t*>(&data) << " ";
+    }
+    else if (4 == sizeof(T))
+    {
+        retVal << "<32bit> " << std::hex << "0x" << *reinterpret_cast<uint32_t*>(&data) << " ";
+    }
+    else if (8 == sizeof(T))
+    {
+        retVal << "<64bit> " << std::hex << "0x" << *reinterpret_cast<uint64_t*>(&data) << " ";
+    }
+    else
+    {
+        retVal << "<uint8_t[" << sizeof(T) << "]> {";
+        uint8_t *pCurse = reinterpret_cast<uint8_t*>(&data);
+        for (size_t i=0; i<sizeof(T); ++i)
+        {
+            retVal << std::setfill ('0') << std::setw(2) << std::hex << uint16_t(*pCurse++) << " ";
+        }
+        retVal << "}";
+    }
+    return retVal.str();
+}
+
 /***  BlockBase CODEC ***/
 inline void sizeRead(BlockBase& head, uint32_t& mCurrentSize)
 {
@@ -89,6 +124,13 @@ inline void encode(BlockBase& head, BufferView& mEncodeCursor)
 inline void decode(BlockBase& head, BufferView& mDecodeCursor)
 {
     head.parse(mDecodeCursor);
+}
+
+inline void printField(BlockBase& head, std::string& name, std::stringstream& output)
+{
+    output << name << ":={";
+    head.print(output);
+    output << "}";
 }
 
 /***  GENERIC ARRAY CODEC ***/
@@ -114,6 +156,13 @@ void decode(T (&value)[N], BufferView& data)
     errorOnLimit(data, size, __PRETTY_FUNCTION__, __FILE__, __LINE__);
     std::memcpy(value, data.mStart, size);
     data.mStart += size;
+}
+
+template <typename T>
+inline void printField(T& value, std::string& name, std::stringstream& output)
+{
+    output << name << ":=";
+    output << fieldToString(value);
 }
 
 /***  GENERIC CODEC ***/
@@ -163,6 +212,13 @@ inline void encode(std::string& value, BufferView& data)
     data.mStart += size;
 }
 
+inline void printField(std::string& value, std::string& name, std::stringstream& output)
+{
+    output << name << ":=\"";
+    output << value;
+    output << "\"";
+}
+
 /***  std::vector CODEC ***/
 template<typename T>
 inline void sizeRead(std::vector<T>& values, uint32_t& mCurrentSize)
@@ -203,9 +259,20 @@ inline void encode(std::vector<T>& values, BufferView& data)
     }
 }
 
-/***  BlockArray CODEC ***/
-template <typename T, typename IndexType = uint16_t>
-struct BlockArray : public BlockBase
+template <typename T>
+inline void printField(std::vector<T>& values, std::string& name, std::stringstream& output)
+{
+    output << name << ":={";
+    for (size_t i=0; i < values.size(); ++i)
+    {
+        output << fieldToString(values[i]) << ", ";
+    }
+    output << "}";
+}
+
+/***  ARRAY CODEC ***/
+template <typename T, bool simpleType, typename IndexType>
+struct Array : public BlockBase
 {
 public:
     void generate(BufferView& data)
@@ -248,14 +315,48 @@ public:
         return sz;
     }
 
+    inline void print(std::stringstream& output)
+    {
+        for (size_t i=0; i < values.size(); ++i)
+        {
+            output << "{";
+            Print<T, simpleType>::print(values[i], output);
+            output << "}, ";
+        }
+    }
+
     std::vector<T>& get()
     {
         return values;
     }
 
 private:
+    template<typename T2, bool>
+    struct Print;
+
+    template<typename T2>
+    struct Print<T2, true>
+    {
+        static void print(T2& v, std::stringstream& output)
+        {
+            output << fieldToString(v);
+        }
+    };
+    template<typename T2>
+    struct Print<T2, false>
+    {
+        static void print(T2& v, std::stringstream& output)
+        {
+            v.print(output);
+        }
+    };
+
     std::vector<T> values;
 };
+template <typename T, typename IndexType = uint16_t>
+using BlockArray = Array<T, false, IndexType>;
+template <typename T, typename IndexType = uint16_t>
+using SimpleArray = Array<T, true, IndexType>;
 
 #define BLOCK (BlockBase&)
 

@@ -5,6 +5,7 @@
 #include <cstring>
 #include <exception>
 #include <iostream>
+#include <sstream>
 #include "MessageCoDecHelpers.hpp"
 
 namespace ptree
@@ -75,9 +76,52 @@ public:
         decode(head, mDecodeCursor);
         translate(tail...);
     }
-
 private:
     BufferView& mDecodeCursor;
+};
+
+class FieldPrinter
+{
+public:
+    FieldPrinter(std::stringstream& outputStringStream):
+        mCurrentNameIndex(0),
+        mOutputStringStream(outputStringStream)
+    {}
+
+    void registerFieldNames(const char * names)
+    {
+        for (size_t cur = 0; true; cur++)
+        {
+            if (names[cur]==',')
+            {
+                mNames.emplace_back(names, cur);
+                names = &names[cur+1];
+                cur = 0;
+            }
+            if (!names[cur])
+            {
+                mNames.emplace_back(names, cur);
+                break;
+            }
+        }
+    }
+
+    void translate()
+    {
+    }
+
+    template <typename T, typename... Tt>
+    void translate(T& head, Tt&... tail)
+    {
+        printField(head, mNames[mCurrentNameIndex], mOutputStringStream);
+        mOutputStringStream << ", ";
+        ++mCurrentNameIndex;
+        translate(tail...);
+    }
+private:
+    std::vector<std::string> mNames;
+    size_t mCurrentNameIndex;
+    std::stringstream& mOutputStringStream;
 };
 
 // THUG CPP
@@ -117,7 +161,20 @@ bool unpackFrom(std::vector<uint8_t>& message)\
     Decoder de(bv);\
     this->serialize(de);\
     return true;\
+}\
+void print(std::stringstream& output)\
+{\
+    FieldPrinter fp(output);\
+    fp.registerFieldNames(#__VA_ARGS__);\
+    fp.translate(__VA_ARGS__);\
+}\
+std::string toString()\
+{\
+    std::stringstream ss;\
+    print(ss);\
+    return ss.str();\
 }
+
 
 // END THUG
 

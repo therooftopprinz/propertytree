@@ -59,7 +59,7 @@ std::chrono::microseconds duration(std::chrono::time_point< std::chrono::high_re
     return c-s;
 }
 
-TEST_F(MessagingTests, DISABLED_propertyUpdateNotificationPackingLeakTest)
+TEST_F(MessagingTests, propertyUpdateNotificationPackingLeakTest)
 {
     protocol::PropertyUpdateNotification propertyUpdateNotifs;
     std::vector<uint8_t> val = {0,0,0,69};
@@ -71,7 +71,7 @@ TEST_F(MessagingTests, DISABLED_propertyUpdateNotificationPackingLeakTest)
     Buffer enbuff = propertyUpdateNotifs.getPacked();
 
     utils::printRaw(enbuff.data(),enbuff.size());
-
+    log << logger::DEBUG << "propertyUpdateNotifs: " << propertyUpdateNotifs.toString();
     logger::loggerServer.waitEmpty();
 }
 
@@ -206,7 +206,6 @@ TEST_F(MessagingTests, arraySpeedTest)
 
     logger::loggerServer.waitEmpty();
 }
-
 
 } // namespace server
 } // namespace ptree

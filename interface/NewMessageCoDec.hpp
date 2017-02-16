@@ -131,7 +131,7 @@ private:
 };
 
 template<typename T,typename IndexSize = uint32_t>
-class SimpleArray
+class SimpleTArray
 {
 public:
     std::vector<T>& get()
