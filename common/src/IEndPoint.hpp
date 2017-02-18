@@ -1,9 +1,10 @@
 #ifndef SERVER_IENDPOINT_HPP_
 #define SERVER_IENDPOINT_HPP_
 
+#include <cstdint>
+#include <memory>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <server/src/Types.hpp>
 
 namespace ptree
 {

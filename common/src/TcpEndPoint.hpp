@@ -6,7 +6,6 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <sys/time.h>
-#include <server/src/Types.hpp>
 #include <common/src/IEndPoint.hpp>
 
 #include <common/src/Logger.hpp>

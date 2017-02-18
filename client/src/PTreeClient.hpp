@@ -40,7 +40,7 @@ public:
 
 private:
 
-    server::IEndPointPtr endpoint;
+    common::IEndPointPtr endpoint;
     TransactionsCV transactionsCV;
     ClientOutgoing outgoing;
     LocalPTree ptree;

@@ -1,4 +1,4 @@
-TLD = ../..
+TLD = ..
 LIBOUT = $(TLD)/libs
 CC = g++
 INCLUDE = -I.
