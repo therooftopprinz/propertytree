@@ -5,13 +5,13 @@ MAKE               := make
 CFLAGS             := -std=gnu++14 -ggdb3 -O0 -Wall -Werror
 
 #Top level
-TLD                := ..
-GTEST              := $(TLD)/libs/gtest.o
+TLD                := .
+GTEST              := libs/gtest.o
 
 #TARGET
-SERVER_TARGET      := $(TLD)/bin/server
-CLIENT_TARGET      := $(TLD)/bin/server
-COMMON_TARGET      := $(TLD)/libs
+SERVER_TARGET      := bin/server
+CLIENT_TARGET      := bin/client
+COMMON_TARGET      := libs
 
 #The Directories, Source, Includes, Objects, Binary and Resources
 SERVER_SRCDIR         := server/src
@@ -45,8 +45,8 @@ endif
 
 ## TARGET DEBUG #########################################################################
 
-BUILDDIR              := $(TLD)/build/normal
-BUILDDIR_GCOV         := $(TLD)/build/gcov
+BUILDDIR              := build/normal
+BUILDDIR_GCOV         := build/gcov
 
 SERVER_INCDIR_GCC     := $(addprefix -I, $(SERVER_INCDIR))
 SERVER_TESTINCDIR_GCC := $(addprefix -I, $(SERVER_TESTINCDIR))
