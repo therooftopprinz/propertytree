@@ -18,6 +18,7 @@ inline void SigninRequestMessageHandler::handle(protocol::MessageHeader& header,
 
     protocol::SigninRequest request;
     request.unpackFrom(message);
+    log << logger::DEBUG << "SigninRequest: " << request.toString();
 
     bool supported = true;
     if (request.version != 1)
@@ -42,7 +43,6 @@ inline void SigninRequestMessageHandler::handle(protocol::MessageHeader& header,
     // }
 
     outgoing.sendToClient(header.transactionId, protocol::MessageType::SigninResponse, response);
-    log << logger::DEBUG << "response size: " << response.size()+sizeof(protocol::MessageHeader);
 }
 
 } // namespace server

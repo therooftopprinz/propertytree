@@ -35,6 +35,7 @@ void ClientOutgoing::sendToServer(uint32_t tid, protocol::MessageType mtype, pro
     endpoint.send(header.data(), header.size());
 
     Buffer responseMessageBuffer = msg.getPacked();
+    log << logger::DEBUG << "sendToServer: " << msg.toString();
     endpoint.send(responseMessageBuffer.data(), responseMessageBuffer.size());
 }
 

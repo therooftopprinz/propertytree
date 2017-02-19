@@ -22,7 +22,7 @@ void RpcRequestMessageHandler::handle(protocol::MessageHeader& header, Buffer& m
     protocol::RpcRequest request;
     request.unpackFrom(message);
 
-    log << logger::DEBUG << "requesting rpc for: " << request.uuid;
+    log << logger::DEBUG << "RpcRequest: " << request.toString();
     try
     {
         auto rpc = ptree.getPropertyByUuid<core::Rpc>(request.uuid);

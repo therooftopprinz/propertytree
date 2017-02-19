@@ -24,7 +24,7 @@ void GetSpecificMetaRequestMessageHandler::handle(protocol::MessageHeader& heade
 
     protocol::GetSpecificMetaResponse response;
 
-    log << logger::DEBUG << "Requesting for: " << request.path;
+    log << logger::DEBUG << "GetSpecificMetaRequest: " << request.toString();
 
     protocol::Uuid uuid = static_cast<protocol::Uuid>(-1);
     protocol::PropertyType ptype = static_cast<protocol::PropertyType>(-1);

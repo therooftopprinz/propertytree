@@ -14,12 +14,13 @@ HandleRpcResponseMessageHandler::HandleRpcResponseMessageHandler(IClientNotifier
 {
 }
 
-void HandleRpcResponseMessageHandler::handle(protocol::MessageHeader& header, Buffer& message)
+void HandleRpcResponseMessageHandler::handle(protocol::MessageHeader&, Buffer& message)
 {
     logger::Logger log("HandleRcpResponseMessageHandler");
 
     protocol::HandleRpcResponse response;
     response.unpackFrom(message);
+    log << logger::DEBUG << "HandleRpcResponse: " << response.toString();
 
     log << logger::DEBUG << "requesting handle rpc for: " << response.callerId << " at: "
         << response.callerTransactionId;

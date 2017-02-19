@@ -32,9 +32,13 @@ ssize_t TcpEndPoint::receive(void *buffer, uint32_t size)
 {
     auto rv = recv(sockfd, buffer, size, flags);
     int errcode = errno;
-    if (rv == -1)
+    if (rv == -1 && (errcode != EAGAIN || errcode != EWOULDBLOCK))
     {
         log << logger::ERROR << "receiv error occured!! error: " << strerror(errcode);
+        return 0;
+    }
+    else if (rv ==-1)
+    {
         return 0;
     }
     return rv;

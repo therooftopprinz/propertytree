@@ -83,7 +83,7 @@ inline std::string fieldToString(T& data)
     std::stringstream retVal;
     if (1 == sizeof(T))
     {
-        retVal << std::setfill ('0') << std::setw(2) << std::hex << *reinterpret_cast<uint8_t*>(&data);
+        retVal << std::setfill ('0') << std::setw(2) << std::hex << uint16_t(*reinterpret_cast<uint8_t*>(&data));
     }
     else if (2 == sizeof(T))
     {

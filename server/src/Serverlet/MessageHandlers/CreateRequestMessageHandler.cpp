@@ -37,8 +37,7 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeader& header, Buffer
     protocol::CreateRequest request;
     request.unpackFrom(message);
 
-    log << logger::DEBUG << "value sz: " << (request.data).size();
-    log << logger::DEBUG << "path: " << request.path;
+    log << logger::DEBUG << "CreateRequest: " << request.toString();
     core::NodePtr parentNode;
     bool created = true;
     protocol::Uuid id = 0;
@@ -110,10 +109,7 @@ void CreateRequestMessageHandler::handle(protocol::MessageHeader& header, Buffer
         notifier.notifyCreation(id, static_cast<protocol::PropertyType>(request.type), request.path);
     }
 
-    log << logger::DEBUG << "is created: " << created;  
-
     outgoing->sendToClient(header.transactionId, protocol::MessageType::CreateResponse, response);
-    log << logger::DEBUG << "response size: " << response.size()+sizeof(protocol::MessageHeader);
 }
 
 } // namespace server

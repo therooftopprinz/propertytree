@@ -17,7 +17,7 @@ void HandleRpcRequestMessageHandler::handle(protocol::MessageHeader& header, Buf
 
     protocol::HandleRpcRequest request;
     request.unpackFrom(message);
-
+    log << logger::DEBUG << "HandleRpcRequest: " << request.toString();
     protocol::HandleRpcResponse response;
 
     response.callerId = request.callerId;

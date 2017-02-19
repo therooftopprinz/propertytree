@@ -16,7 +16,7 @@ void MetaUpdateNotificationMessageHandler::handle(protocol::MessageHeader&, Buff
 
     protocol::MetaUpdateNotification notif;
     notif.unpackFrom(message);
-
+    log << logger::DEBUG << "MetaUpdateNotification: " << notif.toString();
     // Handle creates
     for (auto& i : notif.creations.get())
     {

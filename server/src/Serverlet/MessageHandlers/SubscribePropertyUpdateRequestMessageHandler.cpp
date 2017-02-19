@@ -39,6 +39,7 @@ void SubscribePropertyUpdateRequestMessageHandler::handle(protocol::MessageHeade
 
     protocol::SubscribePropertyUpdateRequest request;
     request.unpackFrom(message);
+    log << logger::DEBUG << "SubscribePropertyUpdateRequest: " << request.toString();
 
     protocol::SubscribePropertyUpdateResponse response;
     response.response = protocol::SubscribePropertyUpdateResponse::Response::OK;

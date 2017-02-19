@@ -108,7 +108,7 @@ void PTreeOutgoing::sendToClient(uint32_t tid, protocol::MessageType mtype, prot
 
     Buffer header = createHeader(mtype, msg.size(), tid);
     endpoint->send(header.data(), header.size());
-
+    log << logger::DEBUG << "sendToClient: " << msg.toString();
     Buffer responseMessageBuffer = msg.getPacked();
     endpoint->send(responseMessageBuffer.data(), responseMessageBuffer.size());
 }

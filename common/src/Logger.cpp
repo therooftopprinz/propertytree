@@ -64,7 +64,7 @@ void LoggerServer::logProcessor()
             std::cout << std::dec << us.count()-timeBase << "us ";
             
             std::cout << color::Modifier(static_cast<color::Code>((l.threadId&0x0F)+30));
-            std::cout << "t" << std::dec << ((l.threadId&0xF)+30);
+            std::cout << "t" << std::dec << (l.threadId&0x0FFF);
             std::cout << def;
             std::cout << " ";
 

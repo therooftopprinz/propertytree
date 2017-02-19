@@ -100,24 +100,24 @@ void ClientIncoming::handleIncoming()
         {
         case EIncomingState::EMPTY:
         case EIncomingState::WAIT_HEAD:
-            log << logger::DEBUG << "receiving: " << receiveSize << " for " << remainingSize;
             incomingState = EIncomingState::WAIT_HEAD;
+            log << logger::DEBUG << "STATE: WAIT_HEAD";
             remainingSize -= receiveSize;
             cursor += receiveSize;
             if (remainingSize == 0)
             {
-                log << logger::DEBUG << "HEADER RECEIVED!! content size: " << header.size;
                 if (header.size >= uint32_t(1024*1024))
                 {
                     log << logger::ERROR << "INVALID CONTENT SIZE!!";
                     incomingState = EIncomingState::EMPTY;
+                    log << logger::DEBUG << "STATE: EMPTY";
                     cursor = (uint8_t*)&header;
                     size = sizeof(protocol::MessageHeader);
                     remainingSize = size;
                     continue;
                 }
                 incomingState = EIncomingState::WAIT_BODY;
-                log << logger::DEBUG << "allocating=" << header.size << "bytes";
+                log << logger::DEBUG << "STATE: WAIT_BODY";
                 data.resize(header.size);
                 cursor = data.data();
                 size = header.size - sizeof(protocol::MessageHeader);
@@ -129,9 +129,9 @@ void ClientIncoming::handleIncoming()
             cursor += receiveSize;
             if (remainingSize == 0)
             {
-                log << logger::DEBUG << "handleIncoming: Message complete.";
                 processMessage(header, data);
                 incomingState = EIncomingState::EMPTY;
+                log << logger::DEBUG << "STATE: EMPTY";
                 cursor = (uint8_t*)&header;
                 size = sizeof(protocol::MessageHeader);
                 remainingSize = size;

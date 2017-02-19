@@ -66,6 +66,7 @@ struct Message
     virtual ~Message() {}
     virtual std::vector<uint8_t> getPacked() = 0;
     virtual bool unpackFrom(std::vector<uint8_t>& message) = 0;
+    virtual std::string toString() = 0;
     virtual uint32_t size() = 0;
 };
 
@@ -98,7 +99,7 @@ struct SigninRequest: public Message
         return featureFlag & uint64_t(1) << (uint8_t)flag;
     }
 
-    MESSAGE_FIELDS(version, refreshRate, featureFlag);
+    MESSAGE_FIELDS(version,refreshRate,featureFlag);
 };
 
 struct SigninResponse: public Message
@@ -112,7 +113,7 @@ struct CreateRequest: public Message
     PropertyType type;
     std::vector<uint8_t> data;
     std::string path;
-    MESSAGE_FIELDS(type, data, path);
+    MESSAGE_FIELDS(type,data,path);
 };
 
 struct CreateResponse: public Message
@@ -135,7 +136,7 @@ struct MetaCreate : public BlockBase
     Uuid uuid;
     PropertyType propertyType;
     std::string path;
-    MESSAGE_FIELDS(uuid, propertyType, path);
+    MESSAGE_FIELDS(uuid,propertyType,path);
 };
 
 struct MetaDelete : public BlockBase
@@ -155,7 +156,7 @@ struct MetaUpdateNotification: public Message
 {
     BlockArray<MetaCreate> creations;
     BlockArray<MetaDelete> deletions;
-    MESSAGE_FIELDS(BLOCK creations, BLOCK deletions);
+    MESSAGE_FIELDS(BLOCK creations,BLOCK deletions);
 };
 
 struct DeleteRequest: public Message
@@ -175,7 +176,7 @@ struct SetValueIndication: public Message
 {
     Uuid uuid;
     std::vector<uint8_t> data;
-    MESSAGE_FIELDS(uuid, data);
+    MESSAGE_FIELDS(uuid,data);
 };
 
 struct SubscribePropertyUpdateRequest: public Message
@@ -198,7 +199,7 @@ struct PropertyUpdateNotificationEntry: public Message
         uuid(uuid), data(buffer) {}
     Uuid uuid;
     std::vector<uint8_t> data;
-    MESSAGE_FIELDS(uuid, data);
+    MESSAGE_FIELDS(uuid,data);
 };
 
 struct PropertyUpdateNotification: public Message
@@ -237,7 +238,7 @@ struct RpcRequest: public Message
 {
     Uuid uuid;
     std::vector<uint8_t> parameter;
-    MESSAGE_FIELDS(uuid, parameter);
+    MESSAGE_FIELDS(uuid,parameter);
 };
 
 struct RpcResponse: public Message
@@ -252,7 +253,7 @@ struct HandleRpcRequest: public Message
     uint32_t callerTransactionId;
     Uuid uuid;
     std::vector<uint8_t> parameter;
-    MESSAGE_FIELDS(callerId, callerTransactionId, uuid, parameter);
+    MESSAGE_FIELDS(callerId,callerTransactionId,uuid,parameter);
 };
 
 struct HandleRpcResponse: public Message
@@ -260,7 +261,7 @@ struct HandleRpcResponse: public Message
     uint64_t callerId;
     uint32_t callerTransactionId;
     std::vector<uint8_t> returnValue;
-    MESSAGE_FIELDS(callerId, callerTransactionId, returnValue);
+    MESSAGE_FIELDS(callerId,callerTransactionId,returnValue);
 };
 
 

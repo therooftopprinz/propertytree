@@ -15,6 +15,7 @@ void PropertyUpdateNotificationMessageHandler::handle(protocol::MessageHeader&, 
 {
     protocol::PropertyUpdateNotification notif;
     notif.unpackFrom(message);
+    log << logger::DEBUG << "PropertyUpdateNotification: " << notif.toString();
 
     for (auto& i : notif.propertyUpdateNotifications.get())
     {

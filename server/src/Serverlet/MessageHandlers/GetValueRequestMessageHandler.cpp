@@ -20,10 +20,10 @@ void GetValueRequestMessageHandler::handle(protocol::MessageHeader& header, Buff
 
     protocol::GetValueRequest request;
     request.unpackFrom(message);
+    log << logger::DEBUG << "GetValueRequest: " << request.toString();
 
     protocol::GetValueResponse response;
 
-    log << logger::DEBUG << "Requesting value for: " << request.uuid;
     try
     {
         auto value = ptree.getPropertyByUuid<core::Value>(request.uuid);

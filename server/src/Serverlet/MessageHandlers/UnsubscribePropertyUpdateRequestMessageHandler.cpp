@@ -21,6 +21,7 @@ void UnsubscribePropertyUpdateRequestMessageHandler::handle(protocol::MessageHea
 
     protocol::UnsubscribePropertyUpdateRequest request;
     request.unpackFrom(message);
+    log << logger::DEBUG << "UnsubscribePropertyUpdateRequest: " << request.toString();
 
     protocol::UnsubscribePropertyUpdateResponse response;
     response.response = protocol::UnsubscribePropertyUpdateResponse::Response::OK;

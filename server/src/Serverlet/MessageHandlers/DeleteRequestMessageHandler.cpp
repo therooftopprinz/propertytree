@@ -19,7 +19,7 @@ inline void DeleteRequestMessageHandler::handle(protocol::MessageHeader& header,
     protocol::DeleteRequest request;
     request.unpackFrom(message);
 
-    log << logger::DEBUG << "uuid: " << request.uuid;
+    log << logger::DEBUG << "DeleteRequest: " << request.toString();
     bool deleted = true;
 
     protocol::DeleteResponse response;
@@ -54,7 +54,7 @@ inline void DeleteRequestMessageHandler::handle(protocol::MessageHeader& header,
     {
 
     }
-    log << logger::DEBUG << "is deleted: " << deleted;
+
     outgoing.sendToClient(header.transactionId, protocol::MessageType::DeleteResponse, response);
 }
 

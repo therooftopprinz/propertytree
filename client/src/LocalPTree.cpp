@@ -75,6 +75,7 @@ ValueContainerPtr LocalPTree::createValue(std::string path, Buffer& value)
     {
         protocol::CreateResponse response;
         response.unpackFrom(created.second->getBuffer());
+        log << logger::DEBUG << "CreateResponse: " << response.toString();
         if ( response.response  == protocol::CreateResponse::Response::OK)
         {
             log << logger::DEBUG << "VALUE CREATED WITH UUID " << response.uuid;
@@ -103,6 +104,7 @@ NodeContainerPtr LocalPTree::createNode(std::string path)
     {
         protocol::CreateResponse response;
         response.unpackFrom(created.second->getBuffer());
+        log << logger::DEBUG << "CreateResponse: " << response.toString();
         if ( response.response  == protocol::CreateResponse::Response::OK)
         {
             log << logger::DEBUG << "NODE CREATED WITH UUID " << response.uuid;
@@ -132,6 +134,7 @@ RpcContainerPtr LocalPTree::createRpc(std::string path, std::function<Buffer(Buf
     {
         protocol::CreateResponse response;
         response.unpackFrom(created.second->getBuffer());
+        log << logger::DEBUG << "CreateResponse: " << response.toString();
         if ( response.response  == protocol::CreateResponse::Response::OK)
         {
             log << logger::DEBUG << "RPC CREATED WITH UUID " << response.uuid;
@@ -159,6 +162,7 @@ void LocalPTree::fillValue(ValueContainerPtr& value)
     {
         protocol::GetValueResponse response;
         response.unpackFrom(getValue.second->getBuffer());
+        log << logger::DEBUG << "CreateResponse: " << response.toString();
         if (response.data.size())
         {
             value->updateValue(std::move(response.data), false);
@@ -183,7 +187,7 @@ IPropertyPtr LocalPTree::fetchMeta(std::string& path)
     {
         protocol::GetSpecificMetaResponse response;
         response.unpackFrom(meta.second->getBuffer());
-        log << logger::DEBUG << "UUID FOR " << path << " IS " << (uint32_t)response.meta.uuid;
+        log << logger::DEBUG << "GetSpecificMetaResponse: " << response.toString();
         if (response.meta.uuid != static_cast<protocol::Uuid>(-1))
         {
             switch (response.meta.propertyType)
@@ -261,6 +265,7 @@ bool LocalPTree::deleteProperty(IPropertyPtr& property)
     {
         protocol::DeleteResponse response;
         response.unpackFrom(created.second->getBuffer());
+        log << logger::DEBUG << "DeleteResponse: " << response.toString();
         if ( response.response  == protocol::DeleteResponse::Response::OK)
         {
             log << logger::DEBUG << "PROPERTY WITH UUID " << property->getUuid() << " DELETED.";
@@ -303,6 +308,7 @@ bool LocalPTree::enableAutoUpdate(protocol::Uuid uuid)
     {
         protocol::SubscribePropertyUpdateResponse response;
         response.unpackFrom(subscribe.second->getBuffer());
+        log << logger::DEBUG << "SubscribePropertyUpdateResponse: " << response.toString();
         if (response.response  == protocol::SubscribePropertyUpdateResponse::Response::OK)
         {
             log << logger::DEBUG << "SUBSCRIBED!! " << uuid;
@@ -327,6 +333,7 @@ bool LocalPTree::disableAutoUpdate(protocol::Uuid uuid)
     {
         protocol::UnsubscribePropertyUpdateResponse response;
         response.unpackFrom(unsubscribe.second->getBuffer());
+        log << logger::DEBUG << "UnsubscribePropertyUpdateResponse: " << response.toString();
         if (response.response  == protocol::UnsubscribePropertyUpdateResponse::Response::OK)
         {
             log << logger::DEBUG << "UNSUBSCRIBED!! " << uuid;
@@ -405,6 +412,7 @@ Buffer LocalPTree::rpcRequest(protocol::Uuid uuid, Buffer&& parameter)
     {
         protocol::RpcResponse response;
         response.unpackFrom(rpcRequest.second->getBuffer());
+        log << logger::DEBUG << "RpcResponse: " << response.toString();
         return response.returnValue;
     }
     else
