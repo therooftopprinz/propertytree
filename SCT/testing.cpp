@@ -152,7 +152,7 @@ public:
                     log << logger::DEBUG << "TOFILTER:  Readying";
                     if (rpc)
                     {
-                        rpc->call(0);
+                        rpc->call(0); // TODO: Can't do this one while in handler, receiving is blocked! deadlock
                         log << logger::DEBUG << "TOFILTER: DONE";
                     }
                     else
