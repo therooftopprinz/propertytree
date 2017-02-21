@@ -63,7 +63,7 @@ bool TransactionsCV::waitTransactionCV(uint32_t transactionId)
     {
         std::unique_lock<std::mutex> guard(tcv->mutex);
         using namespace std::chrono_literals;
-        tcv->cv.wait_for(guard, 5s,[&tcv](){return bool(tcv->condition);});
+        tcv->cv.wait_for(guard, 2s,[&tcv](){return bool(tcv->condition);});
     }
 
     {

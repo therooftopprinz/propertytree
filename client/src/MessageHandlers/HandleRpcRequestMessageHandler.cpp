@@ -13,21 +13,26 @@ HandleRpcRequestMessageHandler::
 
 void HandleRpcRequestMessageHandler::handle(protocol::MessageHeader& header, Buffer& message)
 {
-    logger::Logger log("HandleRpcRequestMessageHandler");
-
-    protocol::HandleRpcRequest request;
-    request.unpackFrom(message);
-    log << logger::DEBUG << "HandleRpcRequest: " << request.toString();
-    protocol::HandleRpcResponse response;
-
-    response.callerId = request.callerId;
-    response.callerTransactionId = request.callerTransactionId;
-    response.returnValue = ptree.handleIncomingRpc(request.uuid, request.parameter);
-
-    if (response.returnValue.size())
+    auto& outgoing = this->outgoing;
+    auto& ptree = this->ptree;
+    std::thread([&ptree, &outgoing, &message, &header]()
     {
-        outgoing.handleRpcResponse(header.transactionId, response);
-    }
+        logger::Logger log("HandleRpcRequestMessageHandler");
+
+        protocol::HandleRpcRequest request;
+        request.unpackFrom(message);
+        log << logger::DEBUG << "HandleRpcRequest: " << request.toString();
+        protocol::HandleRpcResponse response;
+
+        response.callerId = request.callerId;
+        response.callerTransactionId = request.callerTransactionId;
+        response.returnValue = ptree.handleIncomingRpc(request.uuid, request.parameter);
+
+        if (response.returnValue.size())
+        {
+            outgoing.handleRpcResponse(header.transactionId, response);
+        }
+    }).detach();
 }
 
 } // namespace client
