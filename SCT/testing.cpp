@@ -1,3 +1,4 @@
+#include <condition_variable>
 #include <functional>
 #include <algorithm>
 #include <string>
@@ -42,13 +43,27 @@ public:
             std::string valuePath = "/tester_" + std::to_string(targetTester)+"/test_value_"+
                 std::to_string(mRpcIndex);
             auto rpc = mLpt->getRpc(targetRpcPath);
-            auto val = mLpt->getValue(valuePath);
-            signed &value = val->get<signed>();
+
             signed &paramValue = *(signed*)(bval.data());
-            val->setValue(paramValue);
-            log << logger::DEBUG << "TOFILTER: HANDLER OF /tester_"<< mTesterIndex << "/test_rpc_" << mRpcIndex <<
-                "SENDING RPC TO " << targetRpcPath << " with param: " << paramValue;
-            rpc->call(value);
+
+            std::thread([this, valuePath, paramValue, targetRpcPath](){
+                std::string masterReadyPath = "/tester_0/ready";
+                auto rpc = mLpt->getRpc(masterReadyPath);
+                auto vp = valuePath;
+                auto val = mLpt->getValue(vp);
+                val->setValue(paramValue);
+                signed &value = val->get<signed>();
+                if (rpc)
+                {
+                    log << logger::DEBUG << "TESTFLOW: HANDLER OF /tester_"<< mTesterIndex << "/test_rpc_" << mRpcIndex <<
+                    "SENDING RPC TO " << targetRpcPath << " with param: " << paramValue;
+                    rpc->call(value);
+                }
+                else
+                {
+                    log << logger::ERROR << "TESTFLOW:  RPC NULL";
+                }
+            }).detach();
         }
         else
         {
@@ -57,7 +72,7 @@ public:
             signed &paramValue = *(signed*)(bval.data());
             auto val = mLpt->getValue(valuePath);
             val->setValue(paramValue);
-            log << logger::DEBUG << "TOFILTER: HANDLER OF /tester_"<< mTesterIndex << "/test_rpc_" << mRpcIndex <<
+            log << logger::DEBUG << "TESTFLOW: HANDLER OF /tester_"<< mTesterIndex << "/test_rpc_" << mRpcIndex <<
                 " FINAL VALUE IS: " << paramValue;
         }
 
@@ -66,7 +81,7 @@ public:
 
     void voidHandler(Buffer&)
     {
-        log << logger::ERROR << "TOFILTER: ERROR: VOID HANDLER CALLED!";
+        log << logger::ERROR << "TESTFLOW: ERROR: VOID HANDLER CALLED!";
     }
 private:
     unsigned mTesterIndex;
@@ -86,6 +101,7 @@ public:
         mPtreeClient(ptreeClient),
         mLpt(mPtreeClient->getPTree()),
         readyTesters(totalTesters-1),
+        allIsReady(false),
         log("RcpHoppingTest")
     {
         log << logger::DEBUG << "index: " << mTesterIndex << " in: " << totalTesters;
@@ -99,13 +115,15 @@ public:
         mLpt->createNode(testerNodePath);
         // create test_values and test_rpcs
         using std::placeholders::_1;
+        log << logger::DEBUG << "TESTFLOW: SETTING UP TESTER " << mTesterIndex;
         for (unsigned i=0; i<mTotalTesters; i++)
         {
-            auto testerValuePath = testerNodePath + "/tester_values_" + std::to_string(i);
+            auto testerValuePath = testerNodePath + "/test_value_" + std::to_string(i);
             auto testerRpcPath = testerNodePath + "/tester_rpc_" + std::to_string(i);
             auto dval = utils::buildBufferedValue<signed>(-1);
             auto cval = mLpt->createValue(testerValuePath, dval);
-
+            log << logger::DEBUG << "TESTFLOW: CREATING: " << testerValuePath;
+            log << logger::DEBUG << "TESTFLOW: CREATING: " << testerRpcPath;
             std::shared_ptr<TestRpcForwarder> forwarder = std::make_shared<TestRpcForwarder>
                 (mTesterIndex, mTesterIndex, i, mLpt, cval);
             auto fn1 = std::bind(&TestRpcForwarder::handler, *forwarder, _1);
@@ -118,17 +136,26 @@ public:
         auto testerRpcPath = testerNodePath + "/ready";
         auto fn1 = std::bind(&RcpHoppingTest::readyHandler, this, _1);
         auto fn2 = std::bind(&RcpHoppingTest::readyVoidHandler, this, _1);
+        log << logger::DEBUG << "TESTFLOW: CREATING: " << testerRpcPath;
         mLpt->createRpc(testerRpcPath, fn1, fn2);
 
         if (mTesterIndex != 0)
         {
-            log << logger::DEBUG << "TOFILTER: READYING /tester_" << mTesterIndex;
+            log << logger::DEBUG << "TESTFLOW: READYING /tester_" << mTesterIndex;
             std::string readyPath = "/tester_0/ready";
             auto rpc = mLpt->getRpc(readyPath);
             rpc->call(mTesterIndex);
         }
 
-        for (;;);
+        {
+            std::unique_lock<std::mutex> lk(allIsReadyMutex);
+            allIsReadyCv.wait(lk, [this]{return this->allIsReady;});
+        }
+        // TODO: Wait when everyone is ready
+        log << logger::DEBUG << "TESTFLOW: EVERONE IS READY FOR RPC TEST!!" << mTesterIndex;
+
+        using namespace std::chrono_literals;
+        for (;;)std::this_thread::sleep_for(10s);
     }
 
     Buffer readyHandler(Buffer& bval)
@@ -136,38 +163,91 @@ public:
         if (mTesterIndex == 0)
         {
             unsigned &paramValue = *(unsigned*)(bval.data());
-            log << logger::DEBUG << "TOFILTER: /tester_" << paramValue << " is ready!!" ;
+            log << logger::DEBUG << "TESTFLOW: /tester_" << paramValue << " is ready!!" ;
             readyTesters[paramValue-1]++;
              bool allOne = std::all_of(readyTesters.begin(), readyTesters.end(), [](const int i){return i==1;});
+             bool allTwo = std::all_of(readyTesters.begin(), readyTesters.end(), [](const int i){return i==2;});
              if (allOne)
              {
-                log << logger::DEBUG << "TOFILTER:  Everyone is ready is ready!!" ;
+                log << logger::DEBUG << "TESTFLOW:  Everyone is ready for subscription!!" ;
                 for (unsigned i=1; i<mTotalTesters; i++)
                 {
                     std::string testerNodePath = "/tester_";
                     testerNodePath += std::to_string(i);
                     std::string readyPath = testerNodePath+"/ready";
-                    log << logger::DEBUG << "TOFILTER:  Master to /tester_" << i << "/ready";
-                    auto rpc = mLpt->getRpc(readyPath);
-                    log << logger::DEBUG << "TOFILTER:  Readying";
-                    if (rpc)
-                    {
-                        rpc->call(0); // TODO: Can't do this one while in handler, receiving is blocked! deadlock
-                        log << logger::DEBUG << "TOFILTER: DONE";
-                    }
-                    else
-                    {
-                        log << logger::ERROR << "TOFILTER:  RPC NULL";
-                    }
+                    log << logger::DEBUG << "TESTFLOW:  Master to /tester_" << i << "/ready";
+
+                    std::thread([this, readyPath](){
+                        std::string rp = readyPath;
+                        auto rpc = mLpt->getRpc(rp);
+                        if (rpc)
+                        {
+                            rpc->call(0);
+                        }
+                        else
+                        {
+                            log << logger::ERROR << "TESTFLOW:  RPC NULL";
+                        }
+                    }).detach();
+                    log << logger::DEBUG << "TESTFLOW: DONE";
                 }
              }
+             else if (allTwo)
+             {
+                {
+                    std::lock_guard<std::mutex> guard(allIsReadyMutex);
+                    allIsReady = true;
+                }
+                allIsReadyCv.notify_one();
+             }
+        }
+        else
+        {
+            // subscribe all
+            log << logger::DEBUG << "TESTFLOW: Subscribing to every test_value." ;
+            for (unsigned i=0; i<mTotalTesters; i++)
+            {
+                if (i!=mTesterIndex)
+                {
+                    std::string testerNodePath = "/tester_";
+                    testerNodePath += std::to_string(i);
+                    for (unsigned j=0; j<mTotalTesters; j++)
+                    {
+                        auto valuePath = testerNodePath + "/test_value_" + std::to_string(j);
+                        log << logger::DEBUG << "TESTFLOW: Subscribing to " << valuePath;
+                        auto val = mLpt->getValue(valuePath);
+                        if (val)
+                        {
+                            val->enableAutoUpdate();
+                        }
+                        else 
+                        {
+                            log << logger::DEBUG << "TESTFLOW: Vaue not found!!";
+                        }
+                    }
+                }
+            }
+            log << logger::DEBUG << "TESTFLOW: TESTER HAS SUBSCRIBED INFORMING MASTER.";
+
+            std::thread([this](){
+                std::string masterReadyPath = "/tester_0/ready";
+                auto rpc = mLpt->getRpc(masterReadyPath);
+                if (rpc)
+                {
+                    rpc->call(mTesterIndex);
+                }
+                else
+                {
+                    log << logger::ERROR << "TESTFLOW:  RPC NULL";
+                }
+            }).detach();
         }
         return utils::buildBufferedValue<signed>(0);
     }
 
     void readyVoidHandler(Buffer&)
     {
-        log << logger::ERROR << "TOFILTER: ERROR: VOID HANDLER CALLED!";
+        log << logger::ERROR << "TESTFLOW: ERROR: VOID HANDLER CALLED!";
     }
 
 private:
@@ -176,6 +256,9 @@ private:
     std::shared_ptr<client::PTreeClient> mPtreeClient;
     std::shared_ptr<client::LocalPTree> mLpt;
     std::vector<int> readyTesters;
+    std::condition_variable allIsReadyCv;
+    bool allIsReady;
+    std::mutex allIsReadyMutex;
     logger::Logger log;
 };
 

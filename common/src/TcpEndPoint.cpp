@@ -7,7 +7,7 @@ namespace common
 
 
 TcpEndPoint::TcpEndPoint(int sockfd) :
-    sockfd(sockfd), flags(0), log("TcpEndPoint")
+    sockfd(sockfd), flags(MSG_NOSIGNAL), log("TcpEndPoint")
 {
 }
 

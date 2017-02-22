@@ -71,7 +71,6 @@ void ClientIncoming::handleIncoming()
 
     while (!killHandleIncoming)
     {
-        log << logger::ERROR << "STATE:" << static_cast<uint32_t>(incomingState);
         size_t receiveSize = endpoint.receive(cursor, remainingSize);
 
         if (incomingState == EIncomingState::EMPTY && receiveSize == 0)
