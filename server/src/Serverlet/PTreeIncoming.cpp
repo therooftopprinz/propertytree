@@ -36,8 +36,10 @@ void PTreeIncoming::init(IPTreeOutgoingWkPtr o)
 
 void PTreeIncoming::processMessage(protocol::MessageHeader& header, Buffer& message)
 {
-    log << logger::DEBUG << "processMessage()";
     auto type = header.type;
+    log << logger::DEBUG << "processMessage(" << uint32_t(type) << ", "
+        << header.size << ", " << header.transactionId<< "): ";
+    utils::printRaw(message.data(), message.size());
     auto outgoingShared = outgoing.lock();
     MessageHandlerFactory::get(clientServerId, type, config, outgoingShared, ptree, notifier)->handle(header, message);
 }

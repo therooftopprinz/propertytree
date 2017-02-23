@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <client/src/LocalPTree.hpp>
+#include <common/src/Utils.hpp>
 
 namespace ptree
 {

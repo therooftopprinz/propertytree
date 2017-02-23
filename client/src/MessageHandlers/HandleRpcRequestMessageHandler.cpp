@@ -11,11 +11,15 @@ HandleRpcRequestMessageHandler::
         transactionsCV(transactionsCV), ptree(ptree), outgoing(outgoing)
 {}
 
-void HandleRpcRequestMessageHandler::handle(protocol::MessageHeader& header, Buffer& message)
+
+struct HandleRpcRequestMessageHandlerThread
 {
-    auto& outgoing = this->outgoing;
-    auto& ptree = this->ptree;
-    std::thread([&ptree, &outgoing, &message, &header]()
+    HandleRpcRequestMessageHandlerThread(protocol::MessageHeader& header, Buffer&& message,
+        LocalPTree& ptree, IClientOutgoing& outgoing):
+            header(header), message(std::move(message)), ptree(ptree), outgoing(outgoing)
+    {}
+
+    void handle()
     {
         logger::Logger log("HandleRpcRequestMessageHandler");
 
@@ -32,7 +36,22 @@ void HandleRpcRequestMessageHandler::handle(protocol::MessageHeader& header, Buf
         {
             outgoing.handleRpcResponse(header.transactionId, response);
         }
-    }).detach();
+    }
+    protocol::MessageHeader header;
+    Buffer message;
+    LocalPTree& ptree;
+    IClientOutgoing& outgoing;
+};
+
+void HandleRpcRequestMessageHandler::handle(protocol::MessageHeader& header, Buffer& message)
+{
+    auto& outgoing = this->outgoing;
+    auto& ptree = this->ptree;
+
+    std::thread(std::bind(&HandleRpcRequestMessageHandlerThread::handle,
+        std::make_shared<HandleRpcRequestMessageHandlerThread>(header, std::move(message),ptree, outgoing))
+    ).detach();
+
 }
 
 } // namespace client

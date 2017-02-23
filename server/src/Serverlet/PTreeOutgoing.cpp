@@ -79,6 +79,7 @@ void PTreeOutgoing::notifyRpcRequest(protocol::Uuid uuid, uint64_t clientServerI
     request.callerTransactionId = transactionId;
     request.uuid = uuid;
     request.parameter = std::move(parameter);
+    log << logger::DEBUG << "notifyRpcRequest";
     sendToClient(static_cast<uint32_t>(-1), protocol::MessageType::HandleRpcRequest, request);
 }
 

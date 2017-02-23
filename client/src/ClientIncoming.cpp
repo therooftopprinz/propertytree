@@ -1,4 +1,5 @@
 #include "ClientIncoming.hpp"
+#include <common/src/Utils.hpp>
 
 namespace ptree
 {
@@ -38,7 +39,9 @@ ClientIncoming::~ClientIncoming()
 
 void ClientIncoming::processMessage(protocol::MessageHeader& header, Buffer& message)
 {
-    log << logger::DEBUG << "processMessage()";
+    log << logger::DEBUG << "processMessage(" << uint32_t(header.type) << ", "
+    << header.size << ", " << header.transactionId<< "): ";
+    utils::printRaw(message.data(), message.size());
 
     auto h = MessageHandlerFactory::get(header.type, transactionsCV, ptree, outgoing);
     if (h)

@@ -21,7 +21,7 @@ void SetValueIndicationMessageHandler::handle(protocol::MessageHeader&, Buffer& 
     request.unpackFrom(message);
 
     log << logger::DEBUG << "SetValueIndication: " << request.toString();
-    utils::printRaw(request.data.data(), request.data.size());
+
     try
     {
         core::ValuePtr value = ptree.getPropertyByUuid<core::Value>(request.uuid);

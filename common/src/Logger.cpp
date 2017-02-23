@@ -61,10 +61,10 @@ void LoggerServer::logProcessor()
                 (l.time.time_since_epoch());
 
             std::cout << def;
-            std::cout << std::dec << us.count()-timeBase << "us ";
+            std::cout << std::dec << us.count()%(86164000000ul) << "us ";
             
             std::cout << color::Modifier(static_cast<color::Code>((l.threadId&0x0F)+30));
-            std::cout << "t" << std::dec << (l.threadId&0x0FFF);
+            std::cout << "t" << std::dec << (l.threadId&0xFFF);
             std::cout << def;
             std::cout << " ";
 
