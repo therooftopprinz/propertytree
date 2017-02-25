@@ -6,6 +6,8 @@
 #include <exception>
 #include <iostream>
 #include <iomanip>
+#include <thread>
+#include <common/src/Logger.hpp>
 
 namespace ptree
 {
@@ -60,12 +62,19 @@ struct BlockBase
 
 inline void codecError(std::string fn, std::string file, int ln)
 {
+    logger::Logger log("codecError");
     std::string err;
     err += "Cannot translate in ";
     err += fn;
     err += "\nfile: ";
     err += file;
     err += ":" + std::to_string(ln);
+    using namespace std::chrono_literals;
+
+    uint64_t threadId = std::hash<std::thread::id>()(std::this_thread::get_id());
+
+    log << logger::DEBUG << "BAD DATA ERROR IN THREAD:" << (threadId&0xFFF);
+    logger::loggerServer.waitEmpty();
     throw BadData(err);
 }
 

@@ -49,7 +49,13 @@ private:
     UuidActionTypeAndPathMap metaUpdateNotification;
     std::mutex metaUpdateNotificationMutex;
 
-    std::list<core::ValuePtr> valueUpdateNotification;
+    struct ValueUpdateNotificationEntry
+    {
+        protocol::Uuid uuid;
+        Buffer data;
+    };
+
+    std::list<ValueUpdateNotificationEntry> valueUpdateNotification; // there's a bug here: when value is updated before the notification is sent, the data will be invalid!
     std::mutex valueUpdateNotificationMutex;
 
     ClientServerConfig& config;

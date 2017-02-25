@@ -29,7 +29,7 @@ public:
             unsigned targetTester = mTesterIndex+1;
             unsigned targetRpc = mRpcIndex;
 
-            if (targetTester >= mTotalTesters)
+            if (targetTester >= (mTotalTesters*8))
             {
                 targetTester = 0;
             }
@@ -38,7 +38,7 @@ public:
                 targetRpc++;
             }
 
-            if (targetRpc < mTotalTesters)
+            if (targetRpc < (mTotalTesters*8))
             {
                 std::string targetRpcPath = "/tester_" + std::to_string(targetTester)+"/test_rpc_"+
                     std::to_string(targetRpc);
@@ -112,7 +112,7 @@ public:
         // create test_values and test_rpcs
         using std::placeholders::_1;
         log << logger::DEBUG << "TESTFLOW: SETTING UP TESTER " << mTesterIndex;
-        for (unsigned i=0; i<mTotalTesters; i++)
+        for (unsigned i=0; i<(mTotalTesters*8); i++)
         {
             auto testerValuePath = testerNodePath + "/test_value_" + std::to_string(i);
             auto testerRpcPath = testerNodePath + "/test_rpc_" + std::to_string(i);
@@ -152,7 +152,7 @@ public:
 
         std::string triggerRpcPath = "/tester_1/test_rpc_0";
         auto rpc = mLpt->getRpc(triggerRpcPath);
-        for (signed i=0; i<=200;i++)
+        for (signed i=0; i<=10000;i++)
         {
             log << logger::WARNING << "TESTFLOW:  FILL I=" << i;
             if (rpc)

@@ -69,7 +69,10 @@ void PTreeOutgoing::notifyDeletion(uint32_t uuid)
 void PTreeOutgoing::notifyValueUpdate(core::ValuePtr value)
 {
     std::lock_guard<std::mutex> guard(valueUpdateNotificationMutex);
-    valueUpdateNotification.push_back(value);
+    ValueUpdateNotificationEntry toPush;
+    toPush.data = value->getValue();
+    toPush.uuid = value->getUuid();
+    valueUpdateNotification.push_back(toPush);
 }
 
 void PTreeOutgoing::notifyRpcRequest(protocol::Uuid uuid, uint64_t clientServerId, uint32_t transactionId, Buffer&& parameter)
@@ -157,10 +160,10 @@ void PTreeOutgoing::handleOutgoing()
                 log << logger::DEBUG << "Property Update Notifaction available!";
 
                 protocol::PropertyUpdateNotification propertyUpdateNotifs;
-                for(const auto& i : valueUpdateNotification)
+                for(auto& i : valueUpdateNotification)
                 {
                     propertyUpdateNotifs.propertyUpdateNotifications.get().push_back(
-                        protocol::PropertyUpdateNotificationEntry(i->getUuid(), i->getValue()));
+                        protocol::PropertyUpdateNotificationEntry(i.uuid, std::move(i.data)));
                     /** TODO: Optimize by only using the reference of value since value's lifetime is dependent to 
                         valueUpdateNotification which assures an instance of value.**/
                 }

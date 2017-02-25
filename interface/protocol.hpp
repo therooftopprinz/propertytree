@@ -197,6 +197,8 @@ struct PropertyUpdateNotificationEntry: public Message
     PropertyUpdateNotificationEntry(){}
     PropertyUpdateNotificationEntry(Uuid uuid, Buffer& buffer):
         uuid(uuid), data(buffer) {}
+    PropertyUpdateNotificationEntry(Uuid uuid, Buffer&& buffer):
+        uuid(uuid), data(std::move(buffer)) {}
     Uuid uuid;
     std::vector<uint8_t> data;
     MESSAGE_FIELDS(uuid,data);
