@@ -25,7 +25,7 @@ std::unique_ptr<MessageHandler>
         case protocol::MessageType::SubscribePropertyUpdateResponse:
         case protocol::MessageType::UnsubscribePropertyUpdateResponse:
         case protocol::MessageType::RpcResponse:
-            log << logger::WARNING << "RpcResponse";
+            log << logger::WARNING << "GenericResponseMessageHandler";
             return std::make_unique<GenericResponseMessageHandler>(transactionsCV);
         case protocol::MessageType::PropertyUpdateNotification:
             log << logger::WARNING << "PropertyUpdateNotification";

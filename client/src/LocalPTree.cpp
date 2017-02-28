@@ -87,12 +87,12 @@ ValueContainerPtr LocalPTree::createValue(std::string path, Buffer& value)
         }
         else
         {
-            log << logger::ERROR << "VALUE CREATE REQUEST NOT OK";
+            log << logger::ERROR << "VALUE CREATE REQUEST NOT OK TID: " << created.first;
         }
     }
     else
     {
-        log << logger::ERROR << "VALUE CREATE REQUEST TIMEOUT";
+        log << logger::ERROR << "VALUE CREATE REQUEST TIMEOUT TID: " << created.first;
     }
     return ValueContainerPtr();
 }
@@ -116,12 +116,12 @@ NodeContainerPtr LocalPTree::createNode(std::string path)
         }
         else
         {
-            log << logger::ERROR << "NODE CREATE REQUEST NOT OK";
+            log << logger::ERROR << "NODE CREATE REQUEST NOT OK TID:" << created.first;
         }
     }
     else
     {
-        log << logger::ERROR << "NODE CREATE REQUEST TIMEOUT";
+        log << logger::ERROR << "NODE CREATE REQUEST TIMEOUT TID:" << created.first;
     }
     return NodeContainerPtr();
 }
@@ -146,12 +146,12 @@ RpcContainerPtr LocalPTree::createRpc(std::string path, std::function<Buffer(Buf
         }
         else
         {
-            log << logger::ERROR << "RPC CREATE RPC NOT OK";
+            log << logger::ERROR << "RPC CREATE RPC NOT OK TID: " << created.first;
         }
     }
     else
     {
-        log << logger::ERROR << "RPC CREATE RPC TIMEOUT";
+        log << logger::ERROR << "RPC CREATE RPC TIMEOUT TID: " << created.first;
     }
     return RpcContainerPtr();
 }
@@ -171,7 +171,7 @@ void LocalPTree::fillValue(ValueContainerPtr& value)
     }
     else
     {
-        log << logger::ERROR << "GET VALUE REQUEST TIMEOUT";
+        log << logger::ERROR << "GET VALUE REQUEST TIMEOUT TID: " << getValue.first;
     }
 }
 
@@ -221,12 +221,12 @@ IPropertyPtr LocalPTree::fetchMeta(std::string& path)
         }
         else
         {
-            log << logger::DEBUG << "META FOR: " << path << " IS NOT FOUND!";
+            log << logger::DEBUG << "META FOR: " << path << " IS NOT FOUND! TID: " << meta.first;
         }
     }
     else
     {
-        log << logger::ERROR << "GET SPECIFIC META REQUEST TIMEOUT";
+        log << logger::ERROR << "GET SPECIFIC META REQUEST TIMEOUT TID: " << meta.first;
     }
     return IPropertyPtr();
 }
@@ -275,12 +275,12 @@ bool LocalPTree::deleteProperty(IPropertyPtr& property)
         }
         else
         {
-            log << logger::ERROR << "DELETE NOT OK";
+            log << logger::ERROR << "DELETE NOT OK TID: " << created.first;;
         }
     }
     else
     {
-        log << logger::ERROR << "DELETE TIMEOUT";
+        log << logger::ERROR << "DELETE TIMEOUT TID: " << created.first;;
     }
     return false;
 }
@@ -317,12 +317,12 @@ bool LocalPTree::enableAutoUpdate(protocol::Uuid uuid)
         }
         else
         {
-            log << logger::ERROR << "SUBSCRIBE: PLEASE CHECK PATH IS CORRECT AND A VALUE.";
+            log << logger::ERROR << "SUBSCRIBE: PLEASE CHECK PATH IS CORRECT AND A VALUE. TID: " << subscribe.first;;
         }
     }
     else
     {
-        log << logger::ERROR << "SUBSCRIBE REQUEST TIMEOUT";
+        log << logger::ERROR << "SUBSCRIBE REQUEST TIMEOUT TID: " << subscribe.first;;
     }
     return false;
 }
@@ -342,12 +342,12 @@ bool LocalPTree::disableAutoUpdate(protocol::Uuid uuid)
         }
         else
         {
-            log << logger::ERROR << "UNSUBSCRIBE: PLEASE CHECK UUID IS CORRECT AND A VALUE.";
+            log << logger::ERROR << "UNSUBSCRIBE: PLEASE CHECK UUID IS CORRECT AND A VALUE." << unsubscribe.first;;
         }
     }
     else
     {
-        log << logger::ERROR << "UNSUBSCRIBE REQUEST TIMEOUT";
+        log << logger::ERROR << "UNSUBSCRIBE REQUEST TIMEOUT" << unsubscribe.first;;
     }
     return false;
 }
@@ -418,7 +418,7 @@ Buffer LocalPTree::rpcRequest(protocol::Uuid uuid, Buffer&& parameter)
     }
     else
     {
-        log << logger::ERROR << "RPC REQUEST TIMEOUT";
+        log << logger::ERROR << "RPC REQUEST TIMEOUT TID: " << rpcRequest.first;;
     }
     return Buffer();
 }

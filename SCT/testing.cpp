@@ -29,7 +29,7 @@ public:
             unsigned targetTester = mTesterIndex+1;
             unsigned targetRpc = mRpcIndex;
 
-            if (targetTester >= (mTotalTesters*8))
+            if (targetTester >= mTotalTesters)
             {
                 targetTester = 0;
             }
@@ -87,6 +87,18 @@ private:
     client::ValueContainerPtr& mValue;
     logger::Logger log;
 };
+
+template <typename T>
+void printContainer(T& t)
+{
+    logger::Logger log("printContainer");
+    std::string content;
+    for (auto& i : t)
+    {
+        content += std::to_string(i) + ", ";
+    }
+    log << logger::DEBUG << "container: " << content;
+}
 
 class RcpHoppingTest
 {
@@ -182,6 +194,7 @@ public:
                 readyTesters[paramValue-1]++;
                  bool allOne = std::all_of(readyTesters.begin(), readyTesters.end(), [](const int i){return i==1;});
                  bool allTwo = std::all_of(readyTesters.begin(), readyTesters.end(), [](const int i){return i==2;});
+                 printContainer(readyTesters);
                  if (allOne)
                  {
                     log << logger::DEBUG << "TESTFLOW:  Everyone is ready for subscription!!" ;

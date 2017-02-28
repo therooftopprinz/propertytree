@@ -120,9 +120,9 @@ void ClientIncoming::handleIncoming()
                 }
                 incomingState = EIncomingState::WAIT_BODY;
                 log << logger::DEBUG << "STATE: WAIT_BODY";
-                data.resize(header.size);
-                cursor = data.data();
                 size = header.size - sizeof(protocol::MessageHeader);
+                data.resize(size);
+                cursor = data.data();
                 remainingSize = size;
             }
             break;

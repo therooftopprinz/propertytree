@@ -23,13 +23,14 @@ std::shared_ptr<TransactionCV> TransactionsCV::addTransactionCV(uint32_t transac
 
 void TransactionsCV::notifyTransactionCV(uint32_t transactionId, Buffer& value)
 {
+    log << logger::DEBUG << "notifyTransactionCV for tid=" << transactionId;
     std::shared_ptr<TransactionCV> tcv;
     {
         std::lock_guard<std::mutex> guard(transactionIdCV.mutex);
         auto it = transactionIdCV.object.find(transactionId);
         if (it == transactionIdCV.object.end())
         {
-            log << logger::ERROR << "notifyTransactionCV: trigger: transactionId not found in CV list.";
+            log << logger::ERROR << "notifyTransactionCV: trigger: transactionId not found in CV list, tid=" << transactionId;
             return;
         }
         tcv = it->second;
@@ -54,7 +55,7 @@ bool TransactionsCV::waitTransactionCV(uint32_t transactionId)
         auto it = transactionIdCV.object.find(transactionId);
         if (it == transactionIdCV.object.end())
         {
-            log << logger::ERROR << "waitTransactionCV: wait: transactionId not found in CV list.";
+            log << logger::ERROR << "waitTransactionCV: wait: transactionId not found in CV list, tid=" << transactionId;
             return false;
         }
         tcv = it->second;
@@ -68,6 +69,7 @@ bool TransactionsCV::waitTransactionCV(uint32_t transactionId)
 
     {
         std::lock_guard<std::mutex> guard(transactionIdCV.mutex);
+        log << logger::DEBUG << "waitTransactionCV: erase: tcv";
         auto it = transactionIdCV.object.find(transactionId);
         transactionIdCV.object.erase(it);
     }
