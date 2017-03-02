@@ -74,6 +74,8 @@ ValueContainerPtr LocalPTree::createValue(std::string path, Buffer& value)
     auto created  = outgoing.createRequest(path, protocol::PropertyType::Value, value);
     if (transactionsCV.waitTransactionCV(created.first))
     {
+        log << logger::DEBUG << "createValue resp has data of:";
+        utils::printRaw(created.second->getBuffer().data(), created.second->getBuffer().size());
         protocol::CreateResponse response;
         response.unpackFrom(created.second->getBuffer());
         log << logger::DEBUG << "CreateResponse: " << response.toString();
@@ -103,6 +105,8 @@ NodeContainerPtr LocalPTree::createNode(std::string path)
     auto created  = outgoing.createRequest(path, protocol::PropertyType::Node, empty);
     if (transactionsCV.waitTransactionCV(created.first))
     {
+        log << logger::DEBUG << "createNode resp has data of:";
+        utils::printRaw(created.second->getBuffer().data(), created.second->getBuffer().size());
         protocol::CreateResponse response;
         response.unpackFrom(created.second->getBuffer());
         log << logger::DEBUG << "CreateResponse: " << response.toString();
@@ -133,6 +137,8 @@ RpcContainerPtr LocalPTree::createRpc(std::string path, std::function<Buffer(Buf
 
     if (transactionsCV.waitTransactionCV(created.first))
     {
+        log << logger::DEBUG << "createRpc resp has data of:";
+        utils::printRaw(created.second->getBuffer().data(), created.second->getBuffer().size());
         protocol::CreateResponse response;
         response.unpackFrom(created.second->getBuffer());
         log << logger::DEBUG << "CreateResponse: " << response.toString();
@@ -162,8 +168,10 @@ void LocalPTree::fillValue(ValueContainerPtr& value)
     if (transactionsCV.waitTransactionCV(getValue.first))
     {
         protocol::GetValueResponse response;
+        log << logger::DEBUG << "fillValue has data of:";
+        utils::printRaw(getValue.second->getBuffer().data(), getValue.second->getBuffer().size());
         response.unpackFrom(getValue.second->getBuffer());
-        log << logger::DEBUG << "CreateResponse: " << response.toString();
+        log << logger::DEBUG << "getValueResponse: " << response.toString();
         if (response.data.size())
         {
             value->updateValue(std::move(response.data), false);
@@ -186,6 +194,8 @@ IPropertyPtr LocalPTree::fetchMeta(std::string& path)
     auto meta = outgoing.getSpecificMeta(path);
     if (transactionsCV.waitTransactionCV(meta.first))
     {
+        log << logger::DEBUG << "getSpecificMeta resp has data of:";
+        utils::printRaw(meta.second->getBuffer().data(), meta.second->getBuffer().size());
         protocol::GetSpecificMetaResponse response;
         response.unpackFrom(meta.second->getBuffer());
         log << logger::DEBUG << "GetSpecificMetaResponse: " << response.toString();
@@ -260,12 +270,14 @@ RpcContainerPtr LocalPTree::getRpc(std::string& path)
 
 bool LocalPTree::deleteProperty(IPropertyPtr& property)
 {
-    auto created  = outgoing.deleteRequest(property->getUuid());
+    auto deleted  = outgoing.deleteRequest(property->getUuid());
 
-    if (transactionsCV.waitTransactionCV(created.first))
+    if (transactionsCV.waitTransactionCV(deleted.first))
     {
+        log << logger::DEBUG << "deleteProperty resp has data of:";
+        utils::printRaw(deleted.second->getBuffer().data(), deleted.second->getBuffer().size());
         protocol::DeleteResponse response;
-        response.unpackFrom(created.second->getBuffer());
+        response.unpackFrom(deleted.second->getBuffer());
         log << logger::DEBUG << "DeleteResponse: " << response.toString();
         if ( response.response  == protocol::DeleteResponse::Response::OK)
         {
@@ -275,12 +287,12 @@ bool LocalPTree::deleteProperty(IPropertyPtr& property)
         }
         else
         {
-            log << logger::ERROR << "DELETE NOT OK TID: " << created.first;;
+            log << logger::ERROR << "DELETE NOT OK TID: " << deleted.first;;
         }
     }
     else
     {
-        log << logger::ERROR << "DELETE TIMEOUT TID: " << created.first;;
+        log << logger::ERROR << "DELETE TIMEOUT TID: " << deleted.first;;
     }
     return false;
 }
@@ -307,6 +319,8 @@ bool LocalPTree::enableAutoUpdate(protocol::Uuid uuid)
     auto subscribe = outgoing.subscribePropertyUpdate(uuid);
     if (transactionsCV.waitTransactionCV(subscribe.first))
     {
+        log << logger::DEBUG << "enableAutoUpdate resp has data of:";
+        utils::printRaw(subscribe.second->getBuffer().data(), subscribe.second->getBuffer().size());
         protocol::SubscribePropertyUpdateResponse response;
         response.unpackFrom(subscribe.second->getBuffer());
         log << logger::DEBUG << "SubscribePropertyUpdateResponse: " << response.toString();
@@ -332,6 +346,8 @@ bool LocalPTree::disableAutoUpdate(protocol::Uuid uuid)
     auto unsubscribe = outgoing.unsubscribePropertyUpdate(uuid);
     if (transactionsCV.waitTransactionCV(unsubscribe.first))
     {
+        log << logger::DEBUG << "disableAutoUpdate resp has data of:";
+        utils::printRaw(unsubscribe.second->getBuffer().data(), unsubscribe.second->getBuffer().size());
         protocol::UnsubscribePropertyUpdateResponse response;
         response.unpackFrom(unsubscribe.second->getBuffer());
         log << logger::DEBUG << "UnsubscribePropertyUpdateResponse: " << response.toString();
@@ -411,6 +427,8 @@ Buffer LocalPTree::rpcRequest(protocol::Uuid uuid, Buffer&& parameter)
     auto rpcRequest = outgoing.rpcRequest(uuid, std::move(parameter));
     if (transactionsCV.waitTransactionCV(rpcRequest.first))
     {
+        log << logger::DEBUG << "rpcRequest resp has data of:";
+        utils::printRaw(rpcRequest.second->getBuffer().data(), rpcRequest.second->getBuffer().size());
         protocol::RpcResponse response;
         response.unpackFrom(rpcRequest.second->getBuffer());
         log << logger::DEBUG << "RpcResponse: " << response.toString();

@@ -19,7 +19,8 @@ GenericResponseMessageHandler::~GenericResponseMessageHandler()
 
 void GenericResponseMessageHandler::handle(protocol::MessageHeader& header, Buffer& message)
 {
-    log << logger::DEBUG << "Receiving msg with tid=" <<  header.transactionId;
+    log << logger::DEBUG << "Receiving msg with tid=" <<  header.transactionId << " type= " << uint16_t(header.type) <<
+        " size=" << header.size;
     transactionsCV.notifyTransactionCV(header.transactionId, message);
     log << logger::DEBUG << "handle(): exiting...";
 }

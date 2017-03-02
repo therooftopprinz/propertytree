@@ -1,4 +1,5 @@
 #include "TransactionsCV.hpp"
+#include <common/src/Utils.hpp>
 
 namespace ptree
 {
@@ -24,6 +25,7 @@ std::shared_ptr<TransactionCV> TransactionsCV::addTransactionCV(uint32_t transac
 void TransactionsCV::notifyTransactionCV(uint32_t transactionId, Buffer& value)
 {
     log << logger::DEBUG << "notifyTransactionCV for tid=" << transactionId;
+    utils::printRaw(value.data(), value.size());
     std::shared_ptr<TransactionCV> tcv;
     {
         std::lock_guard<std::mutex> guard(transactionIdCV.mutex);
@@ -36,12 +38,12 @@ void TransactionsCV::notifyTransactionCV(uint32_t transactionId, Buffer& value)
         tcv = it->second;
     }
 
-    log << logger::DEBUG << "unlocking cv for tid=" << transactionId;
-    tcv->condition = true;
-
     {
         std::lock_guard<std::mutex> guard(tcv->mutex);
         tcv->value = std::move(value);
+        tcv->condition = true;
+        log << logger::DEBUG << "unlocking cv for tid=" << transactionId;
+        utils::printRaw(tcv->value.data(), tcv->value.size());
         tcv->cv.notify_all();
     }
 }
@@ -66,6 +68,9 @@ bool TransactionsCV::waitTransactionCV(uint32_t transactionId)
         using namespace std::chrono_literals;
         tcv->cv.wait_for(guard, 1s,[&tcv](){return bool(tcv->condition);});
     }
+
+    log << logger::DEBUG << "waiting complete for tid=" << transactionId;
+    utils::printRaw(tcv->value.data(), tcv->value.size());
 
     {
         std::lock_guard<std::mutex> guard(transactionIdCV.mutex);
