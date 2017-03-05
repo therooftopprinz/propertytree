@@ -249,8 +249,10 @@ ValueContainerPtr LocalPTree::getValue(std::string& path)
         return value;
     }
 
-    if (!value->isAutoUpdate())
+    log << logger::ERROR << "GetValue path: " << path;
+    if (!value->isAutoUpdate()&&!value->isOwned())
     {
+        log << logger::ERROR << "GetValue fetching.";
         fillValue(value);
     }
     return value;

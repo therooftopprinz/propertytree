@@ -203,7 +203,6 @@ TEST_F(ClientTests, shouldCreateValueAndDeleteAfter)
     logger::loggerServer.waitEmpty();
 }
 
-
 TEST_F(ClientTests, shouldFetchValueWithGetSpecificMetaWhenNotAutoUpdate)
 {
     MessageMatcher getValueRequestMessageMatcher2 = createGetValueRequestMessage(3, protocol::Uuid(100));
@@ -223,7 +222,6 @@ TEST_F(ClientTests, shouldFetchValueWithGetSpecificMetaWhenNotAutoUpdate)
         std::string valuePath = "/Value";
         auto value = ptree->getValue(valuePath);
         ASSERT_TRUE(value);
-        ASSERT_TRUE(value);
         auto value2 = ptree->getValue(valuePath);
         ASSERT_TRUE(value2);
         EXPECT_EQ(value, value2);
@@ -232,6 +230,40 @@ TEST_F(ClientTests, shouldFetchValueWithGetSpecificMetaWhenNotAutoUpdate)
 
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(100ms);
+    endpoint->waitForAllSending(2500.0);
+    logger::loggerServer.waitEmpty();
+}
+
+TEST_F(ClientTests, shouldNotFetchValueWithGetSpecificMetaOrGetValueWhenOwner)
+{
+    uint32_t newVal = 68;
+    auto newValBuff = utils::buildBufferedValue<uint32_t>(newVal);
+    MessageMatcher createRequestMessageMatcher(createCreateRequestMessage(1, expectedVal, protocol::PropertyType::Value,
+        "/Value"));
+    MessageMatcher getValueRequestMessageMatcher = createGetValueRequestMessage(2, protocol::Uuid(100));
+
+    std::function<void()> createValueRequestAction = [this]()
+    {
+        this->endpoint->queueToReceive(createCreateResponseMessage(1, protocol::CreateResponse::Response::OK,
+            protocol::Uuid(100)));
+    };
+
+    endpoint->expectSend(1, 0, false, 1, signinRequestMessageMatcher.get(), signinRequestAction);
+    endpoint->expectSend(2, 1, false, 1, createRequestMessageMatcher.get(), createValueRequestAction);
+    endpoint->expectSend(3, 2, false, 0, getValueRequestMessageMatcher.get(), DefaultAction::get());
+
+    {
+        auto ptc = std::make_shared<PTreeClient>(endpoint);
+        auto ptree = ptc->getPTree();
+        auto value = ptree->createValue("/Value", expectedVal);
+        ASSERT_TRUE(value);
+        std::string valuePath = "/Value";
+        auto v = ptree->getValue(valuePath);
+        ASSERT_TRUE(v);
+    }
+
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for(1ms);
     endpoint->waitForAllSending(2500.0);
     logger::loggerServer.waitEmpty();
 }

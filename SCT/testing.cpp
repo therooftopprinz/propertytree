@@ -38,7 +38,7 @@ public:
                 targetRpc++;
             }
 
-            if (targetRpc < (mTotalTesters*8))
+            if (targetRpc < (mTotalTesters*1))
             {
                 std::string targetRpcPath = "/tester_" + std::to_string(targetTester)+"/test_rpc_"+
                     std::to_string(targetRpc);
@@ -64,10 +64,6 @@ public:
             }
             else
             {
-                std::string valuePath = "/tester_" + std::to_string(targetTester)+"/test_value_"+
-                    std::to_string(mRpcIndex);
-                auto val = mLpt->getValue(valuePath);
-                val->setValue(paramValue);
                 log << logger::DEBUG << "TESTFLOW: HANDLER OF /tester_"<< mTesterIndex << "/test_rpc_" << mRpcIndex <<
                     " FINAL VALUE IS: " << paramValue;
             }
@@ -124,7 +120,7 @@ public:
         // create test_values and test_rpcs
         using std::placeholders::_1;
         log << logger::DEBUG << "TESTFLOW: SETTING UP TESTER " << mTesterIndex;
-        for (unsigned i=0; i<(mTotalTesters*8); i++)
+        for (unsigned i=0; i<(mTotalTesters*1); i++)
         {
             auto testerValuePath = testerNodePath + "/test_value_" + std::to_string(i);
             auto testerRpcPath = testerNodePath + "/test_rpc_" + std::to_string(i);

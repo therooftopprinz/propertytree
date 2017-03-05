@@ -49,20 +49,20 @@ for i in timeouts:
         print "ERROR: Timeout transaction Id has occurred again:", i
     else:
         cvATU[i[1]] = [i[0],None,None]
-        print "added timeout ", i
+        # print "added timeout ", i
 for i in adds:
     if (cvATU.has_key(i[1])):
         if (cvATU[i[1]][1] is not None):
             print "ERROR: Add transaction Id has occurred again:", i
             continue
-        print "added adds ",i
+        # print "added adds ",i
         cvATU[i[1]][1] = i[0]
 for i in unlocks:
     if (cvATU.has_key(i[1])):
         if (cvATU[i[1]][2] is not None):
             print "ERROR: Unlock transaction Id has occurred again:", i
             continue
-        print "added timeouts ",i
+        # print "added timeouts ",i
         cvATU[i[1]][1] = i[0]
 
 print "Anomaly:"
