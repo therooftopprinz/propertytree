@@ -37,13 +37,8 @@ void ValueContainer::setAutoUpdate(bool b)
     autoUpdate = b;
 }
 
-void ValueContainer::updateValue(bool triggerHandler)
+void ValueContainer::notifyWatchers()
 {
-    if (!triggerHandler)
-    {
-        return;
-    }
-
     std::lock_guard<std::mutex> lockWatcher(watcherMutex);
     for (auto& i : watchers)
     {
@@ -57,9 +52,19 @@ void ValueContainer::updateValue(Buffer&& value, bool triggerHandler)
 {
     {
         std::lock_guard<std::mutex> lockValue(valueMutex);
-        this->value = std::move(value);
+        if (this->value.size() == value.size())
+        {
+            std::copy(this->value.begin(), this->value.end(), value.begin());
+        }
+        else
+        {
+            this->value = std::move(value);
+        }
     }
-    updateValue(triggerHandler);
+    if (triggerHandler)
+    {
+        notifyWatchers();
+    }
 
 }
 
@@ -67,12 +72,20 @@ void ValueContainer::updateValue(Buffer& value, bool triggerHandler)
 {
     {
         std::lock_guard<std::mutex> lockValue(valueMutex);
-        this->value = value;
+        if (this->value.size() == value.size())
+        {
+            std::copy(this->value.begin(), this->value.end(), value.begin());
+        }
+        else
+        {
+            this->value = value;
+        }
     }
-    updateValue(triggerHandler);
+    if (triggerHandler)
+    {
+        notifyWatchers();
+    }
 }
-
-
 
 void ValueContainer::addWatcher(std::shared_ptr<IValueWatcher> watcher)
 {
@@ -116,6 +129,11 @@ bool ValueContainer::disableAutoUpdate()
 void ValueContainer::setValue(Buffer&& value)
 {
     ptree.setValue(getUuid(), std::move(value));
+}
+
+void ValueContainer::setValue(Buffer& value)
+{
+    ptree.setValue(getUuid(), value);
 }
 
 }

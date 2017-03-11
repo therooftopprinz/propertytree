@@ -122,6 +122,16 @@ void ClientOutgoing::setValueIndication(protocol::Uuid uuid, Buffer&& data)
     sendToServer(tid, protocol::MessageType::SetValueIndication, indication);
 }
 
+void ClientOutgoing::setValueIndication(protocol::Uuid uuid, Buffer& data)
+{
+    protocol::SetValueIndication indication;
+    indication.uuid = uuid;
+    indication.data = data;
+    auto tid = transactionIdGenerator.get();
+    sendToServer(tid, protocol::MessageType::SetValueIndication, indication);
+}
+
+
 void ClientOutgoing::handleRpcResponse(uint32_t transactionId, protocol::Message& msg)
 {
     sendToServer(transactionId, protocol::MessageType::HandleRpcResponse, msg);

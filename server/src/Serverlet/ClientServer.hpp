@@ -76,10 +76,10 @@ private:
 
     uint64_t clientServerId;
     ClientServerConfig config;
-    IEndPointPtr endpoint;
+    IEndPointPtr endpoint; /*TODO: to reference*/
     PTreeOutgoing outgoing;
-    core::PTreePtr ptree;
-    IClientNotifierPtr notifier;
+    core::PTreePtr ptree; /*TODO: to reference*/
+    IClientNotifierPtr notifier; /*TODO: to reference*/
     PTreeIncoming incoming;
     logger::Logger log;
 };

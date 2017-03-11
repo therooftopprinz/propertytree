@@ -64,6 +64,7 @@ private:
     bool disableAutoUpdate(protocol::Uuid);
 
     void setValue(protocol::Uuid uuid, Buffer&& value);
+    void setValue(protocol::Uuid uuid, Buffer& value);
     Buffer rpcRequest(protocol::Uuid uuid, Buffer&& parameter);
 
     logger::Logger log;

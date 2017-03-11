@@ -68,11 +68,19 @@ public:
         {
             return;
         }
-
-        Buffer tmv(sizeof(T));
-        std::memcpy(tmv.data(), &value, sizeof(T));
-        updateValue(tmv, true);
-        setValue(std::move(tmv));
+        if (sizeof(T) != this->value.size())
+        {
+            Buffer tmv(sizeof(T));
+            std::memcpy(tmv.data(), &value, sizeof(T));
+            updateValue(tmv, true);
+            setValue(std::move(tmv));
+        }
+        else
+        {
+            *(typename std::remove_reference<T>::type *)(this->value.data()) = value;
+            notifyWatchers();
+            setValue(this->value);
+        }
     }
 
     void addWatcher(std::shared_ptr<IValueWatcher> watcher);
@@ -89,8 +97,9 @@ private:
     bool isAutoUpdate();
     void setAutoUpdate(bool autoUpdate);
     void setValue(Buffer&& value);
+    void setValue(Buffer& value);
 
-    void updateValue(bool triggerHandler);
+    void notifyWatchers();
     void updateValue(Buffer&& value, bool triggerHandler);
     void updateValue(Buffer& value, bool triggerHandler);
     /** TODO: use std::function **/

@@ -108,20 +108,27 @@ public:
 
     ~LoggerStream()
     {
-        // std::cout << "LoggerStream to be flushed!" << std::endl;
+        #ifndef __NOLOGSPLEASE__
         entry.name = logger.getName();
         entry.level = logLevel;
         entry.threadId = std::hash<std::thread::id>()(std::this_thread::get_id());
         entry.time =  std::chrono::high_resolution_clock::now();
         loggerServer.log(entry);
+        #endif
     }
 
     template<typename T>
+    #ifdef __NOLOGSPLEASE__
+    LoggerStream& operator << (T)
+    #else
     LoggerStream& operator << (T message)
+    #endif
     {
+        #ifndef __NOLOGSPLEASE__
         std::ostringstream os;
         os << message;
         entry.text += os.str();
+        #endif
         return *this;
     }
 

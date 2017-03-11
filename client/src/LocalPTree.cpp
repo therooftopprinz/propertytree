@@ -424,6 +424,11 @@ void LocalPTree::setValue(protocol::Uuid uuid, Buffer&& value)
     outgoing.setValueIndication(uuid, std::move(value));
 }
 
+void LocalPTree::setValue(protocol::Uuid uuid, Buffer& value)
+{
+    outgoing.setValueIndication(uuid, value);
+}
+
 Buffer LocalPTree::rpcRequest(protocol::Uuid uuid, Buffer&& parameter)
 {
     auto rpcRequest = outgoing.rpcRequest(uuid, std::move(parameter));
