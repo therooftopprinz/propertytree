@@ -59,6 +59,12 @@ SERVER_OBJECTS_GCOV   := $(addprefix $(BUILDDIR_GCOV)/, $(SERVER_SOURCES:.cpp=.c
 SERVER_TESTS_OBJECTS  	   := $(addprefix $(BUILDDIR)/, $(SERVER_TEST_SOURCES:.cpp=.cpp.o))
 SERVER_TESTS_OBJECTS_GCOV  := $(addprefix $(BUILDDIR_GCOV)/, $(SERVER_TEST_SOURCES:.cpp=.cpp.o))
 
+SERVER_DEPS = $(SERVER_OBJECTS:%.o=%.d)
+SERVER_TEST_DEPS = $(SERVER_TESTS_OBJECTS:%.o=%.d)
+
+-include $(SERVER_DEPS)
+-include $(SERVER_TEST_DEPS)
+
 CLIENT_INCDIR_GCC     := $(addprefix -I, $(CLIENT_INCDIR))
 CLIENT_TESTINCDIR_GCC := $(addprefix -I, $(CLIENT_TESTINCDIR))
 CLIENT_UT_LD_GCC 	  := $(addprefix -l, $(CLIENT_UT_LD))
@@ -70,6 +76,12 @@ CLIENT_OBJECTS_GCOV   := $(addprefix $(BUILDDIR_GCOV)/, $(CLIENT_SOURCES:.cpp=.c
 CLIENT_TESTS_OBJECTS  	   := $(addprefix $(BUILDDIR)/, $(CLIENT_TEST_SOURCES:.cpp=.cpp.o))
 CLIENT_TESTS_OBJECTS_GCOV  := $(addprefix $(BUILDDIR_GCOV)/, $(CLIENT_TEST_SOURCES:.cpp=.cpp.o))
 
+CLIENT_DEPS = $(CLIENT_OBJECTS:%.o=%.d)
+CLIENT_TEST_DEPS = $(CLIENT_TESTS_OBJECTS:%.o=%.d)
+
+-include $(CLIENT_DEPS)
+-include $(CLIENT_TEST_DEPS)
+
 COMMON_INCDIR_GCC     := $(addprefix -I, $(COMMON_INCDIR))
 COMMON_SOURCES        := $(shell find $(COMMON_SRCDIR) -type f -name *.cpp)
 COMMON_OBJECTS        := $(addprefix $(BUILDDIR)/, $(COMMON_SOURCES:.cpp=.cpp.o))
@@ -80,6 +92,13 @@ COMMON_TESTING_SOURCES        := $(shell find $(COMMON_TESTING_SRCDIR) -type f -
 COMMON_TESTING_OBJECTS        := $(addprefix $(BUILDDIR)/, $(COMMON_TESTING_SOURCES:.cpp=.cpp.o))
 COMMON_TESTING_OBJECTS_GCOV   := $(addprefix $(BUILDDIR_GCOV)/, $(COMMON_TESTING_SOURCES:.cpp=.cpp.o))
 COMMON_TESTING_LD_GCC     := $(addprefix -l, $(COMMON_TESTING_LD))
+
+COMMON_DEPS = $(COMMON_OBJECTS:%.o=%.d)
+COMMON_TEST_DEPS = $(COMMON_TESTING_OBJECTS:%.o=%.d)
+
+-include $(COMMON_DEPS)
+-include $(COMMON_TEST_DEPS)
+
 
 ## TARGET GTEST #########################################################################
 
@@ -97,14 +116,14 @@ $(COMMON_TARGET)/common.a: $(COMMON_OBJECTS)
 $(COMMON_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
 	@mkdir -p $(@D)
 	@echo "Building COMMON SOURCE" $@
-	@$(CC) $(CFLAGS) $(COMMON_INCDIR_GCC) -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
+	@$(CC) $(CFLAGS) $(COMMON_INCDIR_GCC) -MMD -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
 
 ## TARGET COMMON TESTING #########################################################################
 
 $(COMMON_TESTING_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
 	@mkdir -p $(@D)
 	@echo "Building COMMON TESTING" $@
-	@$(CC) $(CFLAGS) $(COMMON_TESTING_INCDIR_GCC) -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
+	@$(CC) $(CFLAGS) $(COMMON_TESTING_INCDIR_GCC) -MMD -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
 
 $(COMMON_TARGET)/common_testing.a: $(COMMON_TESTING_OBJECTS)
 	@mkdir -p $(COMMON_TARGET)
@@ -122,7 +141,7 @@ server: $(COMMON_TARGET)/common.a $(SERVER_OBJECTS)
 $(SERVER_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
 	@mkdir -p $(@D)
 	@echo "Building SOURCE" $@
-	@$(CC) $(CFLAGS) $(SERVER_INCDIR_GCC) -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
+	@$(CC) $(CFLAGS) $(SERVER_INCDIR_GCC) -MMD -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
 
 ## TARGET SERVER UT #########################################################################
 
@@ -143,14 +162,14 @@ server_ut_valgrind_run_detailed: server_ut
 $(SERVER_TESTS_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
 	@mkdir -p $(@D)
 	@echo "Building TEST" $@
-	@$(CC) $(CFLAGS) $(SERVER_TESTINCDIR_GCC) -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
+	@$(CC) $(CFLAGS) $(SERVER_TESTINCDIR_GCC) -MMD -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
 
 ## TARGET CLIENT #########################################################################
 
 $(CLIENT_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
 	@mkdir -p $(@D)
 	@echo "Building SOURCE" $@
-	@$(CC) $(CFLAGS) $(CLIENT_INCDIR_GCC) -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
+	@$(CC) $(CFLAGS) $(CLIENT_INCDIR_GCC) -MMD -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
 
 ## TARGET CLIENT UT #########################################################################
 
@@ -176,7 +195,7 @@ client: $(CLIENT_OBJECTS) $(COMMON_TARGET)/common.a
 $(CLIENT_TESTS_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
 	@mkdir -p $(@D)
 	@echo "Building TEST" $@
-	@$(CC) $(CFLAGS) $(CLIENT_TESTINCDIR_GCC) -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
+	@$(CC) $(CFLAGS) $(CLIENT_TESTINCDIR_GCC) -MMD -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
 
 ## TARGET GOV COMMON #########################################################################
 
