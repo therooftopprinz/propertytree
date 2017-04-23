@@ -54,7 +54,7 @@ void ValueContainer::updateValue(Buffer&& value, bool triggerHandler)
         std::lock_guard<std::mutex> lockValue(valueMutex);
         if (this->value.size() == value.size())
         {
-            std::copy(this->value.begin(), this->value.end(), value.begin());
+            std::copy(value.begin(), value.end(), this->value.begin());
         }
         else
         {
