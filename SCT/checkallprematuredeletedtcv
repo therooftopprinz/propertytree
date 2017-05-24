@@ -1,0 +1,14 @@
+#!/bin/sh
+
+./checkForPrematurelyDeletedTCV.py logs/testing_4_16.txt
+./checkForPrematurelyDeletedTCV.py logs/testing_5_16.txt
+./checkForPrematurelyDeletedTCV.py logs/testing_6_16.txt
+./checkForPrematurelyDeletedTCV.py logs/testing_7_16.txt
+./checkForPrematurelyDeletedTCV.py logs/testing_8_16.txt
+./checkForPrematurelyDeletedTCV.py logs/testing_9_16.txt
+./checkForPrematurelyDeletedTCV.py logs/testing_10_16.txt
+./checkForPrematurelyDeletedTCV.py logs/testing_11_16.txt
+./checkForPrematurelyDeletedTCV.py logs/testing_12_16.txt
+./checkForPrematurelyDeletedTCV.py logs/testing_13_16.txt
+./checkForPrematurelyDeletedTCV.py logs/testing_14_16.txt
+./checkForPrematurelyDeletedTCV.py logs/testing_15_16.txt
