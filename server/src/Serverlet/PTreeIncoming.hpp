@@ -20,7 +20,7 @@ class PTreeIncoming
 {
 public:
     PTreeIncoming(uint64_t clientServerId, ClientServerConfig& config, IEndPointPtr& endpoint,
-        core::PTreePtr& ptree, IClientNotifierPtr& notifier);
+        IPTreeOutgoing& outgoing, core::PTreePtr& ptree, IClientNotifierPtr& notifier);
     ~PTreeIncoming();
     void init(IPTreeOutgoingWkPtr o);
 
@@ -34,9 +34,23 @@ private:
     protocol::MessageType type;
     ClientServerConfig& config;
     IEndPointPtr& endpoint;
-    IPTreeOutgoingWkPtr outgoing;
+    IPTreeOutgoing& outgoing;
+    IPTreeOutgoingWkPtr outgoingWkPtr;
     core::PTreePtr& ptree;
     IClientNotifierPtr& notifier;
+
+    CreateRequestMessageHandler createRequestMessageHandler;
+    DeleteRequestMessageHandler deleteRequestMessageHandler;
+    GetSpecificMetaRequestMessageHandler getSpecificMetaRequestMessageHandler;
+    GetValueRequestMessageHandler getValueRequestMessageHandler;
+    HandleRpcResponseMessageHandler handleRpcResponseMessageHandler;
+    RpcRequestMessageHandler rpcRequestMessageHandler;
+    SetValueIndicationMessageHandler setValueIndicationMessageHandler;
+    SigninRequestMessageHandler signinRequestMessageHandler;
+    SubscribePropertyUpdateRequestMessageHandler subscribePropertyUpdateRequestMessageHandler;
+    UnsubscribePropertyUpdateRequestMessageHandler unsubscribePropertyUpdateRequestMessageHandler;
+
+    std::thread incomingThread;
     logger::Logger log;
 };
 

@@ -5,9 +5,21 @@ namespace server
 {
 
 PTreeIncoming::PTreeIncoming(uint64_t clientServerId,
-    ClientServerConfig& config, IEndPointPtr& endpoint, core::PTreePtr& ptree, IClientNotifierPtr& notifier):
-        clientServerId(clientServerId), config(config), endpoint(endpoint), ptree(ptree),
-        notifier(notifier), log("PTreeIncoming")
+    ClientServerConfig& config, IEndPointPtr& endpoint, IPTreeOutgoing& outgoing,
+    core::PTreePtr& ptree, IClientNotifierPtr& notifier):
+        clientServerId(clientServerId), config(config), endpoint(endpoint), outgoing(outgoing), ptree(ptree),
+        notifier(notifier),
+        createRequestMessageHandler(*ptree, *notifier),
+        deleteRequestMessageHandler(outgoing, *ptree, *notifier),
+        getSpecificMetaRequestMessageHandler(outgoing, *ptree),
+        getValueRequestMessageHandler(outgoing, *ptree),
+        handleRpcResponseMessageHandler(*notifier),
+        rpcRequestMessageHandler(clientServerId, *ptree),
+        setValueIndicationMessageHandler(*ptree),
+        signinRequestMessageHandler(outgoing, config, *ptree, *notifier),
+        subscribePropertyUpdateRequestMessageHandler(clientServerId, *ptree, *notifier),
+        unsubscribePropertyUpdateRequestMessageHandler(clientServerId, outgoing, *ptree),
+        log("PTreeIncoming")
 {
     log << logger::DEBUG << "construct";
 }
@@ -18,18 +30,17 @@ PTreeIncoming::~PTreeIncoming()
     killHandleIncoming = true;
     log << logger::DEBUG << "teardown: waiting thread to stop...";
     log << logger::DEBUG << "teardown: handleIncoming " << handleIncomingIsRunning;
-    while (handleIncomingIsRunning);
+    incomingThread.join();
     log << logger::DEBUG << "Teardown complete.";
 }
 
 void PTreeIncoming::init(IPTreeOutgoingWkPtr o)
 {
-    outgoing = o;
+    outgoingWkPtr = o;
     std::function<void()> incoming = std::bind(&PTreeIncoming::handleIncoming, this);
     killHandleIncoming = false;
     log << logger::DEBUG << "Creating incomingThread.";
-    std::thread incomingThread(incoming); 
-    incomingThread.detach();
+    incomingThread = std::thread(incoming);
     log << logger::DEBUG << "Created threads detached.";
     log << logger::DEBUG << "Setup complete.";
 }
@@ -40,8 +51,42 @@ void PTreeIncoming::processMessage(protocol::MessageHeader& header, Buffer& mess
     log << logger::DEBUG << "processMessage(" << uint32_t(type) << ", "
         << header.size << ", " << header.transactionId<< "): ";
     utils::printRaw(message.data(), message.size());
-    auto outgoingShared = outgoing.lock();
-    MessageHandlerFactory::get(clientServerId, type, config, outgoingShared, ptree, notifier)->handle(header, message);
+    auto outgoingShared = outgoingWkPtr.lock();
+
+    using Enum = uint8_t;
+    switch (uint8_t(type))
+    {
+        case (Enum) protocol::MessageType::SigninRequest:
+            signinRequestMessageHandler.handle(header, message);
+            break;
+        case (Enum) protocol::MessageType::CreateRequest:
+            createRequestMessageHandler.handle(outgoingShared, header, message);
+            break;
+        case (Enum) protocol::MessageType::DeleteRequest:
+            deleteRequestMessageHandler.handle(header, message);
+            break;
+        case (Enum) protocol::MessageType::SetValueIndication:
+            setValueIndicationMessageHandler.handle(header, message);
+            break;
+        case (Enum) protocol::MessageType::SubscribePropertyUpdateRequest:
+            subscribePropertyUpdateRequestMessageHandler.handle(outgoingShared, header, message);
+            break;
+        case (Enum) protocol::MessageType::UnsubscribePropertyUpdateRequest:
+            unsubscribePropertyUpdateRequestMessageHandler.handle(header, message);
+            break;
+        case (Enum) protocol::MessageType::GetValueRequest:
+            getValueRequestMessageHandler.handle(header, message);
+            break;
+        case (Enum) protocol::MessageType::RpcRequest:
+            rpcRequestMessageHandler.handle(header, message);
+            break;
+        case (Enum) protocol::MessageType::HandleRpcResponse:
+            handleRpcResponseMessageHandler.handle(header, message);
+            break;
+        case (Enum) protocol::MessageType::GetSpecificMetaRequest:
+            getSpecificMetaRequestMessageHandler.handle(header, message);
+            break;
+    }
 }
 
 void PTreeIncoming::handleIncoming()

@@ -27,13 +27,13 @@ bool UpdateNotificationHandler::handle(core::ValuePtr value)
 }
 
 SubscribePropertyUpdateRequestMessageHandler::SubscribePropertyUpdateRequestMessageHandler
-    (uint64_t clientServerId, IPTreeOutgoingPtr& outgoing, core::PTree& ptree, IClientNotifier& notifier):
-    clientServerId(clientServerId), outgoing(outgoing), ptree(ptree), notifier(notifier)
+    (uint64_t clientServerId, core::PTree& ptree, IClientNotifier& notifier):
+    clientServerId(clientServerId), ptree(ptree), notifier(notifier)
 {
 
 }
 
-void SubscribePropertyUpdateRequestMessageHandler::handle(protocol::MessageHeader& header, Buffer& message)
+void SubscribePropertyUpdateRequestMessageHandler::handle(IPTreeOutgoingPtr& outgoing, protocol::MessageHeader& header, Buffer& message)
 {
     logger::Logger log("SubscribePropertyUpdateRequest");
 

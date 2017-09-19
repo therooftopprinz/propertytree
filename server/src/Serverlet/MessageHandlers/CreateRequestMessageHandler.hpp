@@ -22,13 +22,12 @@ private:
     protocol::Uuid uuid;
 };
 
-class CreateRequestMessageHandler : public MessageHandler
+class CreateRequestMessageHandler
 {
 public:
-    CreateRequestMessageHandler(IPTreeOutgoingPtr& outgoing, core::PTree& ptree, IClientNotifier& notifier);
-    void handle(protocol::MessageHeader& header, Buffer& message);
+    CreateRequestMessageHandler(core::PTree& ptree, IClientNotifier& notifier);
+    void handle(IPTreeOutgoingPtr& outgoing, protocol::MessageHeader& header, Buffer& message);
 private:
-    IPTreeOutgoingPtr& outgoing;
     core::PTree& ptree;
     IClientNotifier& notifier;
 };

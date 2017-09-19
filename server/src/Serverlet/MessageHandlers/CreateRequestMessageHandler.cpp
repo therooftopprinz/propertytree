@@ -25,12 +25,12 @@ void RcpHandler::handle(uint64_t csid, uint32_t tid, Buffer&& parameter)
     }
 }
 
-CreateRequestMessageHandler::CreateRequestMessageHandler(IPTreeOutgoingPtr& outgoing, core::PTree& ptree, IClientNotifier& notifier):
-    outgoing(outgoing), ptree(ptree), notifier(notifier)
+CreateRequestMessageHandler::CreateRequestMessageHandler(core::PTree& ptree, IClientNotifier& notifier):
+    ptree(ptree), notifier(notifier)
 {
 }
 
-void CreateRequestMessageHandler::handle(protocol::MessageHeader& header, Buffer& message)
+void CreateRequestMessageHandler::handle(IPTreeOutgoingPtr& outgoing,protocol::MessageHeader& header, Buffer& message)
 {
     logger::Logger log("CreateRequestMessageHandler");
 

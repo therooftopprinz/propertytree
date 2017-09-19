@@ -63,6 +63,7 @@ private:
     std::mutex sendLock;
     IEndPointPtr& endpoint;
 
+    std::thread outgoingThread;
     logger::Logger log;
 };
 

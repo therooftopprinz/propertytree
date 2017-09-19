@@ -6,21 +6,18 @@ namespace server
 {   
 
 PTreeOutgoing::PTreeOutgoing(ClientServerConfig& config, IEndPointPtr& endpoint):
-    handleOutgoingIsRunning(true), killHandleOutgoing(false), config(config), endpoint(endpoint), log("PTreeOutgoing")
+    handleOutgoingIsRunning(true), killHandleOutgoing(false), config(config), endpoint(endpoint),
+    outgoingThread(&PTreeOutgoing::handleOutgoing, this), log("PTreeOutgoing")
 {
     log << logger::DEBUG << "construct";
-    log << logger::DEBUG << "Creating outgoingThread.";
-    std::function<void()> outgoing = std::bind(&PTreeOutgoing::handleOutgoing, this);
-    std::thread outgoingThread(outgoing); 
-    outgoingThread.detach();
-    log << logger::DEBUG << "Created thread detached.";
+    log << logger::DEBUG << "Created outgoingThread.";
 }
 
 PTreeOutgoing::~PTreeOutgoing()
 {
     log << logger::DEBUG << "destruct";
     killHandleOutgoing = true;
-    while(handleOutgoingIsRunning);
+    outgoingThread.join();
 }
 
 void PTreeOutgoing::notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path)

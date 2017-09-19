@@ -19,13 +19,12 @@ private:
     IPTreeOutgoingWkPtr outgoing;
 };
 
-struct SubscribePropertyUpdateRequestMessageHandler : public MessageHandler
+struct SubscribePropertyUpdateRequestMessageHandler
 {
-    SubscribePropertyUpdateRequestMessageHandler(uint64_t clientServerId, IPTreeOutgoingPtr& outgoing, core::PTree& ptree, IClientNotifier& notifier);
-    void handle(protocol::MessageHeader& header, Buffer& message);
+    SubscribePropertyUpdateRequestMessageHandler(uint64_t clientServerId, core::PTree& ptree, IClientNotifier& notifier);
+    void handle(IPTreeOutgoingPtr& outgoing, protocol::MessageHeader& header, Buffer& message);
 private:
     uint64_t clientServerId;
-    IPTreeOutgoingPtr& outgoing;
     core::PTree& ptree;
     IClientNotifier& notifier;
 };

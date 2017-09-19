@@ -79,7 +79,7 @@ ClientServer::ClientServer(IEndPointPtr endpoint, core::PTreePtr ptree, IClientN
     outgoing(config, this->endpoint),
     ptree(ptree),
     notifier(notifier),
-    incoming(clientServerId, config, this->endpoint, this->ptree, this->notifier),
+    incoming(clientServerId, config, this->endpoint, outgoing, this->ptree, this->notifier),
     log(logger::Logger("ClientServer"))
 {
     log << logger::DEBUG << "setup: adding to notifier";
