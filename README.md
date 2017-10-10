@@ -14,24 +14,13 @@ The PropertyTree Client Library provides the interface in communicating the Prop
 
 Please see the [wiki](https://github.com/rooftopprinz/propertytree/wiki).
 
+**New PropertyTree Specification!**
+
+https://docs.google.com/document/d/1xvhpABWhiU1VUIQkq5ljw2uhR1o_IgIN0w-iVMXWba4/edit?usp=sharing
+
+**IMPLEMENTATION ALIGNMENT IS GOING ON!!!**
+
 ## Building
 ```
-#!/bin/sh
-
-mkdir gtest
-git clone https://github.com/google/googletest.git gtest/git
-python gtest/git/googlemock/scripts/fuse_gmock_files.py gtest/git/googlemock/ gtest/
-
-echo "VExEID0gLi4KTElCT1VUID0gJChUTEQpL2xpYnMKQ\
-0MgPSBnKysKSU5DTFVERSA9IC1JLgpDRkxBR1MgPSAtc3Rk\
-PWMrKzExIC1XYWxsIC1XZXJyb3IgJChJTkNMVURFKQoKYWx\
-sOgoJbWtkaXIgLXAgJChMSUJPVVQpCgkkKENDKSAkKENGTE\
-FHUykgLWMgZ21vY2stZ3Rlc3QtYWxsLmNjIC1vICQoTElCT\
-1VUKS9ndGVzdC5v"|base64 -d > gtest/Makefile
-
-git clone https://github.com/rooftopprinz/propertytree.git PropertyTree
-
-cd PropertyTree
-make server_ut_run -j4
-
+see Makefile for now
 ```
