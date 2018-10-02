@@ -5,6 +5,9 @@
 
 #ifndef CLIENT_TYPES_HPP_
 #define CLIENT_TYPES_HPP_
+#include <vector>
+#include <memory>
+#include <mutex>
 
 namespace ptree
 {
