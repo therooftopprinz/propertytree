@@ -10,6 +10,7 @@
 #include <mutex>
 #include <thread>
 #include <memory>
+#include <type_traits>
 
 #include <interface/protocol.hpp>
 #include <common/src/Logger.hpp>
@@ -64,20 +65,23 @@ public:
     template <typename T>
     void setValue(T&& value)
     {
+        // using U = T;
+        using U = typename std::remove_reference<T>::type;
+        using V = typename std::remove_const<U>::type;
         if (!isOwned())
         {
             return;
         }
-        if (sizeof(T) != this->value.size())
+        if (sizeof(V) != this->value.size())
         {
-            Buffer tmv(sizeof(T));
-            std::memcpy(tmv.data(), &value, sizeof(T));
+            Buffer tmv(sizeof(V));
+            std::memcpy(tmv.data(), &value, sizeof(V));
             updateValue(tmv, true);
             setValue(std::move(tmv));
         }
         else
         {
-            *(typename std::remove_reference<T>::type *)(this->value.data()) = value;
+            *(V*)(this->value.data()) = value;
             notifyWatchers();
             setValue(this->value);
         }
