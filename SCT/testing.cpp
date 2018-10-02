@@ -25,7 +25,7 @@ public:
     Buffer handler(Buffer& bval)
     {
         unsigned paramValue = *(unsigned*)(bval.data());
-        std::thread([this, paramValue](){
+        std::thread([this, paramValue]() mutable -> void{
             unsigned targetTester = mTesterIndex+1;
             unsigned targetRpc = mRpcIndex;
 
