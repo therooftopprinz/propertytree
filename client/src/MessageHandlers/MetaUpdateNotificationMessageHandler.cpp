@@ -12,6 +12,7 @@ MetaUpdateNotificationMessageHandler::
 
 void MetaUpdateNotificationMessageHandler::handle(protocol::MessageHeader&, Buffer& message)
 {
+    // TODO: if sending is done in handler an it's expecting reply it would expire waiting because this is the receive thread.
     logger::Logger log("MetaUpdateNotificationMessageHandler");
 
     protocol::MetaUpdateNotification notif;

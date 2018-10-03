@@ -249,7 +249,7 @@ ValueContainerPtr LocalPTree::getValue(std::string& path)
         return value;
     }
 
-    log << logger::ERROR << "GetValue path: " << path;
+    log << logger::DEBUG << "GetValue path: " << path;
     if (!value->isAutoUpdate()&&!value->isOwned())
     {
         log << logger::ERROR << "GetValue fetching.";
@@ -394,6 +394,7 @@ void LocalPTree::deleteMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler)
 void LocalPTree::triggerMetaUpdateWatchersCreate(protocol::Uuid uuid, std::string& path, protocol::PropertyType propertyType)
 {
     std::lock_guard<std::mutex> lock(metaUpdateHandlers.mutex);
+    // TODO HIGH PRIO: addToPropertyMap
     for (auto& i : metaUpdateHandlers.object)
     {
         i->handleCreation(uuid, path, propertyType);
@@ -403,6 +404,7 @@ void LocalPTree::triggerMetaUpdateWatchersCreate(protocol::Uuid uuid, std::strin
 void LocalPTree::triggerMetaUpdateWatchersDelete(protocol::Uuid uuid)
 {
     std::lock_guard<std::mutex> lock(metaUpdateHandlers.mutex);
+    // TODO HIGH PRIO: removeToPropertyMap
     for (auto& i : metaUpdateHandlers.object)
     {
         i->handleDeletion(uuid);
