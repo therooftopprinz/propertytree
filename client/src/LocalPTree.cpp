@@ -12,14 +12,14 @@ LocalPTree::LocalPTree(IClientOutgoing& outgoing, TransactionsCV& transactionsCV
 {
 }
 
-void LocalPTree::addToPropertyMap(std::string& path, protocol::Uuid uuid, IPropertyPtr& property)
+void LocalPTree::addToPropertyMap(const std::string& path, protocol::Uuid uuid, IPropertyPtr& property)
 {
     std::lock_guard<std::mutex> lock(propertyMapMutex);
     uuidPropertyMap[uuid] = property;
     pathPropertyMap[path] = property;
 }
 
-void LocalPTree::removeFromPropertyMap(std::string& path)
+void LocalPTree::removeFromPropertyMap(const std::string& path)
 {
     std::lock_guard<std::mutex> lock(propertyMapMutex);
     auto foundPathProp = pathPropertyMap.find(path);
@@ -56,7 +56,7 @@ IPropertyPtr LocalPTree::getPropertyByUuid(protocol::Uuid uuid)
     return found->second;
 }
 
-IPropertyPtr LocalPTree::getPropertyByPath(std::string path)
+IPropertyPtr LocalPTree::getPropertyByPath(const std::string& path)
 {
     std::lock_guard<std::mutex> lock(propertyMapMutex);
     auto found = pathPropertyMap.find(path);
@@ -69,7 +69,7 @@ IPropertyPtr LocalPTree::getPropertyByPath(std::string path)
 
 
 
-ValueContainerPtr LocalPTree::createValue(std::string path, Buffer& value)
+ValueContainerPtr LocalPTree::createValue(const std::string& path, Buffer& value)
 {
     auto created  = outgoing.createRequest(path, protocol::PropertyType::Value, value);
     if (transactionsCV.waitTransactionCV(created.first))
@@ -99,7 +99,7 @@ ValueContainerPtr LocalPTree::createValue(std::string path, Buffer& value)
     return ValueContainerPtr();
 }
 
-NodeContainerPtr LocalPTree::createNode(std::string path)
+NodeContainerPtr LocalPTree::createNode(const std::string& path)
 {
     Buffer empty;
     auto created  = outgoing.createRequest(path, protocol::PropertyType::Node, empty);
@@ -130,7 +130,7 @@ NodeContainerPtr LocalPTree::createNode(std::string path)
     return NodeContainerPtr();
 }
 
-RpcContainerPtr LocalPTree::createRpc(std::string path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler)
+RpcContainerPtr LocalPTree::createRpc(const std::string& path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler)
 {
     Buffer empty;
     auto created  = outgoing.createRequest(path, protocol::PropertyType::Rpc, empty);
@@ -183,7 +183,7 @@ void LocalPTree::fillValue(ValueContainerPtr& value)
     }
 }
 
-IPropertyPtr LocalPTree::fetchMeta(std::string& path)
+IPropertyPtr LocalPTree::fetchMeta(const std::string& path)
 {
     auto found = getPropertyByPath(path);
     if (found)
@@ -241,7 +241,7 @@ IPropertyPtr LocalPTree::fetchMeta(std::string& path)
     return IPropertyPtr();
 }
 
-ValueContainerPtr LocalPTree::getValue(std::string& path)
+ValueContainerPtr LocalPTree::getValue(const std::string& path)
 {
     auto value = std::dynamic_pointer_cast<ValueContainer>(fetchMeta(path));
     if (!value)
@@ -258,7 +258,7 @@ ValueContainerPtr LocalPTree::getValue(std::string& path)
     return value;
 }
 
-RpcContainerPtr LocalPTree::getRpc(std::string& path)
+RpcContainerPtr LocalPTree::getRpc(const std::string& path)
 {
     auto rpc = std::dynamic_pointer_cast<RpcContainer>(fetchMeta(path));
     if (!rpc)
@@ -391,7 +391,7 @@ void LocalPTree::deleteMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler)
     metaUpdateHandlers.object.erase(i);
 }
 
-void LocalPTree::triggerMetaUpdateWatchersCreate(protocol::Uuid uuid, std::string& path, protocol::PropertyType propertyType)
+void LocalPTree::triggerMetaUpdateWatchersCreate(protocol::Uuid uuid, const std::string& path, protocol::PropertyType propertyType)
 {
     std::lock_guard<std::mutex> lock(metaUpdateHandlers.mutex);
     // TODO HIGH PRIO: addToPropertyMap

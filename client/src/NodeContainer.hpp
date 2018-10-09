@@ -25,7 +25,7 @@ class NodeContainer : public IProperty, public std::enable_shared_from_this<Node
 {
 public:
 
-    NodeContainer(protocol::Uuid uuid, std::string path, bool owned):
+    NodeContainer(protocol::Uuid uuid, const std::string& path, bool owned):
         IProperty(uuid, path, protocol::PropertyType::Node, owned)
     {
     }

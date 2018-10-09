@@ -28,11 +28,11 @@ class LocalPTree
 {
 public:
     LocalPTree(IClientOutgoing& outgoing, TransactionsCV& transactionsCV);
-    ValueContainerPtr createValue(std::string path, Buffer& value);
-    RpcContainerPtr createRpc(std::string path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler);
-    NodeContainerPtr createNode(std::string path);
-    ValueContainerPtr getValue(std::string& path);
-    RpcContainerPtr getRpc(std::string& path);
+    ValueContainerPtr createValue(const std::string& path, Buffer& value);
+    RpcContainerPtr createRpc(const std::string& path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler);
+    NodeContainerPtr createNode(const std::string& path);
+    ValueContainerPtr getValue(const std::string& path);
+    RpcContainerPtr getRpc(const std::string& path);
     bool deleteProperty(IPropertyPtr& property);
     void addMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
     void deleteMetaWatcher(std::shared_ptr<IMetaUpdateHandler> handler);
@@ -47,18 +47,18 @@ private:
     std::map<std::string, IPropertyPtr> pathPropertyMap;
     std::mutex propertyMapMutex;
 
-    void addToPropertyMap(std::string& path, protocol::Uuid uuid, IPropertyPtr& property);
-    void removeFromPropertyMap(std::string& path);
+    void addToPropertyMap(const std::string& path, protocol::Uuid uuid, IPropertyPtr& property);
+    void removeFromPropertyMap(const std::string& path);
     void removeFromPropertyMap(protocol::Uuid uuid);
     IPropertyPtr getPropertyByUuid(protocol::Uuid uuid);
-    IPropertyPtr getPropertyByPath(std::string path);
+    IPropertyPtr getPropertyByPath(const std::string& path);
 
     void fillValue(ValueContainerPtr& value);
-    IPropertyPtr fetchMeta(std::string& path);
+    IPropertyPtr fetchMeta(const std::string& path);
 
     void handleUpdaNotification(protocol::Uuid uuid, Buffer&& value);
     MutexedObject<std::list<std::shared_ptr<IMetaUpdateHandler>>> metaUpdateHandlers;
-    void triggerMetaUpdateWatchersCreate(protocol::Uuid uuid, std::string& path, protocol::PropertyType propertyType);
+    void triggerMetaUpdateWatchersCreate(protocol::Uuid uuid, const std::string& path, protocol::PropertyType propertyType);
     void triggerMetaUpdateWatchersDelete(protocol::Uuid path);
     bool enableAutoUpdate(protocol::Uuid);
     bool disableAutoUpdate(protocol::Uuid);
@@ -80,7 +80,7 @@ struct IMetaUpdateHandler
 {
     IMetaUpdateHandler() = default;
     virtual ~IMetaUpdateHandler() = default;
-    virtual void handleCreation(protocol::Uuid uuid, std::string path, protocol::PropertyType propertyType) = 0;
+    virtual void handleCreation(protocol::Uuid uuid, const std::string& path, protocol::PropertyType propertyType) = 0;
     virtual void handleDeletion(protocol::Uuid) = 0;
 };
 

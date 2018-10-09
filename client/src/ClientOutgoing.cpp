@@ -57,7 +57,7 @@ std::pair<uint32_t,std::shared_ptr<TransactionCV>>
 }
 
 std::pair<uint32_t,std::shared_ptr<TransactionCV>>
-    ClientOutgoing::createRequest(std::string path, protocol::PropertyType type, Buffer& value)
+    ClientOutgoing::createRequest(const std::string& path, protocol::PropertyType type, Buffer& value)
 {
     protocol::CreateRequest request;
     request.path = path;
@@ -81,7 +81,7 @@ std::pair<uint32_t,std::shared_ptr<TransactionCV>>
 }
 
 std::pair<uint32_t,std::shared_ptr<TransactionCV>>
-    ClientOutgoing::getSpecificMeta(std::string& path)
+    ClientOutgoing::getSpecificMeta(const std::string& path)
 {
     protocol::GetSpecificMetaRequest request;
     request.path = path;

@@ -94,8 +94,8 @@ public:
 
     void operator = (ValueContainer&) = delete;
 
-    ValueContainer(LocalPTree& ptree, protocol::Uuid uuid, std::string path, Buffer &value, bool owned);
-    ValueContainer(LocalPTree& ptree, protocol::Uuid uuid, std::string path, Buffer &&value, bool owned);
+    ValueContainer(LocalPTree& ptree, protocol::Uuid uuid, const std::string& path, Buffer &value, bool owned);
+    ValueContainer(LocalPTree& ptree, protocol::Uuid uuid, const std::string& path, Buffer &&value, bool owned);
 
 private:
     bool isAutoUpdate();

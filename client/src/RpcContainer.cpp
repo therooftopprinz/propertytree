@@ -14,12 +14,12 @@ void RpcContainer::setVoidHandler(std::function<void(Buffer&)>)
 
 }
 
-RpcContainer::RpcContainer(LocalPTree& ptree, protocol::Uuid uuid, std::string path, bool owned):
+RpcContainer::RpcContainer(LocalPTree& ptree, protocol::Uuid uuid, const std::string& path, bool owned):
     IProperty(uuid, path, protocol::PropertyType::Rpc, owned),
     ptree(ptree), log("RpcContainer")
 {
 }
-RpcContainer::RpcContainer(LocalPTree& ptree, protocol::Uuid uuid, std::string path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler, bool owned):
+RpcContainer::RpcContainer(LocalPTree& ptree, protocol::Uuid uuid, const std::string& path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler, bool owned):
     IProperty(uuid, path, protocol::PropertyType::Rpc, owned),
     ptree(ptree), handler(handler), voidHandler(voidHandler), log("RpcContainer")
 {

@@ -15,7 +15,7 @@ struct IPTreeOutgoing
 {
     virtual ~IPTreeOutgoing() {}
 
-    virtual void notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path) = 0;
+    virtual void notifyCreation(uint32_t uuid, protocol::PropertyType type, const std::string& path) = 0;
     virtual void notifyDeletion(uint32_t uuid) = 0;
     virtual void notifyValueUpdate(core::ValuePtr) = 0;
     virtual void notifyRpcRequest(protocol::Uuid uuid, uint64_t clientServerId, uint32_t transactionId, Buffer&& parameter) = 0;

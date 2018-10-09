@@ -20,7 +20,7 @@ PTreeOutgoing::~PTreeOutgoing()
     outgoingThread.join();
 }
 
-void PTreeOutgoing::notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path)
+void PTreeOutgoing::notifyCreation(uint32_t uuid, protocol::PropertyType type, const std::string& path)
 {
     std::lock_guard<std::mutex> guard(metaUpdateNotificationMutex);
     log << logger::DEBUG << "notifyCreation for: " << uuid;

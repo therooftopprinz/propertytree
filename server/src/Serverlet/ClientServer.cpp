@@ -44,7 +44,7 @@ void ClientNotifier::removeClientServer(uint64_t clientServerId)
     }
 }
 
-void ClientNotifier::notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path)
+void ClientNotifier::notifyCreation(uint32_t uuid, protocol::PropertyType type, const std::string& path)
 {
     std::lock_guard<std::mutex> guard(clientNotifierMutex);
     for (auto& clientNotifier : clientNotifiers)

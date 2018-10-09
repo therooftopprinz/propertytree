@@ -28,7 +28,7 @@ struct HandlerMock : public IValueWatcher
 
 struct MetaUpdateHandlerMock : public IMetaUpdateHandler
 {
-    MOCK_METHOD3(handleCreation,void(protocol::Uuid, std::string, protocol::PropertyType));
+    MOCK_METHOD3(handleCreation,void(protocol::Uuid, const std::string&, protocol::PropertyType));
     MOCK_METHOD1(handleDeletion,void(protocol::Uuid));
 };
 

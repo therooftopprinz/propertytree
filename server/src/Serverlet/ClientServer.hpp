@@ -25,7 +25,7 @@ public:
     virtual ~IClientNotifier() {}
     virtual void addClientServer(uint64_t clienServerId, IPTreeOutgoing& clientNotifier) = 0;
     virtual void removeClientServer(uint64_t clienServerId) = 0;
-    virtual void notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path) = 0;
+    virtual void notifyCreation(uint32_t uuid, protocol::PropertyType type, const std::string& path) = 0;
     virtual void notifyDeletion(uint32_t uuid) = 0;
     virtual void notifyRpcResponse(uint64_t csId, uint32_t transactionId, Buffer&& returnValue) = 0;
 };
@@ -38,7 +38,7 @@ public:
     ~ClientNotifier();
     void addClientServer(uint64_t clienServerId, IPTreeOutgoing& clientNotifier);
     void removeClientServer(uint64_t clienServerId);
-    void notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path);
+    void notifyCreation(uint32_t uuid, protocol::PropertyType type, const std::string& path);
     void notifyDeletion(uint32_t uuid);
     void notifyRpcResponse(uint64_t clientServerId, uint32_t transactionId, Buffer&& returnValue);
 

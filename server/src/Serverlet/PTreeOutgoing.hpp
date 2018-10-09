@@ -21,7 +21,7 @@ public:
     PTreeOutgoing(ClientServerConfig& config, IEndPointPtr& endpoint);
     ~PTreeOutgoing();
 
-    void notifyCreation(uint32_t uuid, protocol::PropertyType type, std::string path);
+    void notifyCreation(uint32_t uuid, protocol::PropertyType type, const std::string& path);
     void notifyDeletion(uint32_t uuid);
     void notifyValueUpdate(core::ValuePtr);
     void notifyRpcRequest(protocol::Uuid uuid, uint64_t clientServerId, uint32_t transactionId, Buffer&& parameter);

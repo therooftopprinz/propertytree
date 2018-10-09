@@ -39,8 +39,8 @@ public:
         return call(std::move(tmv));
     }
 
-    RpcContainer(LocalPTree& ptree, protocol::Uuid uuid, std::string path, bool owned);
-    RpcContainer(LocalPTree& ptree, protocol::Uuid uuid, std::string path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler, bool owned);
+    RpcContainer(LocalPTree& ptree, protocol::Uuid uuid, const std::string& path, bool owned);
+    RpcContainer(LocalPTree& ptree, protocol::Uuid uuid, const std::string& path, std::function<Buffer(Buffer&)> handler, std::function<void(Buffer&)> voidHandler, bool owned);
 
 private:
     Buffer call(Buffer&& parameter);

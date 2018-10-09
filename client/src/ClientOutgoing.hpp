@@ -35,11 +35,11 @@ public:
     std::pair<uint32_t,std::shared_ptr<TransactionCV>>
         signinRequest(int refreshRate, const std::list<protocol::SigninRequest::FeatureFlag> features);
     std::pair<uint32_t,std::shared_ptr<TransactionCV>>
-        createRequest(std::string path, protocol::PropertyType type, Buffer& value);
+        createRequest(const std::string& path, protocol::PropertyType type, Buffer& value);
     std::pair<uint32_t,std::shared_ptr<TransactionCV>>
         getValue(protocol::Uuid uuid);
     std::pair<uint32_t,std::shared_ptr<TransactionCV>>
-        getSpecificMeta(std::string& path);
+        getSpecificMeta(const std::string& path);
     std::pair<uint32_t,std::shared_ptr<TransactionCV>>
         subscribePropertyUpdate(protocol::Uuid uuid);
     std::pair<uint32_t,std::shared_ptr<TransactionCV>>

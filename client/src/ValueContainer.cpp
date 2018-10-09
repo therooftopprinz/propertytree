@@ -5,12 +5,12 @@ namespace ptree
 namespace client
 {
 
-ValueContainer::ValueContainer(LocalPTree& ptree, protocol::Uuid uuid, std::string path, Buffer &value, bool owned) :
+ValueContainer::ValueContainer(LocalPTree& ptree, protocol::Uuid uuid, const std::string& path, Buffer &value, bool owned) :
     IProperty(uuid, path, protocol::PropertyType::Value, owned),
     ptree(ptree), autoUpdate(false), value(value), log("ValueContainer")
 {
 }
-ValueContainer::ValueContainer(LocalPTree& ptree, protocol::Uuid uuid, std::string path, Buffer &&value, bool owned) :
+ValueContainer::ValueContainer(LocalPTree& ptree, protocol::Uuid uuid, const std::string& path, Buffer &&value, bool owned) :
     IProperty(uuid, path, protocol::PropertyType::Value, owned),
     ptree(ptree), autoUpdate(false), value(std::move(value)), log("ValueContainer")
 {
@@ -65,7 +65,6 @@ void ValueContainer::updateValue(Buffer&& value, bool triggerHandler)
     {
         notifyWatchers();
     }
-
 }
 
 void ValueContainer::updateValue(Buffer& value, bool triggerHandler)

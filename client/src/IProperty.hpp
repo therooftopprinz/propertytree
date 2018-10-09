@@ -13,7 +13,7 @@ namespace client
 class IProperty
 {
 public:
-    IProperty(protocol::Uuid uuid, std::string path, protocol::PropertyType type, bool owned):
+    IProperty(protocol::Uuid uuid, const std::string& path, protocol::PropertyType type, bool owned):
         uuid(uuid), path(path), type(type), owned(owned)
     {
     }
