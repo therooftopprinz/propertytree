@@ -5,7 +5,7 @@ matrix:
       addons:
         apt:
           packages:
-            - g++-7
+            - g++-6
           sources: &sources
             - ubuntu-toolchain-r-test
 before_install:
