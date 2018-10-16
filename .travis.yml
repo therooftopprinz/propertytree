@@ -31,7 +31,7 @@ script:
 after_success:
 - git clone https://github.com/linux-test-project/lcov.git
 - chmod +x lcov/bin/lcov
-- ./lcov/bin/lcov -c -b . -d ../build/gcov/ > ut_coverage.info
+- ./lcov/bin/lcov -c -b . -d build/gcov/ > ut_coverage.info
 - ./lcov/bin/lcov -r ut_coverage.info '/usr/include*' '*/gtest/g*' > clean_ut_coverage.info
 - coveralls-lcov --repo-token ${COVTOK} clean_ut_coverage.info
 

@@ -197,11 +197,11 @@ $(CLIENT_TESTS_OBJECTS): $(BUILDDIR)/%.cpp.o : %.cpp
 	@echo "Building TEST" $@
 	@$(CC) $(CFLAGS) $(CLIENT_TESTINCDIR_GCC) -MMD -g -c $(patsubst $(BUILDDIR)/%.cpp.o,%.cpp,$@) -o $@
 
-## TARGET GOV COMMON #########################################################################
+## TARGET GCOV COMMON #########################################################################
 
 $(COMMON_TARGET)/gcov/common_testing.a: $(COMMON_TESTING_OBJECTS_GCOV)
 	@mkdir -p $(COMMON_TARGET)
-	@echo Archiving $(COMMON_TARGET)/common_testing.a
+	@echo Archiving $(COMMON_TARGET)/gcov/common_testing.a
 	@$(AR) rcs $(COMMON_TARGET)/gcov/common_testing.a $(COMMON_TESTING_OBJECTS_GCOV)
 
 $(COMMON_TESTING_OBJECTS_GCOV): $(BUILDDIR_GCOV)/%.cpp.o : %.cpp
@@ -211,7 +211,7 @@ $(COMMON_TESTING_OBJECTS_GCOV): $(BUILDDIR_GCOV)/%.cpp.o : %.cpp
 
 $(COMMON_TARGET)/gcov/common.a: $(COMMON_OBJECTS_GCOV)
 	@mkdir -p $(COMMON_TARGET)/gcov/
-	@echo Archiving	 $(COMMON_TARGET_GCOV)/gcov/common.a
+	@echo Archiving	 $(COMMON_TARGET)/gcov/common.a
 	@$(AR) rcs $(COMMON_TARGET)/gcov/common.a $(COMMON_OBJECTS_GCOV)
 
 $(COMMON_OBJECTS_GCOV): $(BUILDDIR_GCOV)/%.cpp.o : %.cpp
@@ -219,7 +219,7 @@ $(COMMON_OBJECTS_GCOV): $(BUILDDIR_GCOV)/%.cpp.o : %.cpp
 	@echo "Building_COMMON_SOURCE_GCOV" $@
 	@$(CC) $(CFLAGS) $(COMMON_INCDIR_GCC) -lgcov --coverage -g -c $(patsubst $(BUILDDIR_GCOV)/%.cpp.o,%.cpp,$@) -o $@
 
-## TARGET GOV SERVER #########################################################################
+## TARGET GCOV SERVER #########################################################################
 
 server_ut_gcov: $(GTEST) $(SERVER_OBJECTS_GCOV) $(SERVER_TESTS_OBJECTS_GCOV) $(COMMON_TARGET)/gcov/common.a $(COMMON_TARGET)/gcov/common_testing.a
 	@mkdir -p $(SERVER_TARGET)
@@ -239,25 +239,25 @@ $(SERVER_TESTS_OBJECTS_GCOV): $(BUILDDIR_GCOV)/%.cpp.o : %.cpp
 	@echo "Building_TEST_GCOV" $@
 	@$(CC) $(CFLAGS) $(SERVER_TESTINCDIR_GCC) -fprofile-arcs -ftest-coverage --coverage -lgcov -c $(patsubst $(BUILDDIR_GCOV)/%.cpp.o,%.cpp,$@) -o $@
 
-## TARGET GOV CLIENT #########################################################################
+## TARGET GCOV CLIENT #########################################################################
 
-# client_ut_gcov: $(GTEST) $(CLIENT_OBJECTS_GCOV) $(CLIENT_TESTS_OBJECTS_GCOV) $(COMMON_TARGET)/gcov/common.a
-# 	@mkdir -p $(CLIENT_TARGET)
-# 	@echo Linking $(CLIENT_TARGET)/client_ut
-# 	@$(CC) $(GTEST) $(CLIENT_UT_LD_GCC) $(CLIENT_OBJECTS_GCOV) $(CLIENT_TESTS_OBJECTS_GCOV) -lgcov --coverage -o $(CLIENT_TARGET)/client_ut_gcov
+client_ut_gcov: $(GTEST) $(CLIENT_OBJECTS_GCOV) $(CLIENT_TESTS_OBJECTS_GCOV) $(COMMON_TARGET)/gcov/common.a $(COMMON_TARGET)/gcov/common_testing.a
+	@mkdir -p $(CLIENT_TARGET)
+	@echo Linking $(CLIENT_TARGET)/client_ut
+	$(CC) $(GTEST) $(CLIENT_UT_LD_GCC) $(CLIENT_OBJECTS_GCOV) $(CLIENT_TESTS_OBJECTS_GCOV) $(COMMON_TARGET)/gcov/common.a $(COMMON_TARGET)/gcov/common_testing.a -lgcov --coverage -o $(CLIENT_TARGET)/client_ut_gcov
 
-# client_ut_gcov_run: client_ut_gcov
-# 	$(CLIENT_TARGET)/client_ut_gcov $(TESTFLAG)
+client_ut_gcov_run: client_ut_gcov
+	$(CLIENT_TARGET)/client_ut_gcov $(TESTFLAG)
 
-# $(CLIENT_OBJECTS_GCOV): $(BUILDDIR_GCOV)/%.cpp.o : %.cpp
-# 	@mkdir -p $(@D)
-# 	@echo "Building SOURCE_GCOV" $@
-# 	@$(CC) $(CFLAGS) -fprofile-arcs -ftest-coverage --coverage $(CLIENT_INCDIR_GCC) -lgcov -c $(patsubst $(BUILDDIR_GCOV)/%.cpp.o,%.cpp,$@) -o $@
+$(CLIENT_OBJECTS_GCOV): $(BUILDDIR_GCOV)/%.cpp.o : %.cpp
+	@mkdir -p $(@D)
+	@echo "Building SOURCE_GCOV" $@
+	@$(CC) $(CFLAGS) -fprofile-arcs -ftest-coverage --coverage $(CLIENT_INCDIR_GCC) -lgcov -c $(patsubst $(BUILDDIR_GCOV)/%.cpp.o,%.cpp,$@) -o $@
 
-# $(CLIENT_TESTS_OBJECTS_GCOV): $(BUILDDIR_GCOV)/%.cpp.o : %.cpp
-# 	@mkdir -p $(@D)
-# 	@echo "Building TEST" $@
-# 	@$(CC) $(CFLAGS) $(CLIENT_TESTINCDIR_GCC) -fprofile-arcs -ftest-coverage --coverage -lgcov -c $(patsubst $(BUILDDIR_GCOV)/%.cpp.o,%.cpp,$@) -o $@
+$(CLIENT_TESTS_OBJECTS_GCOV): $(BUILDDIR_GCOV)/%.cpp.o : %.cpp
+	@mkdir -p $(@D)
+	@echo "Building TEST" $@
+	@$(CC) $(CFLAGS) $(CLIENT_TESTINCDIR_GCC) -fprofile-arcs -ftest-coverage --coverage -lgcov -c $(patsubst $(BUILDDIR_GCOV)/%.cpp.o,%.cpp,$@) -o $@
 
 ## MISC #########################################################################
 
