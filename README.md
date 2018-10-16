@@ -2,7 +2,7 @@
 
 | <img src="http://i.imgur.com/m1A8VQU.jpg" width="12"> Normal | <img src="http://i.imgur.com/VRQhgoh.png" width="14"> Memcheck | <img src="http://i.imgur.com/kysuYC1.png" width="12"> Coverage |
 |---|:-:|---|
-| [![Travis](https://travis-ci.org/rooftopprinz/propertytree.svg?branch=master)](https://travis-ci.org/rooftopprinz/propertytree) | [![CircleCI](https://circleci.com/gh/therooftopprinz/propertytree.svg?style=svg)](https://circleci.com/gh/therooftopprinz/propertytree/tree/master) | [![Coverage Status](https://coveralls.io/repos/github/therooftopprinz/propertytree/badge.svg?branch=master)](https://coveralls.io/github/therooftopprinz/propertytree?branch=master) |
+| [![Travis](https://travis-ci.org/therooftopprinz/propertytree.svg?branch=master)](https://travis-ci.org/therooftopprinz/propertytree) | [![CircleCI](https://circleci.com/gh/therooftopprinz/propertytree.svg?style=svg)](https://circleci.com/gh/therooftopprinz/propertytree/tree/master) | [![Coverage Status](https://coveralls.io/repos/github/therooftopprinz/propertytree/badge.svg?branch=master)](https://coveralls.io/github/therooftopprinz/propertytree?branch=master) |
 
 Trello https://trello.com/b/tuitIIq6/property-tree
 
