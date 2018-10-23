@@ -26,7 +26,8 @@ before_script:
 - sudo ln -s /usr/bin/gcov-6 /usr/bin/gcov
 
 script:
-- make server_ut_gcov_run -j40
+- make server_ut_gcov_run -j
+- make client_ut_gcov_run -j
 
 after_success:
 - git clone https://github.com/linux-test-project/lcov.git
