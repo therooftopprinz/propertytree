@@ -3,6 +3,7 @@
 
 #include <server/src/PTree.hpp>
 #include <server/src/Serverlet/IPTreeOutgoing.hpp>
+#include <server/src/IPTreeServer.hpp>
 #include "MessageHandler.hpp"
 
 namespace ptree
@@ -25,11 +26,11 @@ private:
 class CreateRequestMessageHandler
 {
 public:
-    CreateRequestMessageHandler(core::PTree& ptree, IClientNotifier& notifier);
+    CreateRequestMessageHandler(core::PTree& ptree, IPTreeServer& notifier);
     void handle(IPTreeOutgoingPtr& outgoing, protocol::MessageHeader& header, Buffer& message);
 private:
     core::PTree& ptree;
-    IClientNotifier& notifier;
+    IPTreeServer& notifier;
 };
 
 } // namespace server

@@ -2,6 +2,7 @@
 #define SERVER_SERVERLET_MESSAGEHANDLER_FACTORY_HPP_
 
 #include <interface/protocol.hpp>
+#include <server/src/IPTreeServer.hpp>
 #include <memory>
 #include "MessageHandlers/MessageHandler.hpp"
 #include "MessageHandlers/SigninRequestMessageHandler.hpp"
@@ -30,7 +31,7 @@ struct MessageHandlerFactory
 {
     /** TODO: avoid heap allocation!! **/
     static std::unique_ptr<MessageHandler>
-        get(uint64_t clientServerId, protocol::MessageType type, ClientServerConfig& config, IPTreeOutgoingPtr& outgoing, core::PTreePtr& pt, IClientNotifierPtr& notifier);
+        get(uint64_t clientServerId, protocol::MessageType type, ClientServerConfig& config, IPTreeOutgoingPtr& outgoing, core::PTreePtr& pt, IPTreeServer& notifier);
 };
 
 } // namespace server

@@ -11,7 +11,7 @@ void MessageHandlerDummy::handle(protocol::MessageHeader&, Buffer&)
 
 std::unique_ptr<MessageHandler>
     MessageHandlerFactory::
-        get(uint64_t clientServerId,protocol::MessageType type, ClientServerConfig& config, IPTreeOutgoingPtr& outgoing, core::PTreePtr& ptree, IClientNotifierPtr& notifier)
+        get(uint64_t clientServerId,protocol::MessageType type, ClientServerConfig& config, IPTreeOutgoingPtr& outgoing, core::PTreePtr& ptree, IPTreeServer& notifier)
 {
     logger::Logger log("MessageHandlerFactory");
     // using Enum = uint8_t;

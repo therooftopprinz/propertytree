@@ -27,7 +27,7 @@ bool UpdateNotificationHandler::handle(core::ValuePtr value)
 }
 
 SubscribePropertyUpdateRequestMessageHandler::SubscribePropertyUpdateRequestMessageHandler
-    (uint64_t clientServerId, core::PTree& ptree, IClientNotifier& notifier):
+    (uint64_t clientServerId, core::PTree& ptree, IPTreeServer& notifier):
     clientServerId(clientServerId), ptree(ptree), notifier(notifier)
 {
 

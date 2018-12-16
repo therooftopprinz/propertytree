@@ -20,7 +20,7 @@ class PTreeIncoming
 {
 public:
     PTreeIncoming(uint64_t clientServerId, ClientServerConfig& config, IEndPointPtr& endpoint,
-        IPTreeOutgoing& outgoing, core::PTreePtr& ptree, IClientNotifierPtr& notifier);
+        IPTreeOutgoing& outgoing, core::PTreePtr& ptree, IPTreeServer& notifier);
     ~PTreeIncoming();
     void init(IPTreeOutgoingWkPtr o);
 
@@ -37,7 +37,7 @@ private:
     IPTreeOutgoing& outgoing;
     IPTreeOutgoingWkPtr outgoingWkPtr;
     core::PTreePtr& ptree;
-    IClientNotifierPtr& notifier;
+    IPTreeServer& notifier;
 
     CreateRequestMessageHandler createRequestMessageHandler;
     DeleteRequestMessageHandler deleteRequestMessageHandler;

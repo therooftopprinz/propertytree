@@ -3,6 +3,7 @@
 
 #include <server/src/PTree.hpp>
 #include <server/src/Serverlet/IPTreeOutgoing.hpp>
+#include <server/src/IPTreeServer.hpp>
 #include "MessageHandler.hpp"
 
 namespace ptree
@@ -13,12 +14,12 @@ namespace server
 class DeleteRequestMessageHandler : public MessageHandler
 {
 public:
-    DeleteRequestMessageHandler(IPTreeOutgoing& outgoing, core::PTree& ptree, IClientNotifier& notifier);
+    DeleteRequestMessageHandler(IPTreeOutgoing& outgoing, core::PTree& ptree, IPTreeServer& notifier);
     void handle(protocol::MessageHeader& header, Buffer& message);
 private:
     IPTreeOutgoing& outgoing;
     core::PTree& ptree;
-    IClientNotifier& notifier;
+    IPTreeServer& notifier;
 };
 
 

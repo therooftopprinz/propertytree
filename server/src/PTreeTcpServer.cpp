@@ -1,28 +1,20 @@
-#include "PTreeTcpServer.hpp"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <error.h>
 #include <strings.h>
+#include <server/src/IPTreeServer.hpp>
+#include <server/src/PTreeTcpServer.hpp>
 
 namespace ptree
 {
 namespace server
 {
 
-PTreeTcpServer::PTreeTcpServer():
-    portno(6666),
-    ptree(std::make_shared<core::PTree>(std::make_shared<core::IdGenerator>())),
-    monitor(std::make_shared<ClientNotifier>()), log("PTreeTcpServer")
-{
-    
-}
-
-void PTreeTcpServer::serverlet(ClientServerPtr)
-{
-    log << logger::DEBUG << "Serverlet is starting...";
-    /** TODO: condition variable for signout **/
-    while(1)std::this_thread::sleep_for(std::chrono::seconds(100));
-}
+PTreeTcpServer::PTreeTcpServer()
+    : portno(6666)
+    , ptree(std::make_shared<core::PTree>(std::make_shared<core::IdGenerator>()))
+    , log("PTreeTcpServer")
+{}
 
 void PTreeTcpServer::run()
 {
@@ -39,8 +31,6 @@ void PTreeTcpServer::run()
         log << logger::ERROR << "ERROR opening socket";
         return;
     }
-
-    bzero((char *) &serv_addr, sizeof(serv_addr));
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
@@ -73,10 +63,7 @@ void PTreeTcpServer::run()
 
         log << logger::DEBUG << "ACCEPTING NEW CONNECTION";
         IEndPointPtr ep = std::make_shared<TcpEndPoint>(newsockfd);
-        ClientServerPtr cs = ClientServer::create(ep, ptree, monitor);
-        std::function<void()> sevlet= std::bind(&PTreeTcpServer::serverlet, this, cs);
-        std::thread t(sevlet);
-        t.detach();
+        ClientServer::create(ep, ptree, ptreeServer);
     }
 }
 

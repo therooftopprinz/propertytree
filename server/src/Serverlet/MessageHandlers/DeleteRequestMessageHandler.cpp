@@ -8,7 +8,7 @@ namespace server
 {
 
 DeleteRequestMessageHandler::
-    DeleteRequestMessageHandler(IPTreeOutgoing& outgoing, core::PTree& ptree, IClientNotifier& notifier):
+    DeleteRequestMessageHandler(IPTreeOutgoing& outgoing, core::PTree& ptree, IPTreeServer& notifier):
         outgoing(outgoing), ptree(ptree), notifier(notifier)
 {}
 

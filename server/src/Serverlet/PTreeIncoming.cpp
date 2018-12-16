@@ -6,18 +6,18 @@ namespace server
 
 PTreeIncoming::PTreeIncoming(uint64_t clientServerId,
     ClientServerConfig& config, IEndPointPtr& endpoint, IPTreeOutgoing& outgoing,
-    core::PTreePtr& ptree, IClientNotifierPtr& notifier):
+    core::PTreePtr& ptree, IPTreeServer& notifier):
         clientServerId(clientServerId), config(config), endpoint(endpoint), outgoing(outgoing), ptree(ptree),
         notifier(notifier),
-        createRequestMessageHandler(*ptree, *notifier),
-        deleteRequestMessageHandler(outgoing, *ptree, *notifier),
+        createRequestMessageHandler(*ptree, notifier),
+        deleteRequestMessageHandler(outgoing, *ptree, notifier),
         getSpecificMetaRequestMessageHandler(outgoing, *ptree),
         getValueRequestMessageHandler(outgoing, *ptree),
-        handleRpcResponseMessageHandler(*notifier),
+        handleRpcResponseMessageHandler(notifier),
         rpcRequestMessageHandler(clientServerId, *ptree),
         setValueIndicationMessageHandler(*ptree),
-        signinRequestMessageHandler(outgoing, config, *ptree, *notifier),
-        subscribePropertyUpdateRequestMessageHandler(clientServerId, *ptree, *notifier),
+        signinRequestMessageHandler(outgoing, config, *ptree, notifier),
+        subscribePropertyUpdateRequestMessageHandler(clientServerId, *ptree, notifier),
         unsubscribePropertyUpdateRequestMessageHandler(clientServerId, outgoing, *ptree),
         log("PTreeIncoming")
 {

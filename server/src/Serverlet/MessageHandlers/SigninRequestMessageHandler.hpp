@@ -2,6 +2,7 @@
 #define SERVER_SERVERLET_MESSAGEHANDLERS_SIGNUPREQUESTMESSAGEHANDLER_HPP_
 
 #include <server/src/PTree.hpp>
+#include <server/src/IPTreeServer.hpp>
 #include <server/src/Serverlet/IPTreeOutgoing.hpp>
 #include <server/src/Serverlet/ClientServerConfig.hpp>
 #include "MessageHandler.hpp"
@@ -15,13 +16,13 @@ class SigninRequestMessageHandler : public MessageHandler
 {
 public:
     SigninRequestMessageHandler(IPTreeOutgoing& outgoing, ClientServerConfig& config, core::PTree& ptree,
-        IClientNotifier& notifier);
+        IPTreeServer& notifier);
     void handle(protocol::MessageHeader& header, Buffer& message);
 private:
     IPTreeOutgoing& outgoing;
     ClientServerConfig& config;
     core::PTree& ptree;
-    IClientNotifier& notifier;
+    IPTreeServer& notifier;
 };
 
 

@@ -8,7 +8,7 @@ namespace server
 {
 
 SigninRequestMessageHandler::SigninRequestMessageHandler(IPTreeOutgoing& outgoing, ClientServerConfig& config,
-     core::PTree& ptree, IClientNotifier& notifier):
+     core::PTree& ptree, IPTreeServer& notifier):
         outgoing(outgoing), config(config), ptree(ptree), notifier(notifier)
 {}
 

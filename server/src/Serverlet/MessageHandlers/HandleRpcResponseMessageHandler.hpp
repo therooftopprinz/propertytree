@@ -2,6 +2,7 @@
 #define SERVER_SERVERLET_MESSAGEHANDLERS_HANDLERPCRRESPONSEMESSAGEHANDLER_HPP_
 
 #include <server/src/PTree.hpp>
+#include <server/src/IPTreeServer.hpp>
 #include <server/src/Serverlet/IPTreeOutgoing.hpp>
 #include "MessageHandler.hpp"
 
@@ -13,10 +14,10 @@ namespace server
 class HandleRpcResponseMessageHandler : public MessageHandler
 {
 public:
-    HandleRpcResponseMessageHandler(IClientNotifier& notifier);
+    HandleRpcResponseMessageHandler(IPTreeServer& notifier);
     void handle(protocol::MessageHeader& header, Buffer& message);
 private:
-    IClientNotifier& notifier;
+    IPTreeServer& notifier;
 };
 
 }

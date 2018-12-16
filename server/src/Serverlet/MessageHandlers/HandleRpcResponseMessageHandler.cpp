@@ -9,7 +9,7 @@ namespace ptree
 namespace server
 {
 
-HandleRpcResponseMessageHandler::HandleRpcResponseMessageHandler(IClientNotifier& notifier):
+HandleRpcResponseMessageHandler::HandleRpcResponseMessageHandler(IPTreeServer& notifier):
     notifier(notifier)
 {
 }

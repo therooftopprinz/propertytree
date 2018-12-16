@@ -7,6 +7,7 @@
 #include <gmock/gmock.h>
 #include <common/src/Logger.hpp>
 #include <server/src/PTree.hpp>
+#include <server/src/PTreeServer.hpp>
 #include <common/src/Logger.hpp>
 #include <server/src/Serverlet/ClientServer.hpp>
 
@@ -39,7 +40,7 @@ struct ClientServerTests : public common::MessageCreationHelper, public ::testin
         valueCreationSubscribeAction(std::bind(&ClientServerTests::propValueCreationActionSubscribe, this)),
         endpoint(std::make_shared<common::EndPointMock>()),
         idgen(std::make_shared<core::IdGenerator>()),
-        monitor(std::make_shared<ClientNotifier>()),
+        monitor(std::make_shared<PTreeServer>()),
         ptree(std::make_shared<core::PTree>(idgen)),
         log("TEST")
     {
@@ -107,7 +108,7 @@ struct ClientServerTests : public common::MessageCreationHelper, public ::testin
     void SetUp()
     {
         auto ep = std::dynamic_pointer_cast<IEndPoint>(endpoint);
-        server = ClientServer::create(ep, ptree, monitor);
+        server = ClientServer::create(ep, ptree, *monitor);
     }
 
     void TearDown()
@@ -223,23 +224,10 @@ Test common timeline
 
     std::shared_ptr<common::EndPointMock> endpoint;
     core::IIdGeneratorPtr idgen;
-    IClientNotifierPtr monitor;
+    std::shared_ptr<IPTreeServer> monitor;
     core::PTreePtr ptree;
     ClientServerPtr server;
     logger::Logger log;
-};
-
-class ClientNotifierMock : public IClientNotifier
-{
-public:
-    ClientNotifierMock() {}
-    ~ClientNotifierMock() {}
-    using IClientNotifier::addClientServer;
-    using IClientNotifier::removeClientServer;
-    MOCK_METHOD1(addClientServer, void(ClientServerPtr));
-    MOCK_METHOD1(removeClientServer, void(ClientServerPtr));
-    MOCK_METHOD3(notifyCreation, void(uint32_t, protocol::PropertyType, std::string));
-    MOCK_METHOD1(notifyDeletion, void(uint32_t));
 };
 
 TEST_F(ClientServerTests, shouldSigninRequestAndRespondSameVersionForOk)

@@ -25,7 +25,7 @@ void RcpHandler::handle(uint64_t csid, uint32_t tid, Buffer&& parameter)
     }
 }
 
-CreateRequestMessageHandler::CreateRequestMessageHandler(core::PTree& ptree, IClientNotifier& notifier):
+CreateRequestMessageHandler::CreateRequestMessageHandler(core::PTree& ptree, IPTreeServer& notifier):
     ptree(ptree), notifier(notifier)
 {
 }

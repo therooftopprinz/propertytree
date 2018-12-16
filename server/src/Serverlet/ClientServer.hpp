@@ -18,37 +18,6 @@ namespace ptree
 namespace server
 {
 
-class IClientNotifier
-{
-public:
-    IClientNotifier() {}
-    virtual ~IClientNotifier() {}
-    virtual void addClientServer(uint64_t clienServerId, IPTreeOutgoing& clientNotifier) = 0;
-    virtual void removeClientServer(uint64_t clienServerId) = 0;
-    virtual void notifyCreation(uint32_t uuid, protocol::PropertyType type, const std::string& path) = 0;
-    virtual void notifyDeletion(uint32_t uuid) = 0;
-    virtual void notifyRpcResponse(uint64_t csId, uint32_t transactionId, Buffer&& returnValue) = 0;
-};
-
-/** TODO: UT for notifier **/
-class ClientNotifier : public IClientNotifier
-{
-public:
-    ClientNotifier();
-    ~ClientNotifier();
-    void addClientServer(uint64_t clienServerId, IPTreeOutgoing& clientNotifier);
-    void removeClientServer(uint64_t clienServerId);
-    void notifyCreation(uint32_t uuid, protocol::PropertyType type, const std::string& path);
-    void notifyDeletion(uint32_t uuid);
-    void notifyRpcResponse(uint64_t clientServerId, uint32_t transactionId, Buffer&& returnValue);
-
-private:
-    std::map<uint64_t, std::reference_wrapper<IPTreeOutgoing>> clientNotifiers;
-    std::mutex clientNotifierMutex;
-    logger::Logger log;
-};
-
-
 struct MessageHandlerFactory;
 
 class ClientServer : public std::enable_shared_from_this<ClientServer>
@@ -61,15 +30,16 @@ public:
 
     ~ClientServer();
 
-
-    inline static std::shared_ptr<ClientServer> create(IEndPointPtr& endpoint, core::PTreePtr& ptree, IClientNotifierPtr& notifier)
+    inline static std::shared_ptr<ClientServer> create(IEndPointPtr& endpoint, core::PTreePtr& ptree, IPTreeServer& notifier)
     {
         auto cs = std::make_shared<ClientServer>(endpoint, ptree, notifier);
         cs->init();
         return cs;
     }
     /** TODO: Privatize **/
-    ClientServer(IEndPointPtr endpoint, core::PTreePtr ptree, IClientNotifierPtr notifirer);
+    ClientServer(IEndPointPtr endpoint, core::PTreePtr ptree, IPTreeServer& notifirer);
+    uint64_t getId() {return clientServerId;}
+    PTreeOutgoing& getOutgoing() {return outgoing;}
 private:
     void init();
     void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);
@@ -79,7 +49,7 @@ private:
     IEndPointPtr endpoint; /*TODO: to reference*/
     PTreeOutgoing outgoing;
     core::PTreePtr ptree; /*TODO: to reference*/
-    IClientNotifierPtr notifier; /*TODO: to reference*/
+    IPTreeServer& notifier; /*TODO: to reference*/
     PTreeIncoming incoming;
     logger::Logger log;
 };

@@ -2,6 +2,7 @@
 #define SERVER_SERVERLET_MESSAGEHANDLERS_SUBSCRIBEPROPERTYUPDATEREQUESTMESSAGEHANDLER_HPP_
 
 #include <server/src/PTree.hpp>
+#include <server/src/IPTreeServer.hpp>
 #include <server/src/Serverlet/IPTreeOutgoing.hpp>
 #include "MessageHandler.hpp"
 
@@ -21,12 +22,12 @@ private:
 
 struct SubscribePropertyUpdateRequestMessageHandler
 {
-    SubscribePropertyUpdateRequestMessageHandler(uint64_t clientServerId, core::PTree& ptree, IClientNotifier& notifier);
+    SubscribePropertyUpdateRequestMessageHandler(uint64_t clientServerId, core::PTree& ptree, IPTreeServer& notifier);
     void handle(IPTreeOutgoingPtr& outgoing, protocol::MessageHeader& header, Buffer& message);
 private:
     uint64_t clientServerId;
     core::PTree& ptree;
-    IClientNotifier& notifier;
+    IPTreeServer& notifier;
 };
 
 }
