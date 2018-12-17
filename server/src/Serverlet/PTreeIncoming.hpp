@@ -19,8 +19,8 @@ namespace server
 class PTreeIncoming
 {
 public:
-    PTreeIncoming(uint64_t clientServerId, ClientServerConfig& config, IEndPointPtr& endpoint,
-        IPTreeOutgoing& outgoing, core::PTreePtr& ptree, IPTreeServer& notifier);
+    PTreeIncoming(uint64_t clientServerId, ClientServerConfig& config, IEndPoint& endpoint,
+        IPTreeOutgoingPtr outgoing, core::PTreePtr& ptree, IPTreeServer& notifier);
     ~PTreeIncoming();
     void init(IPTreeOutgoingWkPtr o);
 
@@ -28,16 +28,13 @@ private:
     void handleIncoming();
     void processMessage(protocol::MessageHeader& header, Buffer& message);
 
-    bool handleIncomingIsRunning;
-    bool killHandleIncoming;
+    bool handleIncomingIsRunning = false;
+    bool killHandleIncoming = false;
     uint64_t clientServerId;
     protocol::MessageType type;
     ClientServerConfig& config;
-    IEndPointPtr& endpoint;
-    IPTreeOutgoing& outgoing;
+    IEndPoint& endpoint;
     IPTreeOutgoingWkPtr outgoingWkPtr;
-    core::PTreePtr& ptree;
-    IPTreeServer& notifier;
 
     CreateRequestMessageHandler createRequestMessageHandler;
     DeleteRequestMessageHandler deleteRequestMessageHandler;

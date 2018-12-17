@@ -15,10 +15,10 @@ namespace ptree
 namespace server
 {   
 
-class PTreeOutgoing: public IPTreeOutgoing
+class PTreeOutgoing : public IPTreeOutgoing
 {
 public:
-    PTreeOutgoing(ClientServerConfig& config, IEndPointPtr& endpoint);
+    PTreeOutgoing(ClientServerConfig& config, IEndPoint& endpoint);
     ~PTreeOutgoing();
 
     void notifyCreation(uint32_t uuid, protocol::PropertyType type, const std::string& path);
@@ -61,7 +61,7 @@ private:
     ClientServerConfig& config;
 
     std::mutex sendLock;
-    IEndPointPtr& endpoint;
+    IEndPoint& endpoint;
 
     std::thread outgoingThread;
     logger::Logger log;

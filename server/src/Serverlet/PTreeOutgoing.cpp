@@ -5,7 +5,7 @@ namespace ptree
 namespace server
 {   
 
-PTreeOutgoing::PTreeOutgoing(ClientServerConfig& config, IEndPointPtr& endpoint):
+PTreeOutgoing::PTreeOutgoing(ClientServerConfig& config, IEndPoint& endpoint):
     handleOutgoingIsRunning(true), killHandleOutgoing(false), config(config), endpoint(endpoint),
     outgoingThread(&PTreeOutgoing::handleOutgoing, this), log("PTreeOutgoing")
 {
@@ -108,12 +108,14 @@ void PTreeOutgoing::sendToClient(uint32_t tid, protocol::MessageType mtype, prot
     std::lock_guard<std::mutex> sendGuard(sendLock);
 
     Buffer header = createHeader(mtype, msg.size(), tid);
-    endpoint->send(header.data(), header.size());
+    endpoint.send(header.data(), header.size());
     log << logger::DEBUG << "sendToClient: " << msg.toString();
     Buffer responseMessageBuffer = msg.getPacked();
-    endpoint->send(responseMessageBuffer.data(), responseMessageBuffer.size());
+    endpoint.send(responseMessageBuffer.data(), responseMessageBuffer.size());
 }
 
+
+// TODO: Don't batch meta updatenotification, send immediately
 void PTreeOutgoing::handleOutgoing()
 {
     handleOutgoingIsRunning = true;

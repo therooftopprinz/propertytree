@@ -30,26 +30,15 @@ public:
 
     ~ClientServer();
 
-    inline static std::shared_ptr<ClientServer> create(IEndPointPtr& endpoint, core::PTreePtr& ptree, IPTreeServer& notifier)
-    {
-        auto cs = std::make_shared<ClientServer>(endpoint, ptree, notifier);
-        cs->init();
-        return cs;
-    }
-    /** TODO: Privatize **/
     ClientServer(IEndPointPtr endpoint, core::PTreePtr ptree, IPTreeServer& notifirer);
-    uint64_t getId() {return clientServerId;}
-    PTreeOutgoing& getOutgoing() {return outgoing;}
+    PTreeOutgoing& getOutgoing() {return *outgoing;}
 private:
-    void init();
     void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);
 
-    uint64_t clientServerId;
     ClientServerConfig config;
-    IEndPointPtr endpoint; /*TODO: to reference*/
-    PTreeOutgoing outgoing;
+    IEndPointPtr endpoint;
+    PTreeOutgoingPtr outgoing;
     core::PTreePtr ptree; /*TODO: to reference*/
-    IPTreeServer& notifier; /*TODO: to reference*/
     PTreeIncoming incoming;
     logger::Logger log;
 };

@@ -108,7 +108,7 @@ struct ClientServerTests : public common::MessageCreationHelper, public ::testin
     void SetUp()
     {
         auto ep = std::dynamic_pointer_cast<IEndPoint>(endpoint);
-        server = ClientServer::create(ep, ptree, *monitor);
+        server = monitor->create(ep, ptree);
     }
 
     void TearDown()
@@ -224,7 +224,7 @@ Test common timeline
 
     std::shared_ptr<common::EndPointMock> endpoint;
     core::IIdGeneratorPtr idgen;
-    std::shared_ptr<IPTreeServer> monitor;
+    std::shared_ptr<PTreeServer> monitor;
     core::PTreePtr ptree;
     ClientServerPtr server;
     logger::Logger log;

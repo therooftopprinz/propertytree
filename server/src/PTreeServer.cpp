@@ -17,6 +17,14 @@ PTreeServer::~PTreeServer()
     log << logger::DEBUG << "destruct";
 }
 
+std::shared_ptr<ClientServer> PTreeServer::create(IEndPointPtr endpoint, core::PTreePtr ptree)
+{
+    auto cs = std::make_shared<ClientServer>(endpoint, ptree, *this);
+    log << logger::DEBUG << "create...";
+    addClientServer(std::uintptr_t(cs.get()), cs);
+    return cs;
+}
+
 void PTreeServer::addClientServer(uint64_t clientServerId, ClientServerPtr& clientNotifier)
 {
     std::lock_guard<std::mutex> guard(clientNotifierMutex);

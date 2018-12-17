@@ -5,20 +5,20 @@ namespace server
 {
 
 PTreeIncoming::PTreeIncoming(uint64_t clientServerId,
-    ClientServerConfig& config, IEndPointPtr& endpoint, IPTreeOutgoing& outgoing,
+    ClientServerConfig& config, IEndPoint& endpoint, IPTreeOutgoingPtr outgoing,
     core::PTreePtr& ptree, IPTreeServer& notifier):
-        clientServerId(clientServerId), config(config), endpoint(endpoint), outgoing(outgoing), ptree(ptree),
-        notifier(notifier),
+        clientServerId(clientServerId), config(config), endpoint(endpoint), outgoingWkPtr(outgoing),
         createRequestMessageHandler(*ptree, notifier),
-        deleteRequestMessageHandler(outgoing, *ptree, notifier),
-        getSpecificMetaRequestMessageHandler(outgoing, *ptree),
-        getValueRequestMessageHandler(outgoing, *ptree),
+        deleteRequestMessageHandler(*outgoing, *ptree, notifier),
+        getSpecificMetaRequestMessageHandler(*outgoing, *ptree),
+        getValueRequestMessageHandler(*outgoing, *ptree),
         handleRpcResponseMessageHandler(notifier),
         rpcRequestMessageHandler(clientServerId, *ptree),
         setValueIndicationMessageHandler(*ptree),
-        signinRequestMessageHandler(outgoing, config, *ptree, notifier),
+        signinRequestMessageHandler(*outgoing, config, *ptree, notifier),
         subscribePropertyUpdateRequestMessageHandler(clientServerId, *ptree, notifier),
-        unsubscribePropertyUpdateRequestMessageHandler(clientServerId, outgoing, *ptree),
+        unsubscribePropertyUpdateRequestMessageHandler(clientServerId, *outgoing, *ptree),
+        incomingThread(std::bind(&PTreeIncoming::handleIncoming, this)),
         log("PTreeIncoming")
 {
     log << logger::DEBUG << "construct";
@@ -36,13 +36,13 @@ PTreeIncoming::~PTreeIncoming()
 
 void PTreeIncoming::init(IPTreeOutgoingWkPtr o)
 {
-    outgoingWkPtr = o;
-    std::function<void()> incoming = std::bind(&PTreeIncoming::handleIncoming, this);
-    killHandleIncoming = false;
-    log << logger::DEBUG << "Creating incomingThread.";
-    incomingThread = std::thread(incoming);
-    log << logger::DEBUG << "Created threads detached.";
-    log << logger::DEBUG << "Setup complete.";
+    // outgoingWkPtr = o;
+    // std::function<void()> incoming = std::bind(&PTreeIncoming::handleIncoming, this);
+    // killHandleIncoming = false;
+    // log << logger::DEBUG << "Creating incomingThread.";
+    // incomingThread = std::thread(incoming);
+    // log << logger::DEBUG << "Created threads detached.";
+    // log << logger::DEBUG << "Setup complete.";
 }
 
 void PTreeIncoming::processMessage(protocol::MessageHeader& header, Buffer& message)
@@ -113,7 +113,7 @@ void PTreeIncoming::handleIncoming()
     log << logger::DEBUG << "STATE: EMPTY";
     while (!killHandleIncoming)
     {
-        size_t receiveSize = endpoint->receive(cursor, remainingSize);
+        size_t receiveSize = endpoint.receive(cursor, remainingSize);
 
         if (incomingState == EIncomingState::EMPTY && receiveSize == 0)
         {
