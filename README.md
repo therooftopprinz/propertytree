@@ -22,5 +22,22 @@ https://docs.google.com/document/d/1xvhpABWhiU1VUIQkq5ljw2uhR1o_IgIN0w-iVMXWba4/
 
 ## Building
 ```
-see Makefile for now
+Old way:
+
+make server server_ut
+make server_ut_gcov
+make server_ut_run
+make server_ut_valgrind_run
+
+make client_ut
+make client_ut_run
+make client_ut_gcov
+make client_ut_valgrind_run
+
+New way:
+mkdir buildNewWay
+cd buildNewWay
+../configure
+make server_test
+make client
 ```
