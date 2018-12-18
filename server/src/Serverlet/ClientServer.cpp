@@ -10,11 +10,10 @@ namespace ptree
 namespace server
 {
 
-ClientServer::ClientServer(IEndPointPtr endpoint, core::PTreePtr ptree, IPTreeServer& notifier):
+ClientServer::ClientServer(IEndPointPtr endpoint, core::PTree& ptree, IPTreeServer& notifier):
     endpoint(endpoint),
     outgoing(std::make_shared<PTreeOutgoing>(config, *endpoint)),
-    ptree(ptree),
-    incoming(uintptr_t(this), config, *endpoint, outgoing, this->ptree, notifier),
+    incoming(uintptr_t(this), config, *endpoint, outgoing, ptree, notifier),
     log("ClientServer")
 {}
 

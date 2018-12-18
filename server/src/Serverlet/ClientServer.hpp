@@ -23,22 +23,19 @@ struct MessageHandlerFactory;
 class ClientServer : public std::enable_shared_from_this<ClientServer>
 {
 public:
-    ClientServer(const ClientServer&) = delete;
-    ClientServer(ClientServer&) = delete;
-    void operator = (const ClientServer&) = delete;
-    void operator = (ClientServer&) = delete;
-
+    ClientServer(IEndPointPtr endpoint, core::PTree& ptree, IPTreeServer& notifirer);
     ~ClientServer();
 
-    ClientServer(IEndPointPtr endpoint, core::PTreePtr ptree, IPTreeServer& notifirer);
-    PTreeOutgoing& getOutgoing() {return *outgoing;}
+    ClientServer(const ClientServer&) = delete;
+    void operator = (const ClientServer&) = delete;
+
+    PTreeOutgoing& getOutgoing() {return *outgoing;} /** TODO: REFACTOR **/
 private:
     void processMessage(protocol::MessageHeaderPtr header, BufferPtr message);
 
     ClientServerConfig config;
     IEndPointPtr endpoint;
     PTreeOutgoingPtr outgoing;
-    core::PTreePtr ptree; /*TODO: to reference*/
     PTreeIncoming incoming;
     logger::Logger log;
 };

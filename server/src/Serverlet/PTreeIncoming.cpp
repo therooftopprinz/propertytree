@@ -1,4 +1,17 @@
 #include "PTreeIncoming.hpp"
+
+#include "MessageHandlers/MessageHandler.hpp"
+#include "MessageHandlers/SigninRequestMessageHandler.hpp"
+#include "MessageHandlers/CreateRequestMessageHandler.hpp"
+#include "MessageHandlers/DeleteRequestMessageHandler.hpp"
+#include "MessageHandlers/SetValueIndicationMessageHandler.hpp"
+#include "MessageHandlers/SubscribePropertyUpdateRequestMessageHandler.hpp"
+#include "MessageHandlers/UnsubscribePropertyUpdateRequestMessageHandler.hpp"
+#include "MessageHandlers/GetValueRequestMessageHandler.hpp"
+#include "MessageHandlers/RpcRequestMessageHandler.hpp"
+#include "MessageHandlers/HandleRpcResponseMessageHandler.hpp"
+#include "MessageHandlers/GetSpecificMetaRequestMessageHandler.hpp"
+
 namespace ptree
 {
 namespace server
@@ -6,19 +19,19 @@ namespace server
 
 PTreeIncoming::PTreeIncoming(uint64_t clientServerId,
     ClientServerConfig& config, IEndPoint& endpoint, IPTreeOutgoingPtr outgoing,
-    core::PTreePtr& ptree, IPTreeServer& notifier)
+    core::PTree& ptree, IPTreeServer& notifier)
         : log("PTreeIncoming")
         , clientServerId(clientServerId), config(config), endpoint(endpoint), outgoingWkPtr(outgoing)
-        , createRequestMessageHandler(*ptree, notifier)
-        , deleteRequestMessageHandler(*outgoing, *ptree, notifier)
-        , getSpecificMetaRequestMessageHandler(*outgoing, *ptree)
-        , getValueRequestMessageHandler(*outgoing, *ptree)
+        , createRequestMessageHandler(ptree, notifier)
+        , deleteRequestMessageHandler(*outgoing, ptree, notifier)
+        , getSpecificMetaRequestMessageHandler(*outgoing, ptree)
+        , getValueRequestMessageHandler(*outgoing, ptree)
         , handleRpcResponseMessageHandler(notifier)
-        , rpcRequestMessageHandler(clientServerId, *ptree)
-        , setValueIndicationMessageHandler(*ptree)
-        , signinRequestMessageHandler(*outgoing, config, *ptree, notifier)
-        , subscribePropertyUpdateRequestMessageHandler(clientServerId, *ptree, notifier)
-        , unsubscribePropertyUpdateRequestMessageHandler(clientServerId, *outgoing, *ptree)
+        , rpcRequestMessageHandler(clientServerId, ptree)
+        , setValueIndicationMessageHandler(ptree)
+        , signinRequestMessageHandler(*outgoing, config, ptree, notifier)
+        , subscribePropertyUpdateRequestMessageHandler(clientServerId, ptree, notifier)
+        , unsubscribePropertyUpdateRequestMessageHandler(clientServerId, *outgoing, ptree)
         , incomingThread(std::bind(&PTreeIncoming::handleIncoming, this))
 {
     log << logger::DEBUG << "construct";
@@ -32,17 +45,6 @@ PTreeIncoming::~PTreeIncoming()
     log << logger::DEBUG << "teardown: handleIncoming " << handleIncomingIsRunning;
     incomingThread.join();
     log << logger::DEBUG << "Teardown complete.";
-}
-
-void PTreeIncoming::init(IPTreeOutgoingWkPtr o)
-{
-    // outgoingWkPtr = o;
-    // std::function<void()> incoming = std::bind(&PTreeIncoming::handleIncoming, this);
-    // killHandleIncoming = false;
-    // log << logger::DEBUG << "Creating incomingThread.";
-    // incomingThread = std::thread(incoming);
-    // log << logger::DEBUG << "Created threads detached.";
-    // log << logger::DEBUG << "Setup complete.";
 }
 
 void PTreeIncoming::processMessage(protocol::MessageHeader& header, Buffer& message)
