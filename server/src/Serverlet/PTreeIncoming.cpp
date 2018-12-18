@@ -6,20 +6,20 @@ namespace server
 
 PTreeIncoming::PTreeIncoming(uint64_t clientServerId,
     ClientServerConfig& config, IEndPoint& endpoint, IPTreeOutgoingPtr outgoing,
-    core::PTreePtr& ptree, IPTreeServer& notifier):
-        clientServerId(clientServerId), config(config), endpoint(endpoint), outgoingWkPtr(outgoing),
-        createRequestMessageHandler(*ptree, notifier),
-        deleteRequestMessageHandler(*outgoing, *ptree, notifier),
-        getSpecificMetaRequestMessageHandler(*outgoing, *ptree),
-        getValueRequestMessageHandler(*outgoing, *ptree),
-        handleRpcResponseMessageHandler(notifier),
-        rpcRequestMessageHandler(clientServerId, *ptree),
-        setValueIndicationMessageHandler(*ptree),
-        signinRequestMessageHandler(*outgoing, config, *ptree, notifier),
-        subscribePropertyUpdateRequestMessageHandler(clientServerId, *ptree, notifier),
-        unsubscribePropertyUpdateRequestMessageHandler(clientServerId, *outgoing, *ptree),
-        incomingThread(std::bind(&PTreeIncoming::handleIncoming, this)),
-        log("PTreeIncoming")
+    core::PTreePtr& ptree, IPTreeServer& notifier)
+        : log("PTreeIncoming")
+        , clientServerId(clientServerId), config(config), endpoint(endpoint), outgoingWkPtr(outgoing)
+        , createRequestMessageHandler(*ptree, notifier)
+        , deleteRequestMessageHandler(*outgoing, *ptree, notifier)
+        , getSpecificMetaRequestMessageHandler(*outgoing, *ptree)
+        , getValueRequestMessageHandler(*outgoing, *ptree)
+        , handleRpcResponseMessageHandler(notifier)
+        , rpcRequestMessageHandler(clientServerId, *ptree)
+        , setValueIndicationMessageHandler(*ptree)
+        , signinRequestMessageHandler(*outgoing, config, *ptree, notifier)
+        , subscribePropertyUpdateRequestMessageHandler(clientServerId, *ptree, notifier)
+        , unsubscribePropertyUpdateRequestMessageHandler(clientServerId, *outgoing, *ptree)
+        , incomingThread(std::bind(&PTreeIncoming::handleIncoming, this))
 {
     log << logger::DEBUG << "construct";
 }

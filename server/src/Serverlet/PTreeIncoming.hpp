@@ -28,6 +28,7 @@ private:
     void handleIncoming();
     void processMessage(protocol::MessageHeader& header, Buffer& message);
 
+    logger::Logger log;
     bool handleIncomingIsRunning = false;
     bool killHandleIncoming = false;
     uint64_t clientServerId;
@@ -48,7 +49,6 @@ private:
     UnsubscribePropertyUpdateRequestMessageHandler unsubscribePropertyUpdateRequestMessageHandler;
 
     std::thread incomingThread;
-    logger::Logger log;
 };
 
 } // namespace server
