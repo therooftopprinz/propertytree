@@ -108,7 +108,7 @@ struct ClientServerTests : public common::MessageCreationHelper, public ::testin
     void SetUp()
     {
         auto ep = std::dynamic_pointer_cast<IEndPoint>(endpoint);
-        server = monitor->create(ep, ptree);
+        server = monitor->create(ep, *ptree);
     }
 
     void TearDown()

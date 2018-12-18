@@ -63,7 +63,7 @@ void PTreeTcpServer::run()
 
         log << logger::DEBUG << "ACCEPTING NEW CONNECTION";
         IEndPointPtr ep = std::make_shared<TcpEndPoint>(newsockfd);
-        ptreeServer.create(ep, ptree);
+        ptreeServer.create(ep, *ptree);
     }
 }
 

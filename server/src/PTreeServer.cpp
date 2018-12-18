@@ -17,7 +17,7 @@ PTreeServer::~PTreeServer()
     log << logger::DEBUG << "destruct";
 }
 
-std::shared_ptr<ClientServer> PTreeServer::create(IEndPointPtr endpoint, core::PTreePtr ptree)
+std::shared_ptr<ClientServer> PTreeServer::create(IEndPointPtr endpoint, core::PTree& ptree)
 {
     auto cs = std::make_shared<ClientServer>(endpoint, ptree, *this);
     log << logger::DEBUG << "create...";

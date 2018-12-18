@@ -21,7 +21,7 @@ class PTreeServer : public IPTreeServer
 public:
     PTreeServer();
     ~PTreeServer();
-    std::shared_ptr<ClientServer> create(IEndPointPtr endpoint, core::PTreePtr ptree);
+    std::shared_ptr<ClientServer> create(IEndPointPtr endpoint, core::PTree& ptree);
     void addClientServer(uint64_t clientServerId, ClientServerPtr& clientNotifier);
     void removeClientServer(uint64_t clientServerId);
     void notifyCreation(uint32_t uuid, protocol::PropertyType type, const std::string& path);

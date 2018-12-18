@@ -10,19 +10,32 @@
 #include <common/src/Logger.hpp>
 #include "PTreeOutgoing.hpp"
 
-#include "MessageHandlerFactory.hpp"
+#include <server/src/Serverlet/MessageHandlers/MessageHandler.hpp>
+#include <server/src/Serverlet/MessageHandlers/SigninRequestMessageHandler.hpp>
+#include <server/src/Serverlet/MessageHandlers/CreateRequestMessageHandler.hpp>
+#include <server/src/Serverlet/MessageHandlers/DeleteRequestMessageHandler.hpp>
+#include <server/src/Serverlet/MessageHandlers/SetValueIndicationMessageHandler.hpp>
+#include <server/src/Serverlet/MessageHandlers/SubscribePropertyUpdateRequestMessageHandler.hpp>
+#include <server/src/Serverlet/MessageHandlers/UnsubscribePropertyUpdateRequestMessageHandler.hpp>
+#include <server/src/Serverlet/MessageHandlers/GetValueRequestMessageHandler.hpp>
+#include <server/src/Serverlet/MessageHandlers/RpcRequestMessageHandler.hpp>
+#include <server/src/Serverlet/MessageHandlers/HandleRpcResponseMessageHandler.hpp>
+#include <server/src/Serverlet/MessageHandlers/GetSpecificMetaRequestMessageHandler.hpp>
 
 namespace ptree
 {
 namespace server
 {
+
 class PTreeIncoming
 {
 public:
     PTreeIncoming(uint64_t clientServerId, ClientServerConfig& config, IEndPoint& endpoint,
-        IPTreeOutgoingPtr outgoing, core::PTreePtr& ptree, IPTreeServer& notifier);
+        IPTreeOutgoingPtr outgoing, core::PTree& ptree, IPTreeServer& notifier);
     ~PTreeIncoming();
-    void init(IPTreeOutgoingWkPtr o);
+    PTreeIncoming() = delete;
+    PTreeIncoming(const PTreeIncoming&) = delete;
+    void operator=(const PTreeIncoming&) = delete;
 
 private:
     void handleIncoming();
