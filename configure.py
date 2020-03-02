@@ -160,7 +160,11 @@ server_test.set_linkflags('-lpthread')
 server_test.target_executable('server_test')
 
 server_bin = Build()
-server_bin.add_dependencies(['server.a'])
+server_bin.add_dependencies(['server.a','common.a'])
+server_bin.add_include_paths(['.'])
+server_bin.set_src_dir(TLD+'server/src/')
+server_bin.add_src_files(["main.cpp"])
+server_bin.set_linkflags('-lpthread')
 server_bin.target_executable('server_bin')
 
 with open('Makefile','w+') as mf:
