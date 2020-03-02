@@ -9,8 +9,8 @@ cp -R interface clientlib/interface
 
 find clientlib -type f -not -name "*.hpp" -exec rm {} +
 
-cp bin/client/client.a clientlib/client.a
-cp libs/common.a clientlib/common.a
+cp build/client.a clientlib/client.a
+cp build/common.a clientlib/common.a
 
 find clientlib -type d -name "tests" -exec rm -rf {} +
 find clientlib -type d -name "TestingFramework" -exec rm -rf {} +
