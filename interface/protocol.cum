@@ -39,7 +39,8 @@ Enumeration Cause
     NOT_FOUND,
     ALREADY_EXIST,
     NOT_PERMITTED,
-    NO_HANDLER
+    NOT_EMPTY
+
 };
 
 Sequence NamedNode
@@ -129,10 +130,20 @@ Sequence DeleteResponse
     Cause cause
 };
 
-Sequence SetValueIndication
+Sequence SetValueRequest
 {
     u64 uuid,
     Buffer data
+};
+
+Sequence SetValueAccept
+{
+    u8 spare
+};
+
+Sequence SetValueReject
+{
+    Cause cause
 };
 
 Sequence SubscribeRequest
@@ -193,7 +204,9 @@ Choice PropertyTreeMessages
     TreeUpdateNotification,
     DeleteRequest,
     DeleteResponse,
-    SetValueIndication,
+    SetValueRequest,
+    SetValueAccept,
+    SetValueReject,
     SubscribeRequest,
     SubscribeResponse,
     UnsubscribeRequest,

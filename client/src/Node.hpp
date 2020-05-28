@@ -20,7 +20,9 @@ struct Node
 
     bfc::Buffer data;
     std::map<std::string, std::shared_ptr<Node>> children;
-    std::mutex mutex;
+
+    std::mutex dataMutex;
+    std::mutex childrenMutex;
 
     std::weak_ptr<Node> parent;
     uint64_t uuid;

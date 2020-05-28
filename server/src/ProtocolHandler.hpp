@@ -17,7 +17,13 @@ namespace propertytree
 
 struct Session
 {
+    Session() = delete;
+    Session(std::shared_ptr<IConnectionSession> & pSession)
+        : connectionSession(pSession)
+    {}
+
     std::shared_ptr<IConnectionSession> connectionSession;
+    std::mutex connectionSessionMutex;
 };
 
 class ProtocolHandler
@@ -38,11 +44,15 @@ private:
     void handle(uint16_t pTransactionId, SigninRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
     void handle(uint16_t pTransactionId, CreateRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
     void handle(uint16_t pTransactionId, TreeInfoRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
-    void handle(uint16_t pTransactionId, SetValueIndication&& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
+    void handle(uint16_t pTransactionId, SetValueRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
     void handle(uint16_t pTransactionId, GetRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
+    void handle(uint16_t pTransactionId, SubscribeRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
+    void handle(uint16_t pTransactionId, UnsubscribeRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
+    void handle(uint16_t pTransactionId, DeleteRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
+
 
     template <typename T>
-    void fillToAddListFromTree(T& pIe, std::shared_ptr<Node>& pNode);
+    void fillToAddListFromTree(T& pIe, std::shared_ptr<Node>& pNode, bool pRecursive);
 
     void send(const PropertyTreeProtocol& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
 

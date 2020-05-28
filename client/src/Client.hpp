@@ -40,13 +40,13 @@ public:
     ~Client();
 
     Property root();
-    Property create(Property& pParent, std::string pName);
-    Property get(Property& pParent, std::string pName);
+    Property create(Property& pParent, const std::string& pName);
+    Property get(Property& pParent, const std::string& pName, bool pRecursive);
     void commit(Property& pProp);
     void fetch(Property& pProp);
     bool subscribe(Property&);
     bool unsubscribe(Property&);
-    void set(Property&, bfc::BufferView pValue);
+    bool destroy(Property&);
     Buffer call(Property&, bfc::BufferView pValue);
 
 private:
@@ -58,6 +58,7 @@ private:
     template <typename T>
     void handle(uint16_t pTrId, T&& pMsg){}
     void handle(uint16_t pTrId, TreeUpdateNotification&& pMsg);
+    void handle(uint16_t pTrId, UpdateNotification&& pMsg);
 
     void addNodes(NamedNodeList& pNodeList);
     
@@ -83,7 +84,7 @@ private:
     std::unordered_map<uint16_t, Transaction> mTransactions;
     std::mutex mTransactionsMutex;
 
-    std::atomic_uint16_t mTransactioIdCtr;
+    std::atomic_uint16_t mTransactioIdCtr{};
 };
 
 } // propertytree

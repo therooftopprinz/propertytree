@@ -12,8 +12,12 @@ ConnectionSession::ConnectionSession(int pFd, IServer& pServer, ProtocolHandler&
     : mFd(pFd)
     , mServer(pServer)
     , mProto(pProto)
-
 {
+}
+
+ConnectionSession::~ConnectionSession()
+{
+    close(mFd);
 }
 
 void ConnectionSession::send(const bfc::ConstBufferView& pBuffer)
@@ -40,12 +44,9 @@ void ConnectionSession::handleRead()
 
     auto res = read(mFd, mBuff+mBuffIdx, readSize);
 
-    if (-1 == res)
+    if (0 >= res)
     {
-        throw std::runtime_error(strerror(errno));
-    }
-    if (0 == res)
-    {
+        Logless("ConnectionSession[_]: read error=_", mFd, strerror(errno));
         mServer.onDisconnect(mFd);
         return;
     }

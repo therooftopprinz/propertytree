@@ -20,6 +20,7 @@ class ConnectionSession : public IConnectionSession, public std::enable_shared_f
 {
 public:
     ConnectionSession(int pFd, IServer& pServer, ProtocolHandler& pProto);
+    ~ConnectionSession();
     void handleRead();
 private:
     void send(const bfc::ConstBufferView&);

@@ -16,7 +16,7 @@
 // Enumeration:  ('Cause', ('NOT_FOUND', None))
 // Enumeration:  ('Cause', ('ALREADY_EXIST', None))
 // Enumeration:  ('Cause', ('NOT_PERMITTED', None))
-// Enumeration:  ('Cause', ('NO_HANDLER', None))
+// Enumeration:  ('Cause', ('NOT_EMPTY', None))
 // Sequence:  NamedNode ('String', 'name')
 // Sequence:  NamedNode ('u64', 'uuid')
 // Sequence:  NamedNode ('u64', 'parentUuid')
@@ -40,8 +40,10 @@
 // Sequence:  TreeUpdateNotification ('u64Array', 'nodeToDelete')
 // Sequence:  DeleteRequest ('u64', 'uuid')
 // Sequence:  DeleteResponse ('Cause', 'cause')
-// Sequence:  SetValueIndication ('u64', 'uuid')
-// Sequence:  SetValueIndication ('Buffer', 'data')
+// Sequence:  SetValueRequest ('u64', 'uuid')
+// Sequence:  SetValueRequest ('Buffer', 'data')
+// Sequence:  SetValueAccept ('u8', 'spare')
+// Sequence:  SetValueReject ('Cause', 'cause')
 // Sequence:  SubscribeRequest ('u64', 'uuid')
 // Sequence:  SubscribeResponse ('Cause', 'cause')
 // Sequence:  UnsubscribeRequest ('u64', 'uuid')
@@ -66,7 +68,9 @@
 // Choice:  ('PropertyTreeMessages', 'TreeUpdateNotification')
 // Choice:  ('PropertyTreeMessages', 'DeleteRequest')
 // Choice:  ('PropertyTreeMessages', 'DeleteResponse')
-// Choice:  ('PropertyTreeMessages', 'SetValueIndication')
+// Choice:  ('PropertyTreeMessages', 'SetValueRequest')
+// Choice:  ('PropertyTreeMessages', 'SetValueAccept')
+// Choice:  ('PropertyTreeMessages', 'SetValueReject')
 // Choice:  ('PropertyTreeMessages', 'SubscribeRequest')
 // Choice:  ('PropertyTreeMessages', 'SubscribeResponse')
 // Choice:  ('PropertyTreeMessages', 'UnsubscribeRequest')
@@ -106,7 +110,7 @@ enum class Cause : uint8_t
     NOT_FOUND,
     ALREADY_EXIST,
     NOT_PERMITTED,
-    NO_HANDLER
+    NOT_EMPTY
 };
 
 struct NamedNode
@@ -191,10 +195,20 @@ struct DeleteResponse
     Cause cause;
 };
 
-struct SetValueIndication
+struct SetValueRequest
 {
     u64 uuid;
     Buffer data;
+};
+
+struct SetValueAccept
+{
+    u8 spare;
+};
+
+struct SetValueReject
+{
+    Cause cause;
 };
 
 struct SubscribeRequest
@@ -239,7 +253,7 @@ struct RpcReject
     Cause cause;
 };
 
-using PropertyTreeMessages = std::variant<SigninRequest,SigninAccept,CreateRequest,CreateAccept,CreateReject,GetRequest,GetAccept,GetReject,TreeInfoRequest,TreeInfoResponse,TreeInfoErrorResponse,TreeUpdateNotification,DeleteRequest,DeleteResponse,SetValueIndication,SubscribeRequest,SubscribeResponse,UnsubscribeRequest,UnsubscribeResponse,UpdateNotification,RpcRequest,RpcAccept,RpcReject>;
+using PropertyTreeMessages = std::variant<SigninRequest,SigninAccept,CreateRequest,CreateAccept,CreateReject,GetRequest,GetAccept,GetReject,TreeInfoRequest,TreeInfoResponse,TreeInfoErrorResponse,TreeUpdateNotification,DeleteRequest,DeleteResponse,SetValueRequest,SetValueAccept,SetValueReject,SubscribeRequest,SubscribeResponse,UnsubscribeRequest,UnsubscribeResponse,UpdateNotification,RpcRequest,RpcAccept,RpcReject>;
 struct PropertyTreeMessage
 {
     u16 transactionId;
@@ -265,7 +279,7 @@ inline void str(const char* pName, const Cause& pIe, std::string& pCtx, bool pIs
     if (Cause::NOT_FOUND == pIe) pCtx += "\"NOT_FOUND\"";
     if (Cause::ALREADY_EXIST == pIe) pCtx += "\"ALREADY_EXIST\"";
     if (Cause::NOT_PERMITTED == pIe) pCtx += "\"NOT_PERMITTED\"";
-    if (Cause::NO_HANDLER == pIe) pCtx += "\"NO_HANDLER\"";
+    if (Cause::NOT_EMPTY == pIe) pCtx += "\"NOT_EMPTY\"";
     pCtx = pCtx + "}";
     if (!pIsLast)
     {
@@ -786,21 +800,21 @@ inline void str(const char* pName, const DeleteResponse& pIe, std::string& pCtx,
     }
 }
 
-inline void encode_per(const SetValueIndication& pIe, cum::per_codec_ctx& pCtx)
+inline void encode_per(const SetValueRequest& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     encode_per(pIe.uuid, pCtx);
     encode_per(pIe.data, pCtx);
 }
 
-inline void decode_per(SetValueIndication& pIe, cum::per_codec_ctx& pCtx)
+inline void decode_per(SetValueRequest& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     decode_per(pIe.uuid, pCtx);
     decode_per(pIe.data, pCtx);
 }
 
-inline void str(const char* pName, const SetValueIndication& pIe, std::string& pCtx, bool pIsLast)
+inline void str(const char* pName, const SetValueRequest& pIe, std::string& pCtx, bool pIsLast)
 {
     using namespace cum;
     if (!pName)
@@ -815,6 +829,72 @@ inline void str(const char* pName, const SetValueIndication& pIe, std::string& p
     size_t nMandatory = 2;
     str("uuid", pIe.uuid, pCtx, !(--nMandatory+nOptional));
     str("data", pIe.data, pCtx, !(--nMandatory+nOptional));
+    pCtx = pCtx + "}";
+    if (!pIsLast)
+    {
+        pCtx += ",";
+    }
+}
+
+inline void encode_per(const SetValueAccept& pIe, cum::per_codec_ctx& pCtx)
+{
+    using namespace cum;
+    encode_per(pIe.spare, pCtx);
+}
+
+inline void decode_per(SetValueAccept& pIe, cum::per_codec_ctx& pCtx)
+{
+    using namespace cum;
+    decode_per(pIe.spare, pCtx);
+}
+
+inline void str(const char* pName, const SetValueAccept& pIe, std::string& pCtx, bool pIsLast)
+{
+    using namespace cum;
+    if (!pName)
+    {
+        pCtx = pCtx + "{";
+    }
+    else
+    {
+        pCtx = pCtx + "\"" + pName + "\":{";
+    }
+    size_t nOptional = 0;
+    size_t nMandatory = 1;
+    str("spare", pIe.spare, pCtx, !(--nMandatory+nOptional));
+    pCtx = pCtx + "}";
+    if (!pIsLast)
+    {
+        pCtx += ",";
+    }
+}
+
+inline void encode_per(const SetValueReject& pIe, cum::per_codec_ctx& pCtx)
+{
+    using namespace cum;
+    encode_per(pIe.cause, pCtx);
+}
+
+inline void decode_per(SetValueReject& pIe, cum::per_codec_ctx& pCtx)
+{
+    using namespace cum;
+    decode_per(pIe.cause, pCtx);
+}
+
+inline void str(const char* pName, const SetValueReject& pIe, std::string& pCtx, bool pIsLast)
+{
+    using namespace cum;
+    if (!pName)
+    {
+        pCtx = pCtx + "{";
+    }
+    else
+    {
+        pCtx = pCtx + "\"" + pName + "\":{";
+    }
+    size_t nOptional = 0;
+    size_t nMandatory = 1;
+    str("cause", pIe.cause, pCtx, !(--nMandatory+nOptional));
     pCtx = pCtx + "}";
     if (!pIsLast)
     {
@@ -1190,6 +1270,14 @@ inline void encode_per(const PropertyTreeMessages& pIe, cum::per_codec_ctx& pCtx
     {
         encode_per(std::get<22>(pIe), pCtx);
     }
+    else if (23 == type)
+    {
+        encode_per(std::get<23>(pIe), pCtx);
+    }
+    else if (24 == type)
+    {
+        encode_per(std::get<24>(pIe), pCtx);
+    }
 }
 
 inline void decode_per(PropertyTreeMessages& pIe, cum::per_codec_ctx& pCtx)
@@ -1270,48 +1358,58 @@ inline void decode_per(PropertyTreeMessages& pIe, cum::per_codec_ctx& pCtx)
     }
     else if (14 == type)
     {
-        pIe = SetValueIndication();
+        pIe = SetValueRequest();
         decode_per(std::get<14>(pIe), pCtx);
     }
     else if (15 == type)
     {
-        pIe = SubscribeRequest();
+        pIe = SetValueAccept();
         decode_per(std::get<15>(pIe), pCtx);
     }
     else if (16 == type)
     {
-        pIe = SubscribeResponse();
+        pIe = SetValueReject();
         decode_per(std::get<16>(pIe), pCtx);
     }
     else if (17 == type)
     {
-        pIe = UnsubscribeRequest();
+        pIe = SubscribeRequest();
         decode_per(std::get<17>(pIe), pCtx);
     }
     else if (18 == type)
     {
-        pIe = UnsubscribeResponse();
+        pIe = SubscribeResponse();
         decode_per(std::get<18>(pIe), pCtx);
     }
     else if (19 == type)
     {
-        pIe = UpdateNotification();
+        pIe = UnsubscribeRequest();
         decode_per(std::get<19>(pIe), pCtx);
     }
     else if (20 == type)
     {
-        pIe = RpcRequest();
+        pIe = UnsubscribeResponse();
         decode_per(std::get<20>(pIe), pCtx);
     }
     else if (21 == type)
     {
-        pIe = RpcAccept();
+        pIe = UpdateNotification();
         decode_per(std::get<21>(pIe), pCtx);
     }
     else if (22 == type)
     {
-        pIe = RpcReject();
+        pIe = RpcRequest();
         decode_per(std::get<22>(pIe), pCtx);
+    }
+    else if (23 == type)
+    {
+        pIe = RpcAccept();
+        decode_per(std::get<23>(pIe), pCtx);
+    }
+    else if (24 == type)
+    {
+        pIe = RpcReject();
+        decode_per(std::get<24>(pIe), pCtx);
     }
 }
 
@@ -1466,7 +1564,7 @@ inline void str(const char* pName, const PropertyTreeMessages& pIe, std::string&
             pCtx += std::string(pName) + ":{";
         else
             pCtx += "{";
-        std::string name = "SetValueIndication";
+        std::string name = "SetValueRequest";
         str(name.c_str(), std::get<14>(pIe), pCtx, true);
         pCtx += "}";
     }
@@ -1476,7 +1574,7 @@ inline void str(const char* pName, const PropertyTreeMessages& pIe, std::string&
             pCtx += std::string(pName) + ":{";
         else
             pCtx += "{";
-        std::string name = "SubscribeRequest";
+        std::string name = "SetValueAccept";
         str(name.c_str(), std::get<15>(pIe), pCtx, true);
         pCtx += "}";
     }
@@ -1486,7 +1584,7 @@ inline void str(const char* pName, const PropertyTreeMessages& pIe, std::string&
             pCtx += std::string(pName) + ":{";
         else
             pCtx += "{";
-        std::string name = "SubscribeResponse";
+        std::string name = "SetValueReject";
         str(name.c_str(), std::get<16>(pIe), pCtx, true);
         pCtx += "}";
     }
@@ -1496,7 +1594,7 @@ inline void str(const char* pName, const PropertyTreeMessages& pIe, std::string&
             pCtx += std::string(pName) + ":{";
         else
             pCtx += "{";
-        std::string name = "UnsubscribeRequest";
+        std::string name = "SubscribeRequest";
         str(name.c_str(), std::get<17>(pIe), pCtx, true);
         pCtx += "}";
     }
@@ -1506,7 +1604,7 @@ inline void str(const char* pName, const PropertyTreeMessages& pIe, std::string&
             pCtx += std::string(pName) + ":{";
         else
             pCtx += "{";
-        std::string name = "UnsubscribeResponse";
+        std::string name = "SubscribeResponse";
         str(name.c_str(), std::get<18>(pIe), pCtx, true);
         pCtx += "}";
     }
@@ -1516,7 +1614,7 @@ inline void str(const char* pName, const PropertyTreeMessages& pIe, std::string&
             pCtx += std::string(pName) + ":{";
         else
             pCtx += "{";
-        std::string name = "UpdateNotification";
+        std::string name = "UnsubscribeRequest";
         str(name.c_str(), std::get<19>(pIe), pCtx, true);
         pCtx += "}";
     }
@@ -1526,7 +1624,7 @@ inline void str(const char* pName, const PropertyTreeMessages& pIe, std::string&
             pCtx += std::string(pName) + ":{";
         else
             pCtx += "{";
-        std::string name = "RpcRequest";
+        std::string name = "UnsubscribeResponse";
         str(name.c_str(), std::get<20>(pIe), pCtx, true);
         pCtx += "}";
     }
@@ -1536,7 +1634,7 @@ inline void str(const char* pName, const PropertyTreeMessages& pIe, std::string&
             pCtx += std::string(pName) + ":{";
         else
             pCtx += "{";
-        std::string name = "RpcAccept";
+        std::string name = "UpdateNotification";
         str(name.c_str(), std::get<21>(pIe), pCtx, true);
         pCtx += "}";
     }
@@ -1546,8 +1644,28 @@ inline void str(const char* pName, const PropertyTreeMessages& pIe, std::string&
             pCtx += std::string(pName) + ":{";
         else
             pCtx += "{";
-        std::string name = "RpcReject";
+        std::string name = "RpcRequest";
         str(name.c_str(), std::get<22>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (23 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "RpcAccept";
+        str(name.c_str(), std::get<23>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (24 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "RpcReject";
+        str(name.c_str(), std::get<24>(pIe), pCtx, true);
         pCtx += "}";
     }
     if (!pIsLast)
