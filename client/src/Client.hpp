@@ -41,7 +41,7 @@ public:
 
     Property root();
     Property create(Property& pParent, const std::string& pName);
-    Property get(Property& pParent, const std::string& pName, bool pRecursive);
+    Property get(Property& pParent, const std::string& pName, bool pReq);
     void commit(Property& pProp);
     void fetch(Property& pProp);
     bool subscribe(Property&);

@@ -8,6 +8,7 @@ namespace propertytree
 {
 
 Server::Server()
+    : mProto([this](){mReactor.stop();})
 {
     mServerFd = socket(AF_INET, SOCK_STREAM, 0);
     if (-1 == mServerFd)

@@ -13,10 +13,13 @@ namespace propertytree
 struct Node
 {
     Node() = delete;
-    Node(std::weak_ptr<Node> pParent, uint64_t pUuid)
-        : parent(pParent)
+    Node(const std::string& pName, std::weak_ptr<Node> pParent, uint64_t pUuid)
+        : name(pName)
+        , parent(pParent)
         , uuid(pUuid)
     {}
+
+    std::string name;
 
     bfc::Buffer data;
     std::map<std::string, std::shared_ptr<Node>> children;

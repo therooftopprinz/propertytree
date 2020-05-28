@@ -62,7 +62,7 @@ Client::Client(const ClientConfig& pConfig)
     }
 
     std::unique_lock<std::mutex> lg(mTreeMutex);
-    mTree.emplace(0, std::make_shared<Node>(std::shared_ptr<Node>(), 0));
+    mTree.emplace(0, std::make_shared<Node>("", std::shared_ptr<Node>(), 0));
 }
 
 Client::~Client()
@@ -112,7 +112,7 @@ Property Client::create(Property& pParent, const std::string& pName)
     {
         auto& createAccept = std::get<CreateAccept>(response);
         std::unique_lock<std::mutex> lg(mTreeMutex);
-        auto newNode = std::make_shared<Node>(node, createAccept.uuid);
+        auto newNode = std::make_shared<Node>(pName, node, createAccept.uuid);
         mTree.emplace(createAccept.uuid, newNode);
         lg.unlock();
         std::unique_lock<std::mutex> lgNode(node->childrenMutex);
@@ -319,7 +319,17 @@ bool Client::destroy(Property& pProp)
     if (cum::GetIndexByType<PropertyTreeMessages, DeleteResponse>() == response.index())
     {
         auto& deleteResponse = std::get<DeleteResponse>(response);
-        return deleteResponse.cause == Cause::OK;
+        if (deleteResponse.cause != Cause::OK)
+        {
+            return false;
+        }
+        auto parent = pProp.node()->parent.lock();
+        auto name = pProp.node()->name;
+        if (parent)
+        {
+            parent->children.erase(name);
+        }
+        return true;
     }
     else
     {
@@ -442,7 +452,7 @@ void Client::addNodes(NamedNodeList& pNodeList)
         }
         auto& parentNode = foundIt->second;
         lg.unlock();
-        auto newNode = std::make_shared<Node>(parentNode, i.uuid);
+        auto newNode = std::make_shared<Node>(i.name, parentNode, i.uuid);
         std::unique_lock<std::mutex> parentLg(parentNode->childrenMutex);
         parentNode->children.emplace(i.name, newNode);
         parentLg.unlock();

@@ -29,7 +29,7 @@ struct Session
 class ProtocolHandler
 {
 public:
-    ProtocolHandler();
+    ProtocolHandler(bfc::LightFn<void()> pTerminator);
 
     void onDisconnect(IConnectionSession* pConnection);
     void onMsg(bfc::ConstBuffer pBuffer, std::shared_ptr<IConnectionSession> pConnection);
@@ -67,6 +67,8 @@ private:
 
     bfc::ThreadPool<>& mTp;
     bfc::Timer<>& mTimer;
+
+    bfc::LightFn<void()> mTerminator;
 
 };
 

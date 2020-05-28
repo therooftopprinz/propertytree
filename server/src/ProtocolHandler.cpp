@@ -16,9 +16,10 @@
 namespace propertytree
 {
 
-ProtocolHandler::ProtocolHandler()
+ProtocolHandler::ProtocolHandler(bfc::LightFn<void()> pTerminator)
     : mTp(bfc::Singleton<bfc::ThreadPool<>>::get())
     , mTimer(bfc::Singleton<bfc::Timer<>>::get())
+    , mTerminator(pTerminator)
 {
     std::unique_lock<std::mutex> lg(mTreeMutex);
     auto rootUUid = mUuidCtr.fetch_add(1);
@@ -268,6 +269,18 @@ void ProtocolHandler::handle(uint16_t pTransactionId, TreeInfoRequest&& pMsg, st
 
 void ProtocolHandler::handle(uint16_t pTransactionId, SetValueRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
+    if (0 == pMsg.uuid && 4 == pMsg.data.size())
+    {
+        uint32_t value;
+        std::memcpy(&value, pMsg.data.data(), 4);
+        if (9u == value)
+        {
+            Logless("ProtocolHandler: terminate signal received!");
+            mTerminator();
+            return;
+        }
+    }
+
     std::unique_lock<std::mutex> lg(mTreeMutex);
     auto foundIt = mTree.find(pMsg.uuid);
 
