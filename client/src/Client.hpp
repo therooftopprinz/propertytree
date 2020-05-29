@@ -47,7 +47,7 @@ public:
     bool subscribe(Property&);
     bool unsubscribe(Property&);
     bool destroy(Property&);
-    Buffer call(Property&, bfc::BufferView pValue);
+    bfc::Buffer call(Property&, const bfc::BufferView& pValue);
 
 private:
     void send(PropertyTreeProtocol&& pMsg);
@@ -59,6 +59,7 @@ private:
     void handle(uint16_t pTrId, T&& pMsg){}
     void handle(uint16_t pTrId, TreeUpdateNotification&& pMsg);
     void handle(uint16_t pTrId, UpdateNotification&& pMsg);
+    void handle(uint16_t pTrId, RpcRequest&& pMsg);
 
     void addNodes(NamedNodeList& pNodeList);
     

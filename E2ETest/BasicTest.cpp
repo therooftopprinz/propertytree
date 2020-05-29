@@ -206,3 +206,35 @@ TEST_F(BasicTest, shouldRetrieveTree)
         EXPECT_EQ(child1_grandchild1_great2.value<int>(), 112);
     }
 }
+
+TEST_F(BasicTest, shouldRpcCall)
+{
+    auto rpc = sut.root().create("rpc");
+    rpc.setHRcpHandler([](const bfc::BufferView& pParam) -> bfc::Buffer {
+            uint32_t param = *(uint32_t*)pParam.data();
+            param++;
+            auto rv = bfc::Buffer(new std::byte[4], 4);
+            std::memcpy(rv.data(), &param, 4);
+            return rv;
+        });
+    {
+        Client sut2 = Client(config);
+        auto rpc = sut2.root().get("rpc");
+        {
+            uint32_t param = 42;
+            auto valueRaw = rpc.call(bfc::BufferView((std::byte*)&param, 4));
+            ASSERT_EQ(4u, valueRaw.size());
+            uint32_t value;
+            std::memcpy(&value, valueRaw.data(), 4);
+            EXPECT_EQ(43u, value);
+        }
+        {
+            uint32_t param = 43;
+            auto valueRaw = rpc.call(bfc::BufferView((std::byte*)&param, 4));
+            ASSERT_EQ(4u, valueRaw.size());
+            uint32_t value;
+            std::memcpy(&value, valueRaw.data(), 4);
+            EXPECT_EQ(44u, value);
+        }
+    }
+}

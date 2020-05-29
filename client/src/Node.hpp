@@ -23,9 +23,11 @@ struct Node
 
     bfc::Buffer data;
     std::map<std::string, std::shared_ptr<Node>> children;
-
+    std::function<bfc::Buffer(const bfc::BufferView&)> rcpHandler; 
+ 
     std::mutex dataMutex;
     std::mutex childrenMutex;
+    std::mutex rcpHandlerMutex;
 
     std::weak_ptr<Node> parent;
     uint64_t uuid;

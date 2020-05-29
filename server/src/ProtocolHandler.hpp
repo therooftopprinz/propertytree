@@ -23,7 +23,6 @@ struct Session
     {}
 
     std::shared_ptr<IConnectionSession> connectionSession;
-    std::mutex connectionSessionMutex;
 };
 
 class ProtocolHandler
@@ -50,16 +49,28 @@ private:
     void handle(uint16_t pTransactionId, UnsubscribeRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
     void handle(uint16_t pTransactionId, DeleteRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
 
+    template<typename T>
+    void handleRpc(uint16_t pTransactionId, T&& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
+    void handle(uint16_t pTransactionId, RpcRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
+    void handle(uint16_t pTransactionId, RpcAccept&& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
+    void handle(uint16_t pTransactionId, RpcReject&& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
 
     template <typename T>
     void fillToAddListFromTree(T& pIe, std::shared_ptr<Node>& pNode, bool pRecursive);
 
     void send(const PropertyTreeProtocol& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
 
-    std::unordered_map<uint32_t, Session> mSessions;
+
+    // mSessions: <SessionId, Session>
+    std::unordered_map<uint32_t, std::shared_ptr<Session>> mSessions;
     std::unordered_map<IConnectionSession*, uint32_t> mConnectionToSessionId;
     std::mutex mSessionsMutex;
     std::atomic_uint32_t mSessionIdCtr{};
+
+    std::atomic_uint32_t mTrIdCtr{};
+    // mTrIdTranslation: TrId Req - Resp Translation Table: map<DestinationTrId, <SourceSessionId, SourceTrId>>
+    std::unordered_map<uint16_t, std::pair<uint32_t, uint16_t>> mTrIdTranslation;
+    std::mutex mTrIdTranslationMutex;
 
     std::unordered_map<uint64_t, std::shared_ptr<Node>> mTree;
     std::mutex mTreeMutex;

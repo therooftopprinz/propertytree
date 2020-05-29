@@ -17,6 +17,7 @@
 // Enumeration:  ('Cause', ('ALREADY_EXIST', None))
 // Enumeration:  ('Cause', ('NOT_PERMITTED', None))
 // Enumeration:  ('Cause', ('NOT_EMPTY', None))
+// Enumeration:  ('Cause', ('NO_HANDLER', None))
 // Sequence:  NamedNode ('String', 'name')
 // Sequence:  NamedNode ('u64', 'uuid')
 // Sequence:  NamedNode ('u64', 'parentUuid')
@@ -110,7 +111,8 @@ enum class Cause : uint8_t
     NOT_FOUND,
     ALREADY_EXIST,
     NOT_PERMITTED,
-    NOT_EMPTY
+    NOT_EMPTY,
+    NO_HANDLER
 };
 
 struct NamedNode
@@ -280,6 +282,7 @@ inline void str(const char* pName, const Cause& pIe, std::string& pCtx, bool pIs
     if (Cause::ALREADY_EXIST == pIe) pCtx += "\"ALREADY_EXIST\"";
     if (Cause::NOT_PERMITTED == pIe) pCtx += "\"NOT_PERMITTED\"";
     if (Cause::NOT_EMPTY == pIe) pCtx += "\"NOT_EMPTY\"";
+    if (Cause::NO_HANDLER == pIe) pCtx += "\"NO_HANDLER\"";
     pCtx = pCtx + "}";
     if (!pIsLast)
     {

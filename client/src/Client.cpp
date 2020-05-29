@@ -206,6 +206,43 @@ void Client::handle(uint16_t, UpdateNotification&& pMsg)
     }
 }
 
+void Client::handle(uint16_t pTransactionId, RpcRequest&& pMsg)
+{
+    PropertyTreeProtocol message = PropertyTreeMessage{};
+    auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
+    propertyTreeMessage.message = RpcReject{};
+    propertyTreeMessage.transactionId = pTransactionId;
+    auto& rpcReject = std::get<RpcReject>(propertyTreeMessage.message);
+
+    std::unique_lock<std::mutex> lg(mTreeMutex);
+    auto nodeIt = mTree.find(pMsg.uuid);
+    if (mTree.end() == nodeIt)
+    {
+        rpcReject.cause = Cause::NOT_FOUND;
+        send(std::move(message));
+        return;
+    }
+    auto node = nodeIt->second;
+    lg.unlock();
+
+    std::unique_lock<std::mutex> lgHandler(node->rcpHandlerMutex);
+    if (node->rcpHandler)
+    {
+        propertyTreeMessage.message = RpcAccept{};
+        auto& rcpAccept = std::get<RpcAccept>(propertyTreeMessage.message);
+
+        auto rv = node->rcpHandler(bfc::BufferView((std::byte*)pMsg.param.data(), pMsg.param.size()));
+        rcpAccept.value.resize(rv.size());
+        std::memcpy(rcpAccept.value.data(), rv.data(), rv.size());
+        send(std::move(message));
+        return;
+    }
+
+    rpcReject.cause = Cause::NO_HANDLER;
+    send(std::move(message));
+    return;
+}
+
 void Client::commit(Property& pProp)
 {
     PropertyTreeProtocol message = PropertyTreeMessage{};
@@ -337,9 +374,42 @@ bool Client::destroy(Property& pProp)
     }
 }
 
-Buffer Client::call(Property&, bfc::BufferView pValue)
+bfc::Buffer Client::call(Property& pProp, const bfc::BufferView& pValue)
 {
-    return {};
+    PropertyTreeProtocol message = PropertyTreeMessage{};
+    auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
+    propertyTreeMessage.message = RpcRequest{};
+    auto& rpcRequest = std::get<RpcRequest>(propertyTreeMessage.message);
+    rpcRequest.uuid = pProp.uuid();
+
+    rpcRequest.param.reserve(pValue.size());
+
+    for (auto i=0u; i<pValue.size(); i++)
+    {
+        rpcRequest.param.emplace_back((uint8_t)pValue.data()[i]);
+    }
+
+    auto trId = addTransaction(std::move(message));
+    auto response = waitTransaction(trId);
+
+    bfc::Buffer rv;
+
+    if (cum::GetIndexByType<PropertyTreeMessages, RpcAccept>() == response.index())
+    {
+        auto& rpcAccept = std::get<RpcAccept>(response);
+        size_t size = rpcAccept.value.size();
+        rv = bfc::Buffer(new std::byte[size], size);
+        std::memcpy(rv.data(), rpcAccept.value.data(), size);
+        return rv;
+    }
+    else if (cum::GetIndexByType<PropertyTreeMessages, RpcAccept>() == response.index())
+    {
+        return rv;
+    }
+    else
+    {
+        throw std::runtime_error("protocol error!");
+    }
 }
 
 void Client::handleRead()

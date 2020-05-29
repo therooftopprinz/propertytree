@@ -104,6 +104,16 @@ public:
         return mNode->children.size();
     }
 
+    bfc::Buffer call(const bfc::BufferView& pValue)
+    {
+        return mClient.call(*this, pValue);
+    }
+
+    void setHRcpHandler(std::function<bfc::Buffer(const bfc::BufferView&)>&& pHandler)
+    {
+        mNode->rcpHandler = std::move(pHandler);
+    }
+
 private:
     Property(Client& pClient, std::shared_ptr<Node> pNode)
         : mClient(pClient)

@@ -39,7 +39,8 @@ Enumeration Cause
     NOT_FOUND,
     ALREADY_EXIST,
     NOT_PERMITTED,
-    NOT_EMPTY
+    NOT_EMPTY,
+    NO_HANDLER
 
 };
 

@@ -23,7 +23,7 @@ ProtocolHandler::ProtocolHandler(bfc::LightFn<void()> pTerminator)
 {
     std::unique_lock<std::mutex> lg(mTreeMutex);
     auto rootUUid = mUuidCtr.fetch_add(1);
-    mTree.emplace(rootUUid, std::make_shared<Node>("", std::weak_ptr<Node>(), rootUUid));
+    mTree.emplace(rootUUid, std::make_shared<Node>("", 0xFFFFFFFF, std::weak_ptr<Node>(), rootUUid));
 }
 
 void ProtocolHandler::onDisconnect(IConnectionSession* pConnection)
@@ -37,8 +37,7 @@ void ProtocolHandler::onDisconnect(IConnectionSession* pConnection)
     auto sessionId = sessionIdIt->second;
     mConnectionToSessionId.erase(sessionIdIt);
     auto sessionIt = mSessions.find(sessionId);
-    std::unique_lock<std::mutex> lgSession(sessionIt->second.connectionSessionMutex);
-    sessionIt->second.connectionSession.reset();
+    sessionIt->second->connectionSession.reset();
 }
 
 void ProtocolHandler::onMsg(bfc::ConstBuffer pMsg, std::shared_ptr<IConnectionSession> pConnection)
@@ -64,7 +63,7 @@ void ProtocolHandler::onMsg(bfc::ConstBuffer pMsg, std::shared_ptr<IConnectionSe
 
             std::string stred;
             str("root", message, stred, true);
-            Logless("ProtocolHandler: receive: session=_ decoded=_", pConnection.get(),  stred.c_str());
+            Logless("DBG ProtocolHandler: receive: session=_ decoded=_", pConnection.get(),  stred.c_str());
 
             std::visit([this](auto&& pMsg) {
                     this->self->onMsg(std::move(pMsg), this->pConnection);
@@ -103,7 +102,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SigninRequest&& pMsg, std:
 
     auto sessionId = mSessionIdCtr.fetch_add(1);
     std::unique_lock<std::mutex> lg(mSessionsMutex);
-    mSessions.emplace(std::piecewise_construct, std::forward_as_tuple(sessionId), std::forward_as_tuple(pConnection));
+    mSessions.emplace(sessionId, std::make_shared<Session>(pConnection));
     mConnectionToSessionId.emplace(pConnection.get(), sessionId);
     lg.unlock();
 
@@ -131,7 +130,17 @@ void ProtocolHandler::handle(uint16_t pTransactionId, CreateRequest&& pMsg, std:
     lg.unlock();
 
     std::unique_lock<std::mutex> lgNode(node->childrenMutex);
-    auto res = node->children.emplace(pMsg.name, std::make_shared<Node>(pMsg.name, node, -1));
+    std::unique_lock<std::mutex> lgSession(mSessionsMutex);
+    auto sessionIdIt = mConnectionToSessionId.find(pConnection.get());
+    if (mConnectionToSessionId.end() == sessionIdIt)
+    {
+        Logless("ERR ProtocolHandler:: CreateRequest from a non signedin connection.");
+        return;
+    }
+    auto sessionId = sessionIdIt->second;
+    lgSession.unlock();
+
+    auto res = node->children.emplace(pMsg.name, std::make_shared<Node>(pMsg.name, sessionId, node, -1));
     auto insertedNode = res.first->second;
     lgNode.unlock();
 
@@ -151,7 +160,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, CreateRequest&& pMsg, std:
     createAccept.uuid = uuid;
     send(message, pConnection);
 
-    std::unique_lock<std::mutex> lgSession(mSessionsMutex);
+    lgSession.lock();
     {
         PropertyTreeProtocol message = PropertyTreeMessage{};
         auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
@@ -163,7 +172,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, CreateRequest&& pMsg, std:
 
         for (auto& i : mSessions)
         {
-            send(message, i.second.connectionSession);
+            send(message, i.second->connectionSession);
         }
     }
 }
@@ -275,7 +284,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SetValueRequest&& pMsg, st
         std::memcpy(&value, pMsg.data.data(), 4);
         if (9u == value)
         {
-            Logless("ProtocolHandler: terminate signal received!");
+            Logless("INF ProtocolHandler: terminate signal received!");
             mTerminator();
             return;
         }
@@ -338,7 +347,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SetValueRequest&& pMsg, st
                 // TODO: removal of deleted session on the listener list
                 continue;
             }
-            connection = sessionIt->second.connectionSession;
+            connection = sessionIt->second->connectionSession;
             if (!connection)
             {
                 continue;
@@ -404,13 +413,16 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SubscribeRequest&& pMsg, s
     lg.unlock();
 
     std::unique_lock<std::mutex> lgNode(node->listenerMutex);
+    std::unique_lock<std::mutex> lgSession(mSessionsMutex);
     auto sessionIdIt = mConnectionToSessionId.find(pConnection.get());
     if (mConnectionToSessionId.end() == sessionIdIt)
     {
+        Logless("ERR ProtocolHandler: SubscribeRequest from a non signedin connection.");
         return;
     }
-
-    node->listener[sessionIdIt->second] = pConnection;
+    auto sessionId = sessionIdIt->second;
+    lgSession.unlock();
+    node->listener[sessionId] = pConnection;
     subscribeResponse.cause = Cause::OK;
     send(message, pConnection);
 }
@@ -507,8 +519,100 @@ void ProtocolHandler::handle(uint16_t pTransactionId, DeleteRequest&& pMsg, std:
     send(message, pConnection);
 }
 
+void ProtocolHandler::handle(uint16_t pTransactionId, RpcRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
+{
+    PropertyTreeProtocol message = PropertyTreeMessage{};
+    auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
+    propertyTreeMessage.message = std::move(pMsg);
+
+    PropertyTreeProtocol messageReject = PropertyTreeMessage{};
+    auto& propertyTreeMessageReject = std::get<PropertyTreeMessage>(messageReject);
+    propertyTreeMessageReject.message = RpcReject{};
+    propertyTreeMessageReject.transactionId = pTransactionId;
+    auto& rpcReject = std::get<RpcReject>(propertyTreeMessageReject.message);
+
+    std::unique_lock<std::mutex> lgTree(mTreeMutex);
+    auto foundIt = mTree.find(pMsg.uuid);
+    if (mTree.end() == foundIt)
+    {
+        rpcReject.cause = Cause::NOT_FOUND;
+        send(messageReject, pConnection);
+        return;
+    }
+    auto node = foundIt->second;
+    lgTree.unlock();
+
+    std::unique_lock<std::mutex> lgSession(mSessionsMutex);
+    auto sourceSessionIt = mConnectionToSessionId.find(pConnection.get());
+    if (mConnectionToSessionId.end() == sourceSessionIt)
+    {
+        return;
+    }
+
+    auto sourceSessionId = sourceSessionIt->second;
+    auto sessionId = node->sessionId;
+    auto targetConnection =  mSessions.find(sessionId)->second->connectionSession;
+    lgSession.unlock();
+
+    if (!targetConnection)
+    {
+        return;
+    }
+
+    std::unique_lock<std::mutex> lgTrId(mTrIdTranslationMutex);
+    auto trId = mTrIdCtr.fetch_add(1);
+    propertyTreeMessage.transactionId = trId;
+    mTrIdTranslation[trId] = std::pair<uint32_t, uint16_t>(sourceSessionId, pTransactionId);
+
+    send(message, targetConnection);
+}
+
+template<typename T>
+void ProtocolHandler::handleRpc(uint16_t pTransactionId, T&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
+{
+    std::unique_lock<std::mutex> lgTrId(mTrIdTranslationMutex);
+    auto translationIt = mTrIdTranslation.find(pTransactionId);
+    if (mTrIdTranslation.end() == translationIt)
+    {
+        return;
+    }
+    auto translation = translationIt->second;
+    mTrIdTranslation.erase(translationIt);
+    lgTrId.unlock();
+
+    PropertyTreeProtocol message = PropertyTreeMessage{};
+    auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
+    propertyTreeMessage.message = std::move(pMsg);
+    propertyTreeMessage.transactionId = translation.second;
+
+    std::unique_lock<std::mutex> lgSession(mSessionsMutex);
+    auto targetSessionIt =  mSessions.find(translation.first);
+    if (mSessions.end() == targetSessionIt)
+    {
+        return;
+    }
+    auto targetSession = targetSessionIt->second;
+    lgSession.unlock();
+    send(message, targetSession->connectionSession);
+}
+
+void ProtocolHandler::handle(uint16_t pTransactionId, RpcAccept&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
+{
+    handleRpc(pTransactionId, std::move(pMsg), pConnection);
+}
+
+void ProtocolHandler::handle(uint16_t pTransactionId, RpcReject&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
+{
+    handleRpc(pTransactionId, std::move(pMsg), pConnection);
+}
+
 void ProtocolHandler::send(const PropertyTreeProtocol& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
+    if (!pConnection)
+    {
+        return;
+    }
+
     std::byte buffer[512];
     auto& msgSize = *(new (buffer) uint16_t(0));
     cum::per_codec_ctx context(buffer+sizeof(msgSize), sizeof(buffer)-sizeof(msgSize));
@@ -519,12 +623,9 @@ void ProtocolHandler::send(const PropertyTreeProtocol& pMsg, std::shared_ptr<ICo
 
     std::string stred;
     str("root", pMsg, stred, true);
-    Logless("ProtocolHandler: send: session=_ encoded=_", pConnection.get(), stred.c_str());
+    Logless("DBG ProtocolHandler: send: session=_ encoded=_", pConnection.get(), stred.c_str());
 
-    if (pConnection)
-    {
-        pConnection->send(bfc::ConstBufferView(buffer, msgSize+2));
-    }
+    pConnection->send(bfc::ConstBufferView(buffer, msgSize+2));
  }
 
 } // propertytree
