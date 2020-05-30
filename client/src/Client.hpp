@@ -47,7 +47,7 @@ public:
     bool subscribe(Property&);
     bool unsubscribe(Property&);
     bool destroy(Property&);
-    bfc::Buffer call(Property&, const bfc::BufferView& pValue);
+    std::vector<uint8_t> call(Property&, const bfc::BufferView& pValue);
 
 private:
     void send(PropertyTreeProtocol&& pMsg);

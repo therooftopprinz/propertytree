@@ -3,6 +3,8 @@
 #include <propertytree/Client.hpp>
 #include <propertytree/Property.hpp>
 
+#include <Utils.hpp>
+
 using namespace testing;
 using namespace propertytree;
 
@@ -18,50 +20,6 @@ struct BasicTest : Test
 
     }
 
-    void clean()
-    {
-        auto root = sut.root();
-        root.loadChildren(true);
-        struct TraversalContext
-        {
-            std::vector<std::pair<std::string, Property>> children;
-            size_t index = 0;
-        };
-
-        std::vector<TraversalContext> levels;
-
-        levels.emplace_back(TraversalContext{root.children(), 0});
-
-        while(true)
-        {
-            auto* curentLevel = &levels.back();
-            size_t* index = &curentLevel->index;
-
-            if (*index >= curentLevel->children.size())
-            {
-                levels.pop_back();
-                if (0 == levels.size())
-                {
-                    break;
-                }
-                curentLevel = &levels.back();
-                index = &curentLevel->index;
-            }
-
-            auto& child = curentLevel->children[*index].second;
-            if (child.childrenSize())
-            {
-                levels.emplace_back(TraversalContext{child.children(), 0});
-                continue;
-            }
-            else
-            {
-                child.destroy();
-            }
-            (*index)++;
-        }
-    }
-
     ClientConfig config = {"127.0.0.1", 12345};
     Client sut = Client(config);
 };
@@ -72,7 +30,7 @@ TEST_F(BasicTest, shouldSignIn)
 
 TEST_F(BasicTest, shouldCleanTree)
 {
-    clean();
+    clean(sut);
 }
 
 TEST_F(BasicTest, shouldCreateAnSet)
@@ -124,7 +82,7 @@ TEST_F(BasicTest, shouldSubscribeUpdateAndUnsubscribe)
         child1 = 43;
     }
 
-    std::this_thread::sleep_for(std::chrono::microseconds(200));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     EXPECT_EQ(child1.value<int>(), 43);
     child1.unsubscribe();
@@ -135,7 +93,7 @@ TEST_F(BasicTest, shouldSubscribeUpdateAndUnsubscribe)
         child1 = 44;
     }
 
-    std::this_thread::sleep_for(std::chrono::microseconds(200));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     EXPECT_EQ(child1.value<int>(), 43);
 }
@@ -210,10 +168,10 @@ TEST_F(BasicTest, shouldRetrieveTree)
 TEST_F(BasicTest, shouldRpcCall)
 {
     auto rpc = sut.root().create("rpc");
-    rpc.setHRcpHandler([](const bfc::BufferView& pParam) -> bfc::Buffer {
+    rpc.setHRcpHandler([](const bfc::BufferView& pParam) -> std::vector<uint8_t> {
             uint32_t param = *(uint32_t*)pParam.data();
             param++;
-            auto rv = bfc::Buffer(new std::byte[4], 4);
+            auto rv = std::vector<uint8_t>(4);
             std::memcpy(rv.data(), &param, 4);
             return rv;
         });
@@ -237,4 +195,9 @@ TEST_F(BasicTest, shouldRpcCall)
             EXPECT_EQ(44u, value);
         }
     }
+}
+
+TEST_F(BasicTest, shouldCleanTree2)
+{
+    clean(sut);
 }

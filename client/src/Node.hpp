@@ -21,9 +21,9 @@ struct Node
 
     std::string name;
 
-    bfc::Buffer data;
+    std::vector<uint8_t> data;
     std::map<std::string, std::shared_ptr<Node>> children;
-    std::function<bfc::Buffer(const bfc::BufferView&)> rcpHandler; 
+    std::function<std::vector<uint8_t>(const bfc::BufferView&)> rcpHandler; 
  
     std::mutex dataMutex;
     std::mutex childrenMutex;

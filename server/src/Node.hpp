@@ -24,17 +24,16 @@ struct Node
 
     std::string name;
     uint32_t sessionId;
+    std::weak_ptr<Node> parent;
+    uint64_t uuid;
 
-    bfc::Buffer data;
+    std::vector<uint8_t> data;
     std::map<std::string, std::shared_ptr<Node>> children;
     std::unordered_map<uint32_t, std::weak_ptr<IConnectionSession>> listener;
 
     std::mutex dataMutex;
     std::mutex childrenMutex;
     std::mutex listenerMutex;
-
-    std::weak_ptr<Node> parent;
-    uint64_t uuid;
 };
 
 } // propertytree

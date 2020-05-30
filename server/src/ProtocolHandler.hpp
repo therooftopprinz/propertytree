@@ -58,7 +58,9 @@ private:
     template <typename T>
     void fillToAddListFromTree(T& pIe, std::shared_ptr<Node>& pNode, bool pRecursive);
 
+    size_t encode(const PropertyTreeProtocol& pMsg, std::byte* pData, size_t pSize);
     void send(const PropertyTreeProtocol& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
+    void send(const std::byte* pData, size_t pSize, std::shared_ptr<IConnectionSession>& pConnection);
 
 
     // mSessions: <SessionId, Session>

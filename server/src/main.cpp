@@ -8,7 +8,7 @@ using namespace propertytree;
 
 int main()
 {
-    Logger::getInstance().logful();
+    // Logger::getInstance().logful();
 
     bfc::Singleton<bfc::ThreadPool<>>::instantiate();
     auto& timer = bfc::Singleton<bfc::Timer<>>::instantiate();

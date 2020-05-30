@@ -27,9 +27,8 @@ public:
         }
         else
         {
-            auto raw = new std::byte[sizeof(T)];
-            new (raw) T(pOther);
-            node.data = bfc::Buffer((std::byte*)raw, sizeof(T)); 
+            node.data.resize(sizeof(T));
+            new (node.data.data()) T(pOther);
         }
 
         mClient.commit(*this);
@@ -104,12 +103,12 @@ public:
         return mNode->children.size();
     }
 
-    bfc::Buffer call(const bfc::BufferView& pValue)
+    std::vector<uint8_t> call(const bfc::BufferView& pValue)
     {
         return mClient.call(*this, pValue);
     }
 
-    void setHRcpHandler(std::function<bfc::Buffer(const bfc::BufferView&)>&& pHandler)
+    void setHRcpHandler(std::function<std::vector<uint8_t>(const bfc::BufferView&)>&& pHandler)
     {
         mNode->rcpHandler = std::move(pHandler);
     }

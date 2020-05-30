@@ -200,9 +200,7 @@ void Client::handle(uint16_t, UpdateNotification&& pMsg)
     }
     else
     {
-        auto buff = new std::byte[pMsg.data.size()];
-        std::memcpy(buff, pMsg.data.data(), pMsg.data.size());
-        node->data = bfc::Buffer(buff, pMsg.data.size());
+        node->data = std::move(pMsg.data);
     }
 }
 
@@ -287,9 +285,7 @@ void Client::fetch(Property& pProp)
         }
         else
         {
-            auto buff = new std::byte[getAccept.data.size()];
-            std::memcpy(buff, getAccept.data.data(), getAccept.data.size());
-            node.data = bfc::Buffer(buff, getAccept.data.size());
+            node.data = std::move(getAccept.data);
         }
     }
     else if (cum::GetIndexByType<PropertyTreeMessages, GetReject>() != response.index())
@@ -374,7 +370,7 @@ bool Client::destroy(Property& pProp)
     }
 }
 
-bfc::Buffer Client::call(Property& pProp, const bfc::BufferView& pValue)
+std::vector<uint8_t> Client::call(Property& pProp, const bfc::BufferView& pValue)
 {
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
@@ -392,19 +388,14 @@ bfc::Buffer Client::call(Property& pProp, const bfc::BufferView& pValue)
     auto trId = addTransaction(std::move(message));
     auto response = waitTransaction(trId);
 
-    bfc::Buffer rv;
-
     if (cum::GetIndexByType<PropertyTreeMessages, RpcAccept>() == response.index())
     {
         auto& rpcAccept = std::get<RpcAccept>(response);
-        size_t size = rpcAccept.value.size();
-        rv = bfc::Buffer(new std::byte[size], size);
-        std::memcpy(rv.data(), rpcAccept.value.data(), size);
-        return rv;
+        return std::move(rpcAccept.value);
     }
     else if (cum::GetIndexByType<PropertyTreeMessages, RpcAccept>() == response.index())
     {
-        return rv;
+        return {};
     }
     else
     {
@@ -557,7 +548,7 @@ PropertyTreeMessages Client::waitTransaction(uint16_t pTrId)
     {
         std::unique_lock<std::mutex> lg(transaction.mutex);
 
-        transaction.cv.wait_for(lg, std::chrono::milliseconds(500), [this, &transaction](){
+        transaction.cv.wait_for(lg, std::chrono::milliseconds(5000), [this, &transaction](){
                 return transaction.satisfied;
             });
 
