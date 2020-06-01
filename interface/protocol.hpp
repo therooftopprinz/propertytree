@@ -55,6 +55,8 @@
 // Sequence:  RpcRequest ('Buffer', 'param')
 // Sequence:  RpcAccept ('Buffer', 'value')
 // Sequence:  RpcReject ('Cause', 'cause')
+// Sequence:  HearbeatRequest ('u8', 'spare')
+// Sequence:  HearbeatResponse ('u8', 'spare')
 // Choice:  ('PropertyTreeMessages', 'SigninRequest')
 // Choice:  ('PropertyTreeMessages', 'SigninAccept')
 // Choice:  ('PropertyTreeMessages', 'CreateRequest')
@@ -80,6 +82,8 @@
 // Choice:  ('PropertyTreeMessages', 'RpcRequest')
 // Choice:  ('PropertyTreeMessages', 'RpcAccept')
 // Choice:  ('PropertyTreeMessages', 'RpcReject')
+// Choice:  ('PropertyTreeMessages', 'HearbeatRequest')
+// Choice:  ('PropertyTreeMessages', 'HearbeatResponse')
 // Sequence:  PropertyTreeMessage ('u16', 'transactionId')
 // Sequence:  PropertyTreeMessage ('PropertyTreeMessages', 'message')
 // Type:  ('PropertyTreeMessageArray', {'type': 'PropertyTreeMessage'})
@@ -255,7 +259,17 @@ struct RpcReject
     Cause cause;
 };
 
-using PropertyTreeMessages = std::variant<SigninRequest,SigninAccept,CreateRequest,CreateAccept,CreateReject,GetRequest,GetAccept,GetReject,TreeInfoRequest,TreeInfoResponse,TreeInfoErrorResponse,TreeUpdateNotification,DeleteRequest,DeleteResponse,SetValueRequest,SetValueAccept,SetValueReject,SubscribeRequest,SubscribeResponse,UnsubscribeRequest,UnsubscribeResponse,UpdateNotification,RpcRequest,RpcAccept,RpcReject>;
+struct HearbeatRequest
+{
+    u8 spare;
+};
+
+struct HearbeatResponse
+{
+    u8 spare;
+};
+
+using PropertyTreeMessages = std::variant<SigninRequest,SigninAccept,CreateRequest,CreateAccept,CreateReject,GetRequest,GetAccept,GetReject,TreeInfoRequest,TreeInfoResponse,TreeInfoErrorResponse,TreeUpdateNotification,DeleteRequest,DeleteResponse,SetValueRequest,SetValueAccept,SetValueReject,SubscribeRequest,SubscribeResponse,UnsubscribeRequest,UnsubscribeResponse,UpdateNotification,RpcRequest,RpcAccept,RpcReject,HearbeatRequest,HearbeatResponse>;
 struct PropertyTreeMessage
 {
     u16 transactionId;
@@ -1175,6 +1189,72 @@ inline void str(const char* pName, const RpcReject& pIe, std::string& pCtx, bool
     }
 }
 
+inline void encode_per(const HearbeatRequest& pIe, cum::per_codec_ctx& pCtx)
+{
+    using namespace cum;
+    encode_per(pIe.spare, pCtx);
+}
+
+inline void decode_per(HearbeatRequest& pIe, cum::per_codec_ctx& pCtx)
+{
+    using namespace cum;
+    decode_per(pIe.spare, pCtx);
+}
+
+inline void str(const char* pName, const HearbeatRequest& pIe, std::string& pCtx, bool pIsLast)
+{
+    using namespace cum;
+    if (!pName)
+    {
+        pCtx = pCtx + "{";
+    }
+    else
+    {
+        pCtx = pCtx + "\"" + pName + "\":{";
+    }
+    size_t nOptional = 0;
+    size_t nMandatory = 1;
+    str("spare", pIe.spare, pCtx, !(--nMandatory+nOptional));
+    pCtx = pCtx + "}";
+    if (!pIsLast)
+    {
+        pCtx += ",";
+    }
+}
+
+inline void encode_per(const HearbeatResponse& pIe, cum::per_codec_ctx& pCtx)
+{
+    using namespace cum;
+    encode_per(pIe.spare, pCtx);
+}
+
+inline void decode_per(HearbeatResponse& pIe, cum::per_codec_ctx& pCtx)
+{
+    using namespace cum;
+    decode_per(pIe.spare, pCtx);
+}
+
+inline void str(const char* pName, const HearbeatResponse& pIe, std::string& pCtx, bool pIsLast)
+{
+    using namespace cum;
+    if (!pName)
+    {
+        pCtx = pCtx + "{";
+    }
+    else
+    {
+        pCtx = pCtx + "\"" + pName + "\":{";
+    }
+    size_t nOptional = 0;
+    size_t nMandatory = 1;
+    str("spare", pIe.spare, pCtx, !(--nMandatory+nOptional));
+    pCtx = pCtx + "}";
+    if (!pIsLast)
+    {
+        pCtx += ",";
+    }
+}
+
 inline void encode_per(const PropertyTreeMessages& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
@@ -1280,6 +1360,14 @@ inline void encode_per(const PropertyTreeMessages& pIe, cum::per_codec_ctx& pCtx
     else if (24 == type)
     {
         encode_per(std::get<24>(pIe), pCtx);
+    }
+    else if (25 == type)
+    {
+        encode_per(std::get<25>(pIe), pCtx);
+    }
+    else if (26 == type)
+    {
+        encode_per(std::get<26>(pIe), pCtx);
     }
 }
 
@@ -1413,6 +1501,16 @@ inline void decode_per(PropertyTreeMessages& pIe, cum::per_codec_ctx& pCtx)
     {
         pIe = RpcReject();
         decode_per(std::get<24>(pIe), pCtx);
+    }
+    else if (25 == type)
+    {
+        pIe = HearbeatRequest();
+        decode_per(std::get<25>(pIe), pCtx);
+    }
+    else if (26 == type)
+    {
+        pIe = HearbeatResponse();
+        decode_per(std::get<26>(pIe), pCtx);
     }
 }
 
@@ -1669,6 +1767,26 @@ inline void str(const char* pName, const PropertyTreeMessages& pIe, std::string&
             pCtx += "{";
         std::string name = "RpcReject";
         str(name.c_str(), std::get<24>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (25 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "HearbeatRequest";
+        str(name.c_str(), std::get<25>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (26 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "HearbeatResponse";
+        str(name.c_str(), std::get<26>(pIe), pCtx, true);
         pCtx += "}";
     }
     if (!pIsLast)

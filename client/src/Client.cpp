@@ -390,6 +390,23 @@ bool Client::destroy(Property& pProp)
     }
 }
 
+void Client::beat()
+{
+    LOGLESS_TRACE();
+    PropertyTreeProtocol message = PropertyTreeMessage{};
+    auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
+    propertyTreeMessage.message = HearbeatRequest{};
+
+    auto trId = addTransaction(std::move(message));
+    auto response = waitTransaction(trId);
+
+    if (cum::GetIndexByType<PropertyTreeMessages, HearbeatResponse>() != response.index())
+    {
+        throw std::runtime_error("protocol error!");
+    }
+}
+
+
 std::vector<uint8_t> Client::call(Property& pProp, const bfc::BufferView& pValue)
 {
     LOGLESS_TRACE();

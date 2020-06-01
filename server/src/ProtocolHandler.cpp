@@ -78,6 +78,9 @@ void ProtocolHandler::onMsg(bfc::ConstBuffer pMsg, std::shared_ptr<IConnectionSe
     };
 
     auto instance = new lambda(this, std::move(pMsg), std::move(pConnection));
+    // instance->run();
+    // delete instance;
+    // return;
     mTp.execute([instance]() mutable {
             instance->run();
             delete instance;
@@ -661,6 +664,16 @@ void ProtocolHandler::handle(uint16_t pTransactionId, RpcAccept&& pMsg, std::sha
 void ProtocolHandler::handle(uint16_t pTransactionId, RpcReject&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
     handleRpc(pTransactionId, std::move(pMsg), pConnection);
+}
+
+void ProtocolHandler::handle(uint16_t pTransactionId, HearbeatRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
+{
+    LOGLESS_TRACE();
+    PropertyTreeProtocol message = PropertyTreeMessage{};
+    auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
+    propertyTreeMessage.message = HearbeatResponse{};
+    propertyTreeMessage.transactionId = pTransactionId;
+    send(message, pConnection);
 }
 
 size_t ProtocolHandler::encode(const PropertyTreeProtocol& pMsg, std::byte* pData, size_t pSize)

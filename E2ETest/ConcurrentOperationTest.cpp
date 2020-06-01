@@ -101,12 +101,38 @@ struct SetGetBasic
     double getValSigma = 0;
 };
 
+struct Beat
+{
+    Beat(Client& pSut)
+        : sut(pSut)
+    {
+    }
+
+    void operator()()
+    {
+        constexpr size_t COUNT = 1000;
+        for (uint32_t i = 0; i<COUNT; i++)
+        {
+            auto beatTp0 = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+            sut.beat();
+            auto beatTp1 = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+            auto diff = beatTp1 - beatTp0;
+            beatSigma += diff;
+        }
+
+        beatSigma /= COUNT;
+
+        printf("Beat completed: average_beat_latency:%lf\n", beatSigma);
+    }
+    Client& sut;
+    double beatSigma = 0;
+};
 
 TEST_F(ConcurrentOperationTest, shouldConcurrentAddNodeOnSameParent)
 {
     std::vector<std::thread> runners;
     std::map<uint32_t, Client> clients;
-    for (auto i=0u; i<8; i++)
+    for (auto i=0u; i<4; i++)
     {
         auto res = clients.emplace(std::piecewise_construct, std::forward_as_tuple(i), std::forward_as_tuple(config));
         auto& sut = res.first->second;
@@ -125,7 +151,7 @@ TEST_F(ConcurrentOperationTest, shouldConcurrentAddNodeOnDifferentParent)
 {
     std::vector<std::thread> runners;
     std::map<uint32_t, Client> clients;
-    for (auto i=0u; i<8; i++)
+    for (auto i=0u; i<4; i++)
     {
         auto res = clients.emplace(std::piecewise_construct, std::forward_as_tuple(i), std::forward_as_tuple(config));
         auto& sut = res.first->second;
@@ -161,7 +187,7 @@ TEST_F(ConcurrentOperationTest, shouldSingleSetGetThreaded)
 {
     std::vector<std::thread> runners;
     std::map<uint32_t, Client> clients;
-    for (auto i=0u; i<32; i++)
+    for (auto i=0u; i<4; i++)
     {
         auto res = clients.emplace(std::piecewise_construct, std::forward_as_tuple(i), std::forward_as_tuple(config));
         auto& sut = res.first->second;
@@ -175,6 +201,32 @@ TEST_F(ConcurrentOperationTest, shouldSingleSetGetThreaded)
     }
 }
 
+TEST_F(ConcurrentOperationTest, shouldHeartbeatSingle)
+{
+    Client sut = Client(config);
+    for (auto i=0u; i<8u; i++)
+    {
+        Beat beater(sut);
+        beater();
+    }
+}
+
+TEST_F(ConcurrentOperationTest, shouldHeartbeatThreaded)
+{
+    std::vector<std::thread> runners;
+    std::map<uint32_t, Client> clients;
+    for (auto i=0u; i<4; i++)
+    {
+        auto res = clients.emplace(std::piecewise_construct, std::forward_as_tuple(i), std::forward_as_tuple(config));
+        auto& sut = res.first->second;
+        runners.emplace_back([&sut](){Beat er(sut); er();});
+    }
+
+    for (auto& i : runners)
+    {
+        i.join();
+    }
+}
 
 TEST_F(ConcurrentOperationTest, shouldCleanTree3)
 {

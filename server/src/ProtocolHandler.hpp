@@ -55,6 +55,8 @@ private:
     void handle(uint16_t pTransactionId, RpcAccept&& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
     void handle(uint16_t pTransactionId, RpcReject&& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
 
+    void handle(uint16_t pTransactionId, HearbeatRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection);
+
     template <typename T>
     void fillToAddListFromTree(T& pIe, std::shared_ptr<Node>& pNode, bool pRecursive);
 
