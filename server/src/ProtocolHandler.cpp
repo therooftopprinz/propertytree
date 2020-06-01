@@ -40,7 +40,7 @@ void ProtocolHandler::onDisconnect(IConnectionSession* pConnection)
     sessionIt->second->connectionSession.reset();
 }
 
-void ProtocolHandler::onMsg(bfc::ConstBuffer pMsg, std::shared_ptr<IConnectionSession> pConnection)
+void ProtocolHandler::onMsg(bfc::ConstBufferView pMsg, std::shared_ptr<IConnectionSession> pConnection)
 {
     LOGLESS_TRACE();
     PropertyTreeProtocol message;
@@ -145,7 +145,6 @@ void ProtocolHandler::handle(uint16_t pTransactionId, CreateRequest&& pMsg, std:
         std::byte buffer[ENCODE_SIZE];
         auto msgSize = encode(message, buffer, sizeof(buffer));
 
-        // TODO: this blocks mSessionsMutex too much
         for (auto& i : mSessions)
         {
             send(buffer, msgSize, i.second->connectionSession);
@@ -294,7 +293,6 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SetValueRequest&& pMsg, st
             auto sessionIt = mSessions.find(i->first);
             if (mSessions.end() == sessionIt)
             {
-                // TODO: removal of deleted session on the listener list
                 continue;
             }
             connection = sessionIt->second->connectionSession;
@@ -406,7 +404,6 @@ void ProtocolHandler::handle(uint16_t pTransactionId, UnsubscribeRequest&& pMsg,
 void ProtocolHandler::handle(uint16_t pTransactionId, DeleteRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
     LOGLESS_TRACE();
-    // TODO: blocks deletion of uuid=0
 
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
@@ -451,7 +448,6 @@ void ProtocolHandler::handle(uint16_t pTransactionId, DeleteRequest&& pMsg, std:
         std::byte buffer[ENCODE_SIZE];
         auto msgSize = encode(message, buffer, sizeof(buffer));
 
-        // TODO: this blocks mSessionsMutex too much
         for (auto& i : mSessions)
         {
             send(buffer, msgSize, i.second->connectionSession);

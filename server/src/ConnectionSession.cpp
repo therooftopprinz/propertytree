@@ -66,13 +66,9 @@ void ConnectionSession::handleRead()
 
     if (mExpectedReadSize == mBuffIdx)
     {
-        auto raw = new std::byte[mBuffIdx];
-        bfc::ConstBuffer buff(raw, mBuffIdx);
-        std::memcpy(raw, mBuff, mBuffIdx);
+        Logless("DBG ConnectionSession[_]: receive: _", mFd, BufferLog(mBuffIdx, mBuff));
 
-        Logless("DBG ConnectionSession[_]: receive: _", mFd, BufferLog(buff.size(), buff.data()));
-
-        mProto.onMsg(std::move(buff), shared_from_this());
+        mProto.onMsg(bfc::ConstBufferView(mBuff, mBuffIdx), shared_from_this());
 
         mReadState = WAIT_HEADER;
         mBuffIdx = 0;

@@ -31,7 +31,7 @@ public:
     ProtocolHandler(bfc::LightFn<void()> pTerminator);
 
     void onDisconnect(IConnectionSession* pConnection);
-    void onMsg(bfc::ConstBuffer pBuffer, std::shared_ptr<IConnectionSession> pConnection);
+    void onMsg(bfc::ConstBufferView pBuffer, std::shared_ptr<IConnectionSession> pConnection);
 
 private:
 
