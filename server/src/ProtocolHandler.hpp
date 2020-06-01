@@ -68,20 +68,14 @@ private:
     // mSessions: <SessionId, Session>
     std::unordered_map<uint32_t, std::shared_ptr<Session>> mSessions;
     std::unordered_map<IConnectionSession*, uint32_t> mConnectionToSessionId;
-    std::mutex mSessionsMutex;
-    std::atomic_uint32_t mSessionIdCtr{};
+    uint32_t mSessionIdCtr{};
 
-    std::atomic_uint32_t mTrIdCtr{};
+    uint32_t mTrIdCtr{};
     // mTrIdTranslation: TrId Req - Resp Translation Table: map<DestinationTrId, <SourceSessionId, SourceTrId>>
     std::unordered_map<uint16_t, std::pair<uint32_t, uint16_t>> mTrIdTranslation;
-    std::mutex mTrIdTranslationMutex;
 
     std::unordered_map<uint64_t, std::shared_ptr<Node>> mTree;
-    std::mutex mTreeMutex;
-    std::atomic_uint32_t mUuidCtr{};
-
-    bfc::ThreadPool<>& mTp;
-    bfc::Timer<>& mTimer;
+    uint32_t mUuidCtr{};
 
     bfc::LightFn<void()> mTerminator;
 

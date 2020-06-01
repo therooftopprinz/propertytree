@@ -19,20 +19,16 @@ namespace propertytree
 constexpr size_t ENCODE_SIZE = 1024*64;
 
 ProtocolHandler::ProtocolHandler(bfc::LightFn<void()> pTerminator)
-    : mTp(bfc::Singleton<bfc::ThreadPool<>>::get())
-    , mTimer(bfc::Singleton<bfc::Timer<>>::get())
-    , mTerminator(pTerminator)
+    : mTerminator(pTerminator)
 {
-    auto rootUUid = mUuidCtr.fetch_add(1);
+    auto rootUUid = mUuidCtr++;
 
-    std::unique_lock<std::mutex> lg(mTreeMutex);
     mTree.emplace(rootUUid, std::make_shared<Node>("", 0xFFFFFFFF, std::weak_ptr<Node>(), rootUUid));
 }
 
 void ProtocolHandler::onDisconnect(IConnectionSession* pConnection)
 {
     LOGLESS_TRACE();
-    std::unique_lock<std::mutex> lgSession(mSessionsMutex);
     auto sessionIdIt = mConnectionToSessionId.find(pConnection);
     if (mConnectionToSessionId.end() == sessionIdIt)
     {
@@ -47,44 +43,17 @@ void ProtocolHandler::onDisconnect(IConnectionSession* pConnection)
 void ProtocolHandler::onMsg(bfc::ConstBuffer pMsg, std::shared_ptr<IConnectionSession> pConnection)
 {
     LOGLESS_TRACE();
-    // TODO: this is a workaround to deal with function object that needs to be copyable
-    struct lambda
-    {
-        lambda(ProtocolHandler* pSelf, bfc::ConstBuffer&& pMsg, std::shared_ptr<IConnectionSession>&& pConnection)
-            : self(pSelf)
-            , pMsg(std::move(pMsg))
-            , pConnection(std::move(pConnection))
-        {}
+    PropertyTreeProtocol message;
+    cum::per_codec_ctx context((std::byte*)pMsg.data(), pMsg.size());
+    decode_per(message, context);
 
-        ProtocolHandler* self;
-        bfc::ConstBuffer pMsg;
-        std::shared_ptr<IConnectionSession> pConnection;
+    std::string stred;
+    str("root", message, stred, true);
+    Logless("DBG ProtocolHandler: receive: session=_ decoded=_", pConnection.get(),  stred.c_str());
 
-        void run()
-        {
-            LOGLESS_TRACE();
-            PropertyTreeProtocol message;
-            cum::per_codec_ctx context((std::byte*)pMsg.data(), pMsg.size());
-            decode_per(message, context);
-
-            std::string stred;
-            str("root", message, stred, true);
-            Logless("DBG ProtocolHandler: receive: session=_ decoded=_", pConnection.get(),  stred.c_str());
-
-            std::visit([this](auto&& pMsg) {
-                    this->self->onMsg(std::move(pMsg), this->pConnection);
-                }, std::move(message));
-        }
-    };
-
-    auto instance = new lambda(this, std::move(pMsg), std::move(pConnection));
-    // instance->run();
-    // delete instance;
-    // return;
-    mTp.execute([instance]() mutable {
-            instance->run();
-            delete instance;
-        });
+    std::visit([this, &pConnection](auto&& pMsg) {
+            onMsg(std::move(pMsg), pConnection);
+        }, std::move(message));
 }
 
 void ProtocolHandler::onMsg(PropertyTreeMessage&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
@@ -110,11 +79,9 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SigninRequest&& pMsg, std:
     propertyTreeMessage.transactionId = pTransactionId;
     propertyTreeMessage.message = SigninAccept{};
 
-    auto sessionId = mSessionIdCtr.fetch_add(1);
-    std::unique_lock<std::mutex> lgSession(mSessionsMutex);
+    auto sessionId = mSessionIdCtr++;
     mSessions.emplace(sessionId, std::make_shared<Session>(pConnection));
     mConnectionToSessionId.emplace(pConnection.get(), sessionId);
-    lgSession.unlock();
 
     send(message, pConnection);
 }
@@ -129,7 +96,6 @@ void ProtocolHandler::handle(uint16_t pTransactionId, CreateRequest&& pMsg, std:
     auto& createReject = std::get<CreateReject>(propertyTreeMessage.message);
     createReject.cause = Cause::NOT_FOUND;
 
-    std::unique_lock<std::mutex> lgTree(mTreeMutex);
     auto foundIt = mTree.find(pMsg.parentUuid);
 
     if (mTree.end() == foundIt)
@@ -138,9 +104,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, CreateRequest&& pMsg, std:
         return;
     }
     auto node = foundIt->second;
-    lgTree.unlock();
 
-    std::unique_lock<std::mutex> lgSession(mSessionsMutex);
     auto sessionIdIt = mConnectionToSessionId.find(pConnection.get());
     if (mConnectionToSessionId.end() == sessionIdIt)
     {
@@ -148,12 +112,9 @@ void ProtocolHandler::handle(uint16_t pTransactionId, CreateRequest&& pMsg, std:
         return;
     }
     auto sessionId = sessionIdIt->second;
-    lgSession.unlock();
 
-    std::unique_lock<std::mutex> lgChildren(node->childrenMutex);
     auto res = node->children.emplace(pMsg.name, std::make_shared<Node>(pMsg.name, sessionId, node, -1));
     auto insertedNode = res.first->second;
-    lgChildren.unlock();
 
     if (false == res.second)
     {
@@ -162,19 +123,16 @@ void ProtocolHandler::handle(uint16_t pTransactionId, CreateRequest&& pMsg, std:
         return;
     }
 
-    auto uuid = mUuidCtr.fetch_add(1);
+    auto uuid = mUuidCtr++;
     insertedNode->uuid = uuid;
 
-    lgTree.lock();
     mTree.emplace(uuid, insertedNode);
-    lgTree.unlock();
 
     propertyTreeMessage.message = CreateAccept{};
     auto& createAccept = std::get<CreateAccept>(propertyTreeMessage.message);
     createAccept.uuid = uuid;
     send(message, pConnection);
 
-    lgSession.lock();
     {
         PropertyTreeProtocol message = PropertyTreeMessage{};
         auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
@@ -201,81 +159,42 @@ void ProtocolHandler::fillToAddListFromTree(T& pIe, std::shared_ptr<Node>& pNode
     LOGLESS_TRACE();
     struct TraversalContext
     {
-        TraversalContext(std::shared_ptr<Node>& pNode)
+        TraversalContext(std::shared_ptr<Node> pNode, std::map<std::string, std::shared_ptr<Node>>::iterator pIt)
             : parentNode(pNode)
-        {
-            std::unique_lock<std::mutex> lg(pNode->childrenMutex);
-            current = pNode->children.begin()->first;
-        }
+            , current(pIt)
+        {}
 
         std::shared_ptr<Node> parentNode;
-        std::string current;
+        std::map<std::string, std::shared_ptr<Node>>::iterator current;
     };
 
     auto currentNode = pNode;
-
-    std::unique_lock<std::mutex> lgChildren(pNode->childrenMutex);
-    if (!currentNode->children.size())
-    {
-        return;
-    }
-    lgChildren.unlock();
-
     std::list<TraversalContext> levels;
 
-    levels.emplace_back(TraversalContext(currentNode));
+    levels.emplace_back(TraversalContext(currentNode, currentNode->children.begin()));
 
     while (true)
     {
-        auto currentLevel = &levels.back();
-        auto& parentNode = currentLevel->parentNode;
+        auto& currentLevel = levels.back();
 
-        std::unique_lock<std::mutex> lgChildren(parentNode->childrenMutex);
-        auto currentIt = parentNode->children.equal_range(currentLevel->current).first;
-
-        if (currentLevel->parentNode->children.end() != currentIt)
+        if (currentLevel.parentNode->children.end() == currentLevel.current)
         {
-            Logless("DGB ProtocolHandler: Tree traversal: level:_ uuid:_ \"_/_\"", levels.size(), currentIt->second->uuid, parentNode->name.c_str(), currentIt->first.c_str());
-
-            pIe.nodeToAddList.emplace_back(NamedNode{currentIt->first, currentIt->second->uuid, parentNode->uuid});
-            if (currentIt->second->children.size() && pRecursive)
-            {
-                levels.emplace_back(TraversalContext(currentIt->second));
-                continue;
-            }
-
-            currentIt++;
-        }
-        if (currentLevel->parentNode->children.end() == currentIt)
-        {
-            bool mainLoopBreak = false;
-            while (currentLevel->parentNode->children.end() == currentIt)
-            {
-                lgChildren = {};
-                levels.pop_back();
-                if (!levels.size())
-                {
-                    mainLoopBreak = true;
-                    break;
-                }
-
-                currentLevel = &levels.back();
-                std::unique_lock<std::mutex> lgChildren(currentLevel->parentNode->childrenMutex);
-                auto nextIts = currentLevel->parentNode->children.equal_range(currentLevel->current);
-                currentIt = nextIts.second;
-                currentLevel->current = currentIt->first; 
-            }
-
-            if (mainLoopBreak)
+            levels.pop_back();
+            if (!levels.size())
             {
                 break;
             }
+            continue;
         }
-        else
+
+        pIe.nodeToAddList.emplace_back(NamedNode{currentLevel.current->first, currentLevel.current->second->uuid, currentLevel.parentNode->uuid});
+        if (currentLevel.current->second->children.size() && pRecursive)
         {
-            auto nextIts = parentNode->children.equal_range(currentLevel->current);
-            currentLevel->current = nextIts.second->first; 
+            levels.emplace_back(TraversalContext(currentLevel.current->second, currentLevel.current->second->children.begin()));
+            currentLevel.current++;
+            continue;
         }
+        currentLevel.current++;
     }
 }
 
@@ -289,7 +208,6 @@ void ProtocolHandler::handle(uint16_t pTransactionId, TreeInfoRequest&& pMsg, st
     auto& treeInfoErrorResponse = std::get<TreeInfoErrorResponse>(propertyTreeMessage.message);
     treeInfoErrorResponse.cause = Cause::NOT_FOUND;
 
-    std::unique_lock<std::mutex> lgTree(mTreeMutex);
     auto foundItParent = mTree.find(pMsg.parentUuid);
     if (mTree.end() == foundItParent)
     {
@@ -297,7 +215,6 @@ void ProtocolHandler::handle(uint16_t pTransactionId, TreeInfoRequest&& pMsg, st
         return;
     }
     auto parentNode = foundItParent->second;
-    lgTree.unlock();
 
     std::shared_ptr<propertytree::Node> node;
 
@@ -307,7 +224,6 @@ void ProtocolHandler::handle(uint16_t pTransactionId, TreeInfoRequest&& pMsg, st
     }
     else
     {
-        std::unique_lock<std::mutex> lgChildren(parentNode->childrenMutex);
         auto foundIt = parentNode->children.find(pMsg.name);
         if (parentNode->children.end() == foundIt)
         {
@@ -344,7 +260,6 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SetValueRequest&& pMsg, st
         }
     }
 
-    std::unique_lock<std::mutex> lgTree(mTreeMutex);
     auto foundIt = mTree.find(pMsg.uuid);
 
     if (mTree.end() == foundIt)
@@ -352,11 +267,8 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SetValueRequest&& pMsg, st
         return;
     }
     auto node = foundIt->second;
-    lgTree.unlock();
 
-    std::unique_lock<std::mutex> lgData(node->dataMutex);
     node->data = std::move(pMsg.data);
-    lgData.unlock();
 
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
@@ -369,20 +281,16 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SetValueRequest&& pMsg, st
     auto& updateNotification = std::get<UpdateNotification>(propertyTreeMessage.message);
     updateNotification.uuid = node->uuid;
 
-    lgData.lock();
     updateNotification.data = node->data;
-    lgData.unlock();
 
     std::byte buffer[ENCODE_SIZE];
     auto msgSize = encode(message, buffer, sizeof(buffer));
 
-    std::unique_lock<std::mutex> lgListener(node->listenerMutex);
     for (auto i = node->listener.begin(); node->listener.end() != i; i++)
     {
         auto connection = i->second.lock();
         if (!connection)
         {
-            std::unique_lock<std::mutex> lgSession(mSessionsMutex);
             auto sessionIt = mSessions.find(i->first);
             if (mSessions.end() == sessionIt)
             {
@@ -411,7 +319,6 @@ void ProtocolHandler::handle(uint16_t pTransactionId, GetRequest&& pMsg, std::sh
     auto& getReject = std::get<GetReject>(propertyTreeMessage.message);
     getReject.cause = Cause::NOT_FOUND;
 
-    std::unique_lock<std::mutex> lgTree(mTreeMutex);
     auto foundIt = mTree.find(pMsg.uuid);
     if (mTree.end() == foundIt)
     {
@@ -419,13 +326,10 @@ void ProtocolHandler::handle(uint16_t pTransactionId, GetRequest&& pMsg, std::sh
         return;
     }
     auto node = foundIt->second;
-    lgTree.unlock();
 
-    std::unique_lock<std::mutex> lgData(node->dataMutex);
     propertyTreeMessage.message = GetAccept{};
     auto& getAccept = std::get<GetAccept>(propertyTreeMessage.message);
     getAccept.data = node->data;
-    lgData.unlock();
 
     send(message, pConnection);
 }
@@ -440,7 +344,6 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SubscribeRequest&& pMsg, s
     auto& subscribeResponse = std::get<SubscribeResponse>(propertyTreeMessage.message);
     subscribeResponse.cause = Cause::NOT_FOUND;
 
-    std::unique_lock<std::mutex> lgTree(mTreeMutex);
     auto foundIt = mTree.find(pMsg.uuid);
     if (mTree.end() == foundIt)
     {
@@ -448,9 +351,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SubscribeRequest&& pMsg, s
         return;
     }
     auto node = foundIt->second;
-    lgTree.unlock();
 
-    std::unique_lock<std::mutex> lgSession(mSessionsMutex);
     auto sessionIdIt = mConnectionToSessionId.find(pConnection.get());
     if (mConnectionToSessionId.end() == sessionIdIt)
     {
@@ -458,11 +359,8 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SubscribeRequest&& pMsg, s
         return;
     }
     auto sessionId = sessionIdIt->second;
-    lgSession.unlock();
 
-    std::unique_lock<std::mutex> lgListener(node->listenerMutex);
     node->listener[sessionId] = pConnection;
-    lgListener.unlock();
 
     subscribeResponse.cause = Cause::OK;
     send(message, pConnection);
@@ -478,7 +376,6 @@ void ProtocolHandler::handle(uint16_t pTransactionId, UnsubscribeRequest&& pMsg,
     auto& unsubscribeResponse = std::get<UnsubscribeResponse>(propertyTreeMessage.message);
     unsubscribeResponse.cause = Cause::NOT_FOUND;
 
-    std::unique_lock<std::mutex> lgTree(mTreeMutex);
     auto foundIt = mTree.find(pMsg.uuid);
     if (mTree.end() == foundIt)
     {
@@ -486,18 +383,14 @@ void ProtocolHandler::handle(uint16_t pTransactionId, UnsubscribeRequest&& pMsg,
         return;
     }
     auto node = foundIt->second;
-    lgTree.unlock();
 
-    std::unique_lock<std::mutex> lgSession(mSessionsMutex);
     auto sessionIdIt = mConnectionToSessionId.find(pConnection.get());
     if (mConnectionToSessionId.end() == sessionIdIt)
     {
         return;
     }
     auto sessionId = sessionIdIt->second;
-    lgSession.unlock();
 
-    std::unique_lock<std::mutex> lgListener(node->listenerMutex);
     auto listenerIt = node->listener.find(sessionId);
     if (node->listener.end() == listenerIt)
     {
@@ -505,7 +398,6 @@ void ProtocolHandler::handle(uint16_t pTransactionId, UnsubscribeRequest&& pMsg,
         return;
     }
     node->listener.erase(listenerIt);
-    lgListener.unlock();
 
     unsubscribeResponse.cause = Cause::OK;
     send(message, pConnection);
@@ -523,7 +415,6 @@ void ProtocolHandler::handle(uint16_t pTransactionId, DeleteRequest&& pMsg, std:
     auto& deleteResponse = std::get<DeleteResponse>(propertyTreeMessage.message);
     deleteResponse.cause = Cause::NOT_FOUND;
 
-    std::unique_lock<std::mutex> lgTree(mTreeMutex);
     auto foundIt = mTree.find(pMsg.uuid);
     if (mTree.end() == foundIt)
     {
@@ -531,31 +422,23 @@ void ProtocolHandler::handle(uint16_t pTransactionId, DeleteRequest&& pMsg, std:
         return;
     }
     auto node = foundIt->second;
-    lgTree.unlock();
 
-    std::unique_lock<std::mutex> lgChildren(node->childrenMutex);
     if (node->children.size())
     {
         deleteResponse.cause = Cause::NOT_EMPTY;
         send(message, pConnection);
         return;
     }
-    auto parentNode = node->parent.lock();
     auto name = node->name;
-    lgChildren.unlock();
 
-    lgTree.lock();
+    auto parentNode = node->parent.lock();
     mTree.erase(pMsg.uuid);
-    lgTree.unlock();
 
-    std::unique_lock<std::mutex> lgParentChildren(parentNode->childrenMutex);
     parentNode->children.erase(name);
-    lgParentChildren.unlock();
 
     deleteResponse.cause = Cause::OK;
     send(message, pConnection);
 
-    std::unique_lock<std::mutex> lgSession(mSessionsMutex);
     {
         PropertyTreeProtocol message = PropertyTreeMessage{};
         auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
@@ -589,7 +472,6 @@ void ProtocolHandler::handle(uint16_t pTransactionId, RpcRequest&& pMsg, std::sh
     propertyTreeMessageReject.transactionId = pTransactionId;
     auto& rpcReject = std::get<RpcReject>(propertyTreeMessageReject.message);
 
-    std::unique_lock<std::mutex> lgTree(mTreeMutex);
     auto foundIt = mTree.find(pMsg.uuid);
     if (mTree.end() == foundIt)
     {
@@ -598,9 +480,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, RpcRequest&& pMsg, std::sh
         return;
     }
     auto node = foundIt->second;
-    lgTree.unlock();
 
-    std::unique_lock<std::mutex> lgSession(mSessionsMutex);
     auto sourceSessionIt = mConnectionToSessionId.find(pConnection.get());
     if (mConnectionToSessionId.end() == sourceSessionIt)
     {
@@ -609,19 +489,16 @@ void ProtocolHandler::handle(uint16_t pTransactionId, RpcRequest&& pMsg, std::sh
     auto sourceSessionId = sourceSessionIt->second;
     auto sessionId = node->sessionId;
     auto targetConnection =  mSessions.find(sessionId)->second->connectionSession;
-    lgSession.unlock();
 
     if (!targetConnection)
     {
         return;
     }
 
-    auto trId = mTrIdCtr.fetch_add(1);
+    auto trId = mTrIdCtr++;
     propertyTreeMessage.transactionId = trId;
 
-    std::unique_lock<std::mutex> lgTrId(mTrIdTranslationMutex);
     mTrIdTranslation[trId] = std::pair<uint32_t, uint16_t>(sourceSessionId, pTransactionId);
-    lgTrId.unlock();
 
     send(message, targetConnection);
 }
@@ -630,7 +507,6 @@ template<typename T>
 void ProtocolHandler::handleRpc(uint16_t pTransactionId, T&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
     LOGLESS_TRACE();
-    std::unique_lock<std::mutex> lgTrId(mTrIdTranslationMutex);
     auto translationIt = mTrIdTranslation.find(pTransactionId);
     if (mTrIdTranslation.end() == translationIt)
     {
@@ -638,21 +514,18 @@ void ProtocolHandler::handleRpc(uint16_t pTransactionId, T&& pMsg, std::shared_p
     }
     auto translation = translationIt->second;
     mTrIdTranslation.erase(translationIt);
-    lgTrId.unlock();
 
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = std::move(pMsg);
     propertyTreeMessage.transactionId = translation.second;
 
-    std::unique_lock<std::mutex> lgSession(mSessionsMutex);
     auto targetSessionIt =  mSessions.find(translation.first);
     if (mSessions.end() == targetSessionIt)
     {
         return;
     }
     auto targetSession = targetSessionIt->second;
-    lgSession.unlock();
     send(message, targetSession->connectionSession);
 }
 
