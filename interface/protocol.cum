@@ -189,6 +189,16 @@ Sequence RpcReject
     Cause cause
 };
 
+Sequence HearbeatRequest
+{
+    u8 spare
+};
+
+Sequence HearbeatResponse
+{
+    u8 spare
+};
+
 Choice PropertyTreeMessages
 {
     SigninRequest,
@@ -215,7 +225,9 @@ Choice PropertyTreeMessages
     UpdateNotification,
     RpcRequest,
     RpcAccept,
-    RpcReject
+    RpcReject,
+    HearbeatRequest,
+    HearbeatResponse
 };
 
 Sequence PropertyTreeMessage

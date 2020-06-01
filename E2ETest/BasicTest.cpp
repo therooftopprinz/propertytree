@@ -167,6 +167,11 @@ TEST_F(BasicTest, shouldRetrieveTree)
 
 TEST_F(BasicTest, shouldRpcCall)
 {
+    if (auto rpc = sut.root().get("rpc"))
+    {
+        rpc.destroy();
+    }
+
     auto rpc = sut.root().create("rpc");
     rpc.setHRcpHandler([](const bfc::BufferView& pParam) -> std::vector<uint8_t> {
             uint32_t param = *(uint32_t*)pParam.data();

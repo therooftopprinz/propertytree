@@ -1,3 +1,5 @@
+#include <signal.h>
+
 #include <Server.hpp>
 
 #include <bfc/Singleton.hpp>
@@ -8,7 +10,8 @@ using namespace propertytree;
 
 int main()
 {
-    // Logger::getInstance().logful();
+    signal(SIGPIPE, SIG_IGN);
+    Logger::getInstance().logful();
 
     bfc::Singleton<bfc::ThreadPool<>>::instantiate();
     auto& timer = bfc::Singleton<bfc::Timer<>>::instantiate();

@@ -2,6 +2,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include <logless/Logger.hpp>
+
 #include <propertytree/Client.hpp>
 #include <propertytree/Property.hpp>
 
@@ -74,20 +76,22 @@ Client::~Client()
 
 Property Client::root()
 {
+    std::unique_lock<std::mutex> lgTree(mTreeMutex);
     return Property(*this, mTree.find(0)->second);
 }
 
 Property Client::create(Property& pParent, const std::string& pName)
 {
+    LOGLESS_TRACE();
     auto& node = pParent.node();
 
-    std::unique_lock<std::mutex> lg(node->childrenMutex);
+    std::unique_lock<std::mutex> lgChildren(node->childrenMutex);
     auto foundIt = node->children.find(pName);
     if (node->children.end() != foundIt)
     {
         return Property(*this, foundIt->second);
     }
-    lg.unlock();
+    lgChildren.unlock();
 
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
@@ -111,12 +115,19 @@ Property Client::create(Property& pParent, const std::string& pName)
     else if (cum::GetIndexByType<PropertyTreeMessages, CreateAccept>() == response.index())
     {
         auto& createAccept = std::get<CreateAccept>(response);
-        std::unique_lock<std::mutex> lg(mTreeMutex);
+        std::unique_lock<std::mutex> lgTree(mTreeMutex);
+
+        // Note: Case when TreeUpdateNotification came first.
+        auto foundIt = mTree.find(createAccept.uuid);
+        if (mTree.end() != foundIt)
+        {
+            return Property(*this, foundIt->second);
+        }
         auto newNode = std::make_shared<Node>(pName, node, createAccept.uuid);
         mTree.emplace(createAccept.uuid, newNode);
-        lg.unlock();
         std::unique_lock<std::mutex> lgNode(node->childrenMutex);
         node->children.emplace(pName, newNode);
+        lgTree.unlock();
         return Property(*this, newNode);
     }
     else
@@ -127,6 +138,7 @@ Property Client::create(Property& pParent, const std::string& pName)
 
 Property Client::get(Property& pParent, const std::string& pName, bool pRecursive)
 {
+    LOGLESS_TRACE();
     auto& node = pParent.node();
 
     std::unique_lock<std::mutex> lg(node->childrenMutex);
@@ -183,6 +195,7 @@ void Client::handle(uint16_t, TreeUpdateNotification&& pMsg)
 
 void Client::handle(uint16_t, UpdateNotification&& pMsg)
 {
+    LOGLESS_TRACE();
     std::unique_lock<std::mutex> lg(mTreeMutex);
     auto nodeIt = mTree.find(pMsg.uuid);
     if (mTree.end() == nodeIt)
@@ -206,6 +219,7 @@ void Client::handle(uint16_t, UpdateNotification&& pMsg)
 
 void Client::handle(uint16_t pTransactionId, RpcRequest&& pMsg)
 {
+    LOGLESS_TRACE();
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = RpcReject{};
@@ -235,6 +249,7 @@ void Client::handle(uint16_t pTransactionId, RpcRequest&& pMsg)
         send(std::move(message));
         return;
     }
+    lgHandler.unlock();
 
     rpcReject.cause = Cause::NO_HANDLER;
     send(std::move(message));
@@ -243,6 +258,7 @@ void Client::handle(uint16_t pTransactionId, RpcRequest&& pMsg)
 
 void Client::commit(Property& pProp)
 {
+    LOGLESS_TRACE();
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = SetValueRequest{};
@@ -265,6 +281,7 @@ void Client::commit(Property& pProp)
 
 void Client::fetch(Property& pProp)
 {
+    LOGLESS_TRACE();
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = GetRequest{};
@@ -296,6 +313,7 @@ void Client::fetch(Property& pProp)
 
 bool Client::subscribe(Property& pProp)
 {
+    LOGLESS_TRACE();
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = SubscribeRequest{};
@@ -318,6 +336,7 @@ bool Client::subscribe(Property& pProp)
 
 bool Client::unsubscribe(Property& pProp)
 {
+    LOGLESS_TRACE();
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = UnsubscribeRequest{};
@@ -340,6 +359,7 @@ bool Client::unsubscribe(Property& pProp)
 
 bool Client::destroy(Property& pProp)
 {
+    LOGLESS_TRACE();
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = DeleteRequest{};
@@ -372,6 +392,7 @@ bool Client::destroy(Property& pProp)
 
 std::vector<uint8_t> Client::call(Property& pProp, const bfc::BufferView& pValue)
 {
+    LOGLESS_TRACE();
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = RpcRequest{};
@@ -446,6 +467,7 @@ void Client::handleRead()
 
 void Client::decodeMessage()
 {
+    LOGLESS_TRACE();
     PropertyTreeProtocol message;
     cum::per_codec_ctx context(mBuff, mBuffIdx);
     decode_per(message, context);
@@ -457,22 +479,24 @@ void Client::decodeMessage()
 
 void Client::send(PropertyTreeProtocol&& pMsg)
 {
-        std::byte buffer[512];
-        auto& msgSize = *(new (buffer) uint16_t(0));
-        cum::per_codec_ctx context(buffer+sizeof(msgSize), sizeof(buffer)-sizeof(msgSize));
-        encode_per(pMsg, context);
+    LOGLESS_TRACE();
+    std::byte buffer[512];
+    auto& msgSize = *(new (buffer) uint16_t(0));
+    cum::per_codec_ctx context(buffer+sizeof(msgSize), sizeof(buffer)-sizeof(msgSize));
+    encode_per(pMsg, context);
 
-        msgSize = sizeof(buffer)-context.size()-2;
+    msgSize = sizeof(buffer)-context.size()-2;
 
-        auto res = ::send(mFd, buffer, msgSize+2, 0);
-        if (-1 == res)
-        {
-            throw std::runtime_error(strerror(errno));
-        }
+    auto res = ::send(mFd, buffer, msgSize+2, 0);
+    if (-1 == res)
+    {
+        throw std::runtime_error(strerror(errno));
+    }
 }
 
 void Client::handle(PropertyTreeMessage&& pMsg)
 {
+    LOGLESS_TRACE();
     auto trId = pMsg.transactionId;
     std::unique_lock<std::mutex> lg(mTransactionsMutex);
     auto foundIt = mTransactions.find(trId);
@@ -503,27 +527,29 @@ void Client::handle(PropertyTreeMessageArray&& pMsg)
 
 void Client::addNodes(NamedNodeList& pNodeList)
 {
+    LOGLESS_TRACE();
     for (auto& i : pNodeList)
     {
-        std::unique_lock<std::mutex> lg(mTreeMutex);
+        std::unique_lock<std::mutex> lgTree(mTreeMutex);
         auto foundIt = mTree.find(i.parentUuid);
-        if (mTree.end() == foundIt)
+        if (mTree.end() == foundIt || mTree.end() != mTree.find(i.uuid))
         {
             continue;
         }
         auto& parentNode = foundIt->second;
-        lg.unlock();
+
         auto newNode = std::make_shared<Node>(i.name, parentNode, i.uuid);
-        std::unique_lock<std::mutex> parentLg(parentNode->childrenMutex);
-        parentNode->children.emplace(i.name, newNode);
-        parentLg.unlock();
-        std::unique_lock<std::mutex> lgTree(mTreeMutex);
         mTree.emplace(i.uuid, newNode);
+
+        std::unique_lock<std::mutex> parentLg(parentNode->childrenMutex);
+        parentNode->children[i.name] = newNode;
+        parentLg.unlock();
     }
 }
 
 uint16_t Client::addTransaction(PropertyTreeProtocol&& pMsg)
 {
+    LOGLESS_TRACE();
     uint16_t trId = mTransactioIdCtr.fetch_add(1);
 
     auto& message = std::get<PropertyTreeMessage>(pMsg);
@@ -539,6 +565,7 @@ uint16_t Client::addTransaction(PropertyTreeProtocol&& pMsg)
 
 PropertyTreeMessages Client::waitTransaction(uint16_t pTrId)
 {
+    LOGLESS_TRACE();
     std::unique_lock<std::mutex> lg(mTransactionsMutex);
     auto& transaction = mTransactions.find(pTrId)->second;
     lg.unlock();

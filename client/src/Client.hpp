@@ -72,7 +72,7 @@ private:
     bfc::EpollReactor mReactor;
     int mFd;
 
-    std::byte mBuff[512];
+    std::byte mBuff[1024*64];
     uint16_t mBuffIdx = 0;
     enum ReadState {WAIT_HEADER, WAIT_REMAINING};
     ReadState mReadState = WAIT_HEADER;

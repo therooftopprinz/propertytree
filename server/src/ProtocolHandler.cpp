@@ -16,7 +16,7 @@
 namespace propertytree
 {
 
-constexpr size_t ENCODE_SIZE = 1024*16;
+constexpr size_t ENCODE_SIZE = 1024*64;
 
 ProtocolHandler::ProtocolHandler(bfc::LightFn<void()> pTerminator)
     : mTp(bfc::Singleton<bfc::ThreadPool<>>::get())
@@ -31,6 +31,7 @@ ProtocolHandler::ProtocolHandler(bfc::LightFn<void()> pTerminator)
 
 void ProtocolHandler::onDisconnect(IConnectionSession* pConnection)
 {
+    LOGLESS_TRACE();
     std::unique_lock<std::mutex> lgSession(mSessionsMutex);
     auto sessionIdIt = mConnectionToSessionId.find(pConnection);
     if (mConnectionToSessionId.end() == sessionIdIt)
@@ -45,6 +46,7 @@ void ProtocolHandler::onDisconnect(IConnectionSession* pConnection)
 
 void ProtocolHandler::onMsg(bfc::ConstBuffer pMsg, std::shared_ptr<IConnectionSession> pConnection)
 {
+    LOGLESS_TRACE();
     // TODO: this is a workaround to deal with function object that needs to be copyable
     struct lambda
     {
@@ -60,6 +62,7 @@ void ProtocolHandler::onMsg(bfc::ConstBuffer pMsg, std::shared_ptr<IConnectionSe
 
         void run()
         {
+            LOGLESS_TRACE();
             PropertyTreeProtocol message;
             cum::per_codec_ctx context((std::byte*)pMsg.data(), pMsg.size());
             decode_per(message, context);
@@ -98,6 +101,7 @@ void ProtocolHandler::onMsg(PropertyTreeMessageArray&& pMsg, std::shared_ptr<ICo
 
 void ProtocolHandler::handle(uint16_t pTransactionId, SigninRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
+    LOGLESS_TRACE();
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.transactionId = pTransactionId;
@@ -114,6 +118,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SigninRequest&& pMsg, std:
 
 void ProtocolHandler::handle(uint16_t pTransactionId, CreateRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
+    LOGLESS_TRACE();
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.transactionId = pTransactionId;
@@ -190,6 +195,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, CreateRequest&& pMsg, std:
 template <typename T>
 void ProtocolHandler::fillToAddListFromTree(T& pIe, std::shared_ptr<Node>& pNode, bool pRecursive)
 {
+    LOGLESS_TRACE();
     struct TraversalContext
     {
         TraversalContext(std::shared_ptr<Node>& pNode)
@@ -272,6 +278,7 @@ void ProtocolHandler::fillToAddListFromTree(T& pIe, std::shared_ptr<Node>& pNode
 
 void ProtocolHandler::handle(uint16_t pTransactionId, TreeInfoRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
+    LOGLESS_TRACE();
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.transactionId = pTransactionId;
@@ -321,6 +328,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, TreeInfoRequest&& pMsg, st
 
 void ProtocolHandler::handle(uint16_t pTransactionId, SetValueRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
+    LOGLESS_TRACE();
     if (0 == pMsg.uuid && 4 == pMsg.data.size())
     {
         uint32_t value;
@@ -392,6 +400,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SetValueRequest&& pMsg, st
 
 void ProtocolHandler::handle(uint16_t pTransactionId, GetRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
+    LOGLESS_TRACE();
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.transactionId = pTransactionId;
@@ -420,6 +429,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, GetRequest&& pMsg, std::sh
 
 void ProtocolHandler::handle(uint16_t pTransactionId, SubscribeRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
+    LOGLESS_TRACE();
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.transactionId = pTransactionId;
@@ -457,6 +467,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SubscribeRequest&& pMsg, s
 
 void ProtocolHandler::handle(uint16_t pTransactionId, UnsubscribeRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
+    LOGLESS_TRACE();
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.transactionId = pTransactionId;
@@ -499,6 +510,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, UnsubscribeRequest&& pMsg,
 
 void ProtocolHandler::handle(uint16_t pTransactionId, DeleteRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
+    LOGLESS_TRACE();
     // TODO: blocks deletion of uuid=0
 
     PropertyTreeProtocol message = PropertyTreeMessage{};
@@ -563,6 +575,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, DeleteRequest&& pMsg, std:
 
 void ProtocolHandler::handle(uint16_t pTransactionId, RpcRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
+    LOGLESS_TRACE();
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = std::move(pMsg);
@@ -613,6 +626,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, RpcRequest&& pMsg, std::sh
 template<typename T>
 void ProtocolHandler::handleRpc(uint16_t pTransactionId, T&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
+    LOGLESS_TRACE();
     std::unique_lock<std::mutex> lgTrId(mTrIdTranslationMutex);
     auto translationIt = mTrIdTranslation.find(pTransactionId);
     if (mTrIdTranslation.end() == translationIt)
@@ -651,6 +665,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, RpcReject&& pMsg, std::sha
 
 size_t ProtocolHandler::encode(const PropertyTreeProtocol& pMsg, std::byte* pData, size_t pSize)
 {
+    LOGLESS_TRACE();
     auto& msgSize = *(new (pData) uint16_t(0));
     cum::per_codec_ctx context(pData+sizeof(msgSize), pSize-sizeof(msgSize));
     encode_per(pMsg, context);
@@ -669,6 +684,7 @@ void ProtocolHandler::send(const PropertyTreeProtocol& pMsg, std::shared_ptr<ICo
     {
         return;
     }
+    LOGLESS_TRACE();
 
     std::byte buffer[ENCODE_SIZE];
     auto msgSize = encode(pMsg, buffer, sizeof(buffer));
@@ -683,7 +699,7 @@ void ProtocolHandler::send(const std::byte* pData, size_t pSize, std::shared_ptr
     {
         return;
     }
-
+    LOGLESS_TRACE();
     Logless("DBG ProtocolHandler: send: session=_", pConnection.get());
     pConnection->send(bfc::ConstBufferView(pData, pSize));
 }

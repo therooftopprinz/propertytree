@@ -1,0 +1,33 @@
+{
+   EPollReactor::mRunning EPollReactor::stop
+   drd:ConflictingAccess
+   fun:_ZN3bfc12EpollReactor4stopEv
+   ...
+}
+
+{
+   EPollReactor::mRunning EPollReactor::run
+   drd:ConflictingAccess
+   fun:_ZN3bfc12EpollReactor3runEv
+   ...
+}
+{
+   EPollReactor::mRunning
+   Helgrind:Race
+   fun:_ZN3bfc12EpollReactor3runEv
+   ...
+}
+
+{
+   EPollReactor::mRunning EPollReactor::stop
+   Helgrind:Race
+   fun:_ZN3bfc12EpollReactor4stopEv
+   ...
+}
+
+{
+   EPollReactor::mRunning EPollReactor::run
+   Helgrind:Race
+   fun:_ZN3bfc12EpollReactor3runEv
+   ...
+}

@@ -22,11 +22,14 @@ ConnectionSession::~ConnectionSession()
 
 void ConnectionSession::send(const bfc::ConstBufferView& pBuffer)
 {
-    Logless("ConnectionSession[_]: send: _", mFd, BufferLog(pBuffer.size(), pBuffer.data()));
+    Logless("DBG ConnectionSession[_]: send: _", mFd, BufferLog(pBuffer.size(), pBuffer.data()));
     auto res = ::send(mFd, pBuffer.data(), pBuffer.size(), 0);
     if (-1 == res)
     {
-        throw std::runtime_error(strerror(errno));
+        Logless("ERR ConnectionSession[_]: write error=_", mFd, strerror(errno));
+        // TODO: this causes recursive locking in ProtocolHandler::mSessionsMutex 
+        // mServer.onDisconnect(mFd);
+        return;
     }
 }
 
@@ -46,7 +49,7 @@ void ConnectionSession::handleRead()
 
     if (0 >= res)
     {
-        Logless("ConnectionSession[_]: read error=_", mFd, strerror(errno));
+        Logless("DBG ConnectionSession[_]: read error=_", mFd, strerror(errno));
         mServer.onDisconnect(mFd);
         return;
     }
@@ -67,7 +70,7 @@ void ConnectionSession::handleRead()
         bfc::ConstBuffer buff(raw, mBuffIdx);
         std::memcpy(raw, mBuff, mBuffIdx);
 
-        Logless("ConnectionSession[_]: receive: _", mFd, BufferLog(buff.size(), buff.data()));
+        Logless("DBG ConnectionSession[_]: receive: _", mFd, BufferLog(buff.size(), buff.data()));
 
         mProto.onMsg(std::move(buff), shared_from_this());
 

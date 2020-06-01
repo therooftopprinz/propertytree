@@ -110,6 +110,7 @@ public:
 
     void setHRcpHandler(std::function<std::vector<uint8_t>(const bfc::BufferView&)>&& pHandler)
     {
+        std::unique_lock<std::mutex> lgRpcHanlder(mNode->rcpHandlerMutex);
         mNode->rcpHandler = std::move(pHandler);
     }
 

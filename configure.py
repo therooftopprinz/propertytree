@@ -6,7 +6,7 @@ import subprocess
 CXX      = 'g++'
 AR       = 'ar'
 MAKE     = 'make'
-CXXFLAGS = '-std=c++17 -ggdb3 -O0 -Wall -Werror -I../gtest'
+CXXFLAGS = '-std=c++17 -ggdb3 -O0 -Wall -Werror -pg'
 
 TLD = os.path.dirname(sys.argv[0])+'/'
 PWD = os.getcwd()+'/'
@@ -57,7 +57,7 @@ class Build:
         output = output + self.output_file + ':' + ' '.join(self.dependencies)+' '+' '.join(objects) + '\n'
         # target rule
         if (self.target_type == 0):
-            output = output + '\t'+ CXX + ' ' + ' '.join(objects) + ' ' + ' '.join(self.dependencies) + ' ' + ' '.join([TLD+i for i in self.external_dependencies]) + ' ' + self.linkflags +  ' -o ' + self.output_file + '\n'
+            output = output + '\t'+ CXX + ' ' + ' '.join(objects) + ' ' + ' '.join(self.dependencies) + ' ' + ' '.join([TLD+i for i in self.external_dependencies]) + ' ' + self.linkflags + ' ' + self.cxxflags + ' -o ' + self.output_file + '\n'
         else:
             output = output + '\t'+ AR + ' rcs ' + self.linkflags + ' ' + self.output_file + ' ' + ' '.join(objects) + '\n'
 
@@ -150,6 +150,7 @@ e2e_test.set_src_dir('E2ETest/')
 e2e_test.add_src_files(E2ETEST_SOURCES)
 e2e_test.set_linkflags('-lpthread')
 e2e_test.add_dependencies(['gtest.a', 'client.a'])
+e2e_test.add_external_dependencies(['Logless/build/logless.a'])
 e2e_test.target_executable('e2e_test')
 
 server_test = Build()
