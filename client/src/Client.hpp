@@ -41,7 +41,7 @@ public:
 
     Property root();
     Property create(Property& pParent, const std::string& pName);
-    Property get(Property& pParent, const std::string& pName, bool pReq);
+    Property get(Property& pParent, const std::string& pName, bool pRecursive);
     void commit(Property& pProp);
     void fetch(Property& pProp);
     bool subscribe(Property&);
@@ -49,6 +49,9 @@ public:
     bool destroy(Property&);
     void beat();
     std::vector<uint8_t> call(Property&, const bfc::BufferView& pValue);
+
+    void setTreeAddHandler(std::function<void(Property)> pHandler);
+    void setTreeRemoveHandler(std::function<void(Property)> pHandler);
 
 private:
     void send(PropertyTreeProtocol&& pMsg);
@@ -62,6 +65,7 @@ private:
     void handle(uint16_t pTrId, UpdateNotification&& pMsg);
     void handle(uint16_t pTrId, RpcRequest&& pMsg);
 
+    void removeNodes(const std::vector<uint64_t>& pNodes);
     void addNodes(NamedNodeList& pNodeList);
     
     void handleRead();
@@ -87,6 +91,9 @@ private:
     std::mutex mTransactionsMutex;
 
     std::atomic_uint16_t mTransactioIdCtr{};
+
+    std::function<void(Property)> mTreeAddHandler;
+    std::function<void(Property)> mTreeRemoveHandler;
 };
 
 } // propertytree

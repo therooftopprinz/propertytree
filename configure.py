@@ -90,6 +90,7 @@ s = subprocess.Popen('cd '+TLD+'/server/src  && find .             | egrep \'\.c
 v = subprocess.Popen('cd '+TLD+'/common/test && find . | egrep \'\.cpp$\'', shell=True, stdout=subprocess.PIPE)
 t = subprocess.Popen('cd '+TLD+'/common/src && find .              | egrep \'\.cpp$\'', shell=True, stdout=subprocess.PIPE)
 u = subprocess.Popen('cd '+TLD+'/E2ETest/  && find .             | egrep \'\.cpp$\'', shell=True, stdout=subprocess.PIPE)
+w = subprocess.Popen('cd '+TLD+'/monitor/src  && find .             | egrep \'\.cpp$\'', shell=True, stdout=subprocess.PIPE)
 
 CLIENT_TEST_SOURCES = clean_filenames(p.stdout.readlines())
 CLIENT_SRC_SOURCES  = clean_filenames(q.stdout.readlines())
@@ -98,14 +99,16 @@ SERVER_SRC_SOURCES  = clean_filenames(s.stdout.readlines())
 COMMON_TEST_SOURCES = clean_filenames(v.stdout.readlines())
 COMMON_SRC_SOURCES  = clean_filenames(t.stdout.readlines())
 E2ETEST_SOURCES     = clean_filenames(u.stdout.readlines())
+MONITOR_SOURCES     = clean_filenames(w.stdout.readlines())
 
-print "CLIENT_TEST_SOURCES",CLIENT_TEST_SOURCES
-print "CLIENT_SRC_SOURCES",CLIENT_SRC_SOURCES
-print "SERVER_TEST_SOURCES",SERVER_TEST_SOURCES
-print "SERVER_SRC_SOURCES",SERVER_SRC_SOURCES
-print "COMMON_TEST_SOURCES",COMMON_TEST_SOURCES
-print "COMMON_SRC_SOURCES",COMMON_SRC_SOURCES
-print "E2ETEST_SOURCES",E2ETEST_SOURCES
+print "CLIENT_TEST_SOURCES", CLIENT_TEST_SOURCES
+print "CLIENT_SRC_SOURCES", CLIENT_SRC_SOURCES
+print "SERVER_TEST_SOURCES", SERVER_TEST_SOURCES
+print "SERVER_SRC_SOURCES", SERVER_SRC_SOURCES
+print "COMMON_TEST_SOURCES", COMMON_TEST_SOURCES
+print "COMMON_SRC_SOURCES", COMMON_SRC_SOURCES
+print "E2ETEST_SOURCES", E2ETEST_SOURCES
+print "E2ETEST_SOURCES", MONITOR_SOURCES
 
 
 includePathsCommon = ['.', 'Logless/include/', 'BFC/include/', 'cum/', 'interface/']
@@ -173,6 +176,18 @@ server_bin.add_external_dependencies(['Logless/build/logless.a'])
 server_bin.set_linkflags('-lpthread')
 server_bin.target_executable('server')
 
+monitor_bin = Build()
+monitor_bin.set_cxxflags(CXXFLAGS)
+monitor_bin.add_include_paths(['.', 'monitor/include/', 'client/include'])
+monitor_bin.add_include_paths(includePathsCommon)
+monitor_bin.set_src_dir('monitor/src/')
+monitor_bin.add_src_files(MONITOR_SOURCES)
+monitor_bin.add_external_dependencies(['Logless/build/logless.a'])
+monitor_bin.add_dependencies(['client.a'])
+monitor_bin.set_linkflags('-lpthread')
+monitor_bin.target_executable('monitor')
+
+
 with open('Makefile','w+') as mf:
     mf.write(client.generate_make())
     mf.write(server.generate_make())
@@ -181,3 +196,4 @@ with open('Makefile','w+') as mf:
     mf.write(e2e_test.generate_make())
     mf.write(server_test.generate_make())
     mf.write(server_bin.generate_make())
+    mf.write(monitor_bin.generate_make())

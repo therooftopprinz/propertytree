@@ -23,11 +23,13 @@ struct Node
 
     std::vector<uint8_t> data;
     std::map<std::string, std::shared_ptr<Node>> children;
-    std::function<std::vector<uint8_t>(const bfc::BufferView&)> rcpHandler; 
+    std::function<std::vector<uint8_t>(const bfc::BufferView&)> rcpHandler;
+    std::function<void()> updateHandler;
  
     std::mutex dataMutex;
     std::mutex childrenMutex;
     std::mutex rcpHandlerMutex;
+    std::mutex updateHandlerMutex;
 
     std::weak_ptr<Node> parent;
     uint64_t uuid;

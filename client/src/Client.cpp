@@ -143,7 +143,7 @@ Property Client::get(Property& pParent, const std::string& pName, bool pRecursiv
 
     std::unique_lock<std::mutex> lg(node->childrenMutex);
     auto foundIt = node->children.find(pName);
-    if (node->children.end()!= foundIt)
+    if (!pRecursive && node->children.end()!= foundIt)
     {
         return Property(*this, foundIt->second);
     }
@@ -191,19 +191,20 @@ Property Client::get(Property& pParent, const std::string& pName, bool pRecursiv
 void Client::handle(uint16_t, TreeUpdateNotification&& pMsg)
 {
     addNodes(pMsg.nodeToAddList);
+    removeNodes(pMsg.nodeToDelete);
 }
 
 void Client::handle(uint16_t, UpdateNotification&& pMsg)
 {
     LOGLESS_TRACE();
-    std::unique_lock<std::mutex> lg(mTreeMutex);
+    std::unique_lock<std::mutex> lgTree(mTreeMutex);
     auto nodeIt = mTree.find(pMsg.uuid);
     if (mTree.end() == nodeIt)
     {
         return;
     }
     auto node = nodeIt->second;
-    lg.unlock();
+    lgTree.unlock();
 
     std::unique_lock<std::mutex> lgData(node->dataMutex);
 
@@ -214,6 +215,13 @@ void Client::handle(uint16_t, UpdateNotification&& pMsg)
     else
     {
         node->data = std::move(pMsg.data);
+    }
+
+    lgData.unlock();
+    std::unique_lock<std::mutex> lgUpdateHandler(node->updateHandlerMutex);
+    if (node->updateHandler)
+    {
+        node->updateHandler();
     }
 }
 
@@ -441,8 +449,19 @@ std::vector<uint8_t> Client::call(Property& pProp, const bfc::BufferView& pValue
     }
 }
 
+void Client::setTreeAddHandler(std::function<void(Property)> pHandler)
+{
+    mTreeAddHandler = std::move(pHandler);
+}
+
+void Client::setTreeRemoveHandler(std::function<void(Property)> pHandler)
+{
+    mTreeRemoveHandler = std::move(pHandler);
+}
+
 void Client::handleRead()
 {
+    LOGLESS_TRACE();
     int readSize = 0;
     if (WAIT_HEADER == mReadState)
     {
@@ -454,6 +473,11 @@ void Client::handleRead()
     }
 
     auto res = read(mFd, mBuff+mBuffIdx, readSize);
+
+    if (res>0)
+    {
+        Logless("DBG Client: handleRead: size=_ data=_", res, BufferLog(res, mBuff+mBuffIdx));
+    }
 
     if (-1 == res)
     {
@@ -489,6 +513,10 @@ void Client::decodeMessage()
     cum::per_codec_ctx context(mBuff, mBuffIdx);
     decode_per(message, context);
 
+    std::string stred;
+    str("root", message, stred, true);
+    Logless("DBG Client: decode: decoded=_ raw=_", stred.c_str(), BufferLog(mBuffIdx, mBuff));
+
     std::visit([this](auto&& pMsg){
             handle(std::move(pMsg));
         }, std::move(message));
@@ -497,12 +525,18 @@ void Client::decodeMessage()
 void Client::send(PropertyTreeProtocol&& pMsg)
 {
     LOGLESS_TRACE();
+
     std::byte buffer[512];
     auto& msgSize = *(new (buffer) uint16_t(0));
     cum::per_codec_ctx context(buffer+sizeof(msgSize), sizeof(buffer)-sizeof(msgSize));
     encode_per(pMsg, context);
 
     msgSize = sizeof(buffer)-context.size()-2;
+
+
+    std::string stred;
+    str("root", pMsg, stred, true);
+    Logless("DBG Client: send: encoded=_ raw=_", stred.c_str(), BufferLog(msgSize+2, buffer));
 
     auto res = ::send(mFd, buffer, msgSize+2, 0);
     if (-1 == res)
@@ -542,25 +576,77 @@ void Client::handle(PropertyTreeMessageArray&& pMsg)
     }
 }
 
+void Client::removeNodes(const std::vector<uint64_t>& pNodes)
+{
+    LOGLESS_TRACE();
+    for (auto i : pNodes)
+    {
+        std::unique_lock<std::mutex> lgTree(mTreeMutex);
+        auto foundIt = mTree.find(i);
+        if (mTree.end() == foundIt)
+        {
+            continue;
+        }
+
+        if (mTreeRemoveHandler)
+        {
+            mTreeRemoveHandler(Property(*this, foundIt->second));
+        }
+
+        auto parent = foundIt->second->parent.lock();
+
+        if (parent)
+        {
+            std::unique_lock<std::mutex> lgChildren(parent->childrenMutex);
+            parent->children.erase(foundIt->second->name);
+        }
+
+        mTree.erase(foundIt);
+    }
+}
+
 void Client::addNodes(NamedNodeList& pNodeList)
 {
     LOGLESS_TRACE();
     for (auto& i : pNodeList)
     {
         std::unique_lock<std::mutex> lgTree(mTreeMutex);
-        auto foundIt = mTree.find(i.parentUuid);
-        if (mTree.end() == foundIt || mTree.end() != mTree.find(i.uuid))
+        auto parentIt = mTree.find(i.parentUuid);
+        auto nodeIt = mTree.find(i.uuid);
+
+        if (mTree.end() == parentIt)
         {
-            continue;
+            auto dummyParent = std::make_shared<Node>("ghost", std::weak_ptr<Node>{}, i.parentUuid);
+            auto res = mTree.emplace(i.parentUuid, dummyParent);
+            parentIt = res.first;
         }
-        auto& parentNode = foundIt->second;
 
-        auto newNode = std::make_shared<Node>(i.name, parentNode, i.uuid);
-        mTree.emplace(i.uuid, newNode);
+        auto& parentNode = parentIt->second;
 
-        std::unique_lock<std::mutex> parentLg(parentNode->childrenMutex);
-        parentNode->children[i.name] = newNode;
-        parentLg.unlock();
+        if (mTree.end() != nodeIt)
+        {
+            nodeIt->second.get()->name = i.name;
+            nodeIt->second.get()->parent = parentIt->second;
+            lgTree.unlock();
+            if (mTreeAddHandler)
+            {
+                mTreeAddHandler(Property(*this, nodeIt->second));
+            }
+        }
+        else
+        {
+            auto newNode = std::make_shared<Node>(i.name, parentNode, i.uuid);
+            mTree.emplace(i.uuid, newNode);
+
+            std::unique_lock<std::mutex> parentLg(parentNode->childrenMutex);
+            parentNode->children[i.name] = newNode;
+            parentLg.unlock();
+            lgTree.unlock();
+            if (mTreeAddHandler)
+            {
+                mTreeAddHandler(Property(*this, newNode));
+            }
+        }
     }
 }
 
@@ -568,6 +654,10 @@ uint16_t Client::addTransaction(PropertyTreeProtocol&& pMsg)
 {
     LOGLESS_TRACE();
     uint16_t trId = mTransactioIdCtr.fetch_add(1);
+    if (0xFFFF == trId)
+    {
+        trId = mTransactioIdCtr.fetch_add(1);
+    }
 
     auto& message = std::get<PropertyTreeMessage>(pMsg);
     message.transactionId = trId;
@@ -592,7 +682,7 @@ PropertyTreeMessages Client::waitTransaction(uint16_t pTrId)
     {
         std::unique_lock<std::mutex> lg(transaction.mutex);
 
-        transaction.cv.wait_for(lg, std::chrono::milliseconds(5000), [this, &transaction](){
+        transaction.cv.wait_for(lg, std::chrono::milliseconds(500), [this, &transaction](){
                 return transaction.satisfied;
             });
 

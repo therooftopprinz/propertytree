@@ -16,6 +16,13 @@ class Property
 public:
     Property() = delete;
 
+    Property& operator=(const Property& pOther)
+    {
+        mClient = pOther.mClient;
+        mNode = pOther.mNode;
+        return *this;
+    }
+
     template <typename T>
     Property& operator=(const T& pOther)
     {
@@ -31,8 +38,18 @@ public:
             new (node.data.data()) T(pOther);
         }
 
-        mClient.commit(*this);
+        mClient->commit(*this);
         return *this;
+    }
+
+    void set(std::vector<uint8_t>&& pValue)
+    {
+        std::unique_lock<std::mutex> lg(mNode->dataMutex);
+        auto& node = *mNode;
+
+        node.data = std::move(pValue);
+
+        mClient->commit(*this);
     }
 
     template <typename T>
@@ -46,19 +63,25 @@ public:
         return {};
     }
 
+    std::vector<uint8_t> raw()
+    {
+        std::unique_lock<std::mutex> lg(mNode->dataMutex);
+        return mNode->data;
+    }
+
     void fetch()
     {
-        mClient.fetch(*this);
+        mClient->fetch(*this);
     }
 
     Property create(const std::string& pName)
     {
-        return mClient.create(*this, pName);
+        return mClient->create(*this, pName);
     }
 
     Property get(const std::string& pName)
     {
-        return mClient.get(*this, pName, false);
+        return mClient->get(*this, pName, false);
     }
 
     operator bool() const
@@ -68,22 +91,22 @@ public:
 
     void subscribe()
     {
-        mClient.subscribe(*this);
+        mClient->subscribe(*this);
     }
 
     void unsubscribe()
     {
-        mClient.unsubscribe(*this);
+        mClient->unsubscribe(*this);
     }
 
     void destroy()
     {
-        mClient.destroy(*this);
+        mClient->destroy(*this);
     }
 
     void loadChildren(bool pRecursive = false)
     {
-        mClient.get(*this, ".", true);
+        mClient->get(*this, ".", pRecursive);
     }
 
     std::vector<std::pair<std::string, Property>> children()
@@ -92,7 +115,7 @@ public:
         std::unique_lock<std::mutex> lg(mNode->childrenMutex);
         for (auto& i : mNode->children)
         {
-            rv.emplace_back(i.first, Property(mClient, i.second));
+            rv.emplace_back(i.first, Property(*mClient, i.second));
         }
         return rv;
     }
@@ -105,7 +128,7 @@ public:
 
     std::vector<uint8_t> call(const bfc::BufferView& pValue)
     {
-        return mClient.call(*this, pValue);
+        return mClient->call(*this, pValue);
     }
 
     void setHRcpHandler(std::function<std::vector<uint8_t>(const bfc::BufferView&)>&& pHandler)
@@ -114,9 +137,34 @@ public:
         mNode->rcpHandler = std::move(pHandler);
     }
 
+    uint64_t uuid()
+    {
+        return mNode->uuid;
+    }
+
+    const std::string& name()
+    {
+        return mNode->name;
+    }
+
+    std::optional<Property> parent()
+    {
+        if (auto p = mNode->parent.lock())
+        {
+            return Property(*mClient, p);
+        }
+        return {};
+    }
+
+    void setUpdateHandler(std::function<void()> pHandler)
+    {
+        std::unique_lock<std::mutex> lgUpdateHandler(mNode->updateHandlerMutex);
+        mNode->updateHandler = std::move(pHandler);
+    }
+
 private:
     Property(Client& pClient, std::shared_ptr<Node> pNode)
-        : mClient(pClient)
+        : mClient(&pClient)
         , mNode(pNode)
     {}
 
@@ -125,13 +173,8 @@ private:
         return mNode;
     }
 
-    uint64_t uuid()
-    {
-        return mNode->uuid;
-    }
-
     friend class Client;
-    Client& mClient;
+    Client* mClient;
     std::shared_ptr<Node> mNode;
 };
 
