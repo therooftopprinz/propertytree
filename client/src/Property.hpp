@@ -99,9 +99,9 @@ public:
         mClient->unsubscribe(*this);
     }
 
-    void destroy()
+    bool destroy()
     {
-        mClient->destroy(*this);
+        return mClient->destroy(*this);
     }
 
     void loadChildren(bool pRecursive = false)

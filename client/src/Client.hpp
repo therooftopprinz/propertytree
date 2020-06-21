@@ -94,6 +94,7 @@ private:
 
     std::function<void(Property)> mTreeAddHandler;
     std::function<void(Property)> mTreeRemoveHandler;
+    std::mutex mmTreeHandlerMutex;
 };
 
 } // propertytree

@@ -31,7 +31,7 @@ std::vector<uint8_t> hexStringToVector(const std::string& pHex)
             rv.emplace_back(byte);
         }
 
-        nibble = !nibble; 
+        nibble = !nibble;
     }
     return rv;
 }
@@ -84,6 +84,11 @@ public:
 
                 consoleLog("[Monitor]: Property add uuid=", pProp.uuid(), " name=\"", pProp.name(), "\"", parentInfo);
 
+                if (!mAutowatch)
+                {
+                    return;
+                }
+
                 std::unique_lock<std::mutex> lgToSubscribe(mToSubscribeMutex);
                 mToSubscribe.emplace_back(pProp);
                 mToSubscribeCv.notify_one();
@@ -97,9 +102,10 @@ public:
         mCmdMan.addCommand("set", [this](bfc::ArgsMap&& pMap) -> std::string {return onCmdSet(std::move(pMap));});
         mCmdMan.addCommand("get", [this](bfc::ArgsMap&& pMap) -> std::string {return onCmdGet(std::move(pMap));});
         mCmdMan.addCommand("list", [this](bfc::ArgsMap&& pMap) -> std::string {return onCmdList(std::move(pMap));});
-        mCmdMan.addCommand("watch", [this](bfc::ArgsMap&& pMap) -> std::string {return onCmdWatch(std::move(pMap));});
-        mCmdMan.addCommand("unwatch", [this](bfc::ArgsMap&& pMap) -> std::string {return onCmdUnwatch(std::move(pMap));});
         mCmdMan.addCommand("autowatch", [this](bfc::ArgsMap&& pMap) -> std::string {return onCmdAutoWatch(std::move(pMap));});
+        mCmdMan.addCommand("subscribe", [this](bfc::ArgsMap&& pMap) -> std::string {return onCmdSubscribe(std::move(pMap));});
+        mCmdMan.addCommand("unsubscribe", [this](bfc::ArgsMap&& pMap) -> std::string {return onCmdUnsubscribe(std::move(pMap));});
+        mCmdMan.addCommand("delete", [this](bfc::ArgsMap&& pMap) -> std::string {return onCmdDelete(std::move(pMap));});
     }
 
     void run()
@@ -191,11 +197,18 @@ private:
     {
         auto root = mClient.root();
         auto path = pMap.arg("path");
+        auto act = pMap.arg("action");
 
         if (path)
         {
             root = getByPath(*path);
         }
+
+        enum {NONE, DEL, SUB, UNSUB} action;
+
+        if (act && "delete" == *act) action = DEL;
+        else if (act && "subscribe" == *act) action = SUB;
+        else if (act && "unsubscribe" == *act) action = UNSUB;
 
         root.loadChildren(true);
 
@@ -222,6 +235,19 @@ private:
                 auto name = curentLevel->children[*index].first;
                 auto& prop = curentLevel->children[*index].second;
                 prop.fetch();
+
+                if (SUB == action)
+                {
+                    prop.subscribe();
+                    prop.setUpdateHandler([this, prop]() mutable {
+                            auto data = prop.raw();
+                            consoleLog("[Monitor]: Property upt uuid=", prop.uuid(), " name=\"", prop.name(), "\" data=[", data.size(), "]{", toHexString(data.data(), data.size()) ,"}");
+                        });
+                }
+                else if (UNSUB == action)
+                {
+                    prop.unsubscribe();
+                }
                 auto data = prop.raw();
                 ss << std::string(levels.size()*2, ' ') << "|-/" << name << " uuid=" << prop.uuid() << " data[" << data.size() <<  "]={" << toHexString(data.data(), data.size()) << "}\n";
             }
@@ -232,6 +258,15 @@ private:
                 if (0 == levels.size())
                 {
                     break;
+                }
+
+                curentLevel = &levels.back();
+                index = &curentLevel->index;
+                size_t oldIndex = *index-1;
+                auto& child = curentLevel->children[oldIndex].second;
+                if (!child.childrenSize() && DEL == action)
+                {
+                    child.destroy();
                 }
                 continue;
             }
@@ -245,45 +280,68 @@ private:
                 auto name = curentLevel->children[oldIndex].first;
                 levels.emplace_back(TraversalContext{name, child.children(), 0});
             }
+            else if (DEL == action)
+            {
+                child.destroy();
+            }
         }
 
         return std::move(ss.str());
     }
 
-    std::string onCmdWatch(bfc::ArgsMap&& pMap)
+    std::string onCmdSubscribe(bfc::ArgsMap&& pMap)
     {
         auto path = pMap.arg("path");
-
         if (!path)
         {
-            return "path not specified.";
+            return "path not specified!";
         }
 
         auto prop = getByPath(*path);
         if (!prop)
         {
-            return "property not found.";   
+            return "property not found!";
         }
         prop.subscribe();
         prop.setUpdateHandler([this, prop]() mutable {
                 auto data = prop.raw();
                 consoleLog("[Monitor]: Property upt uuid=", prop.uuid(), " name=\"", prop.name(), "\" data=[", data.size(), "]{", toHexString(data.data(), data.size()) ,"}");
             });
-        return "watched!";
+        return "subscribed!";
     }
 
-    std::string onCmdUnwatch(bfc::ArgsMap&& pMap)
+    std::string onCmdUnsubscribe(bfc::ArgsMap&& pMap)
     {
         auto path = pMap.arg("path");
-
         if (!path)
         {
-            return "path not specified.";
+            return "path not specified!";
         }
 
         auto prop = getByPath(*path);
+        if (!prop)
+        {
+            return "property not found!";
+        }
         prop.unsubscribe();
-        return "unwatched!";
+        return "unsubscribed!";
+    }
+
+    std::string onCmdDelete(bfc::ArgsMap&& pMap)
+    {
+        auto path = pMap.arg("path");
+        if (!path)
+        {
+            return "path not specified!";
+        }
+
+        auto prop = getByPath(*path);
+        if (!prop)
+        {
+            return "property not found!";
+        }
+
+        return prop.destroy() ? "deleted!" : "failed!";
     }
 
     std::string onCmdAutoWatch(bfc::ArgsMap&& pMap)

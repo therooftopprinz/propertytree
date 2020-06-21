@@ -451,11 +451,13 @@ std::vector<uint8_t> Client::call(Property& pProp, const bfc::BufferView& pValue
 
 void Client::setTreeAddHandler(std::function<void(Property)> pHandler)
 {
+    std::unique_lock<std::mutex> lgTreeHandlerMutex(mmTreeHandlerMutex);
     mTreeAddHandler = std::move(pHandler);
 }
 
 void Client::setTreeRemoveHandler(std::function<void(Property)> pHandler)
 {
+    std::unique_lock<std::mutex> lgTreeHandlerMutex(mmTreeHandlerMutex);
     mTreeRemoveHandler = std::move(pHandler);
 }
 
@@ -588,10 +590,12 @@ void Client::removeNodes(const std::vector<uint64_t>& pNodes)
             continue;
         }
 
+        std::unique_lock<std::mutex> lgTreeHandlerMutex(mmTreeHandlerMutex);
         if (mTreeRemoveHandler)
         {
             mTreeRemoveHandler(Property(*this, foundIt->second));
         }
+        lgTreeHandlerMutex.unlock();
 
         auto parent = foundIt->second->parent.lock();
 
@@ -625,12 +629,22 @@ void Client::addNodes(NamedNodeList& pNodeList)
 
         if (mTree.end() != nodeIt)
         {
+            auto oldParent = nodeIt->second.get()->parent;
             nodeIt->second.get()->name = i.name;
             nodeIt->second.get()->parent = parentIt->second;
+
+            std::unique_lock<std::mutex> parentLg(parentNode->childrenMutex);
+            parentNode->children[i.name] = nodeIt->second;
+            parentLg.unlock();
             lgTree.unlock();
-            if (mTreeAddHandler)
+
+            if (!oldParent.lock())
             {
-                mTreeAddHandler(Property(*this, nodeIt->second));
+                std::unique_lock<std::mutex> lgTreeHandlerMutex(mmTreeHandlerMutex);
+                if (mTreeAddHandler)
+                {
+                    mTreeAddHandler(Property(*this, nodeIt->second));
+                }
             }
         }
         else
@@ -642,6 +656,8 @@ void Client::addNodes(NamedNodeList& pNodeList)
             parentNode->children[i.name] = newNode;
             parentLg.unlock();
             lgTree.unlock();
+
+            std::unique_lock<std::mutex> lgTreeHandlerMutex(mmTreeHandlerMutex);
             if (mTreeAddHandler)
             {
                 mTreeAddHandler(Property(*this, newNode));
