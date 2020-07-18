@@ -14,7 +14,7 @@ namespace propertytree
 class Property
 {
 public:
-    Property() = delete;
+    Property() = default;
 
     Property& operator=(const Property& pOther)
     {
@@ -77,6 +77,16 @@ public:
     Property create(const std::string& pName)
     {
         return mClient->create(*this, pName);
+    }
+
+    Property createOrGet(const std::string& pName)
+    {
+        auto rv = get(pName);
+        if (!rv)
+        {
+            rv = create(pName);
+        }
+        return rv;
     }
 
     Property get(const std::string& pName)
@@ -174,7 +184,7 @@ private:
     }
 
     friend class Client;
-    Client* mClient;
+    Client* mClient = nullptr;
     std::shared_ptr<Node> mNode;
 };
 
