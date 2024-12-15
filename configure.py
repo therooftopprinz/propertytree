@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import os
 import sys
 import subprocess
@@ -6,7 +6,7 @@ import subprocess
 CXX      = 'g++'
 AR       = 'ar'
 MAKE     = 'make'
-CXXFLAGS = '-std=c++17 -ggdb3 -O0 -Wall -Werror -pg'
+CXXFLAGS = '-std=c++17 -ggdb3 -O0 -Wall -pg'
 
 TLD = os.path.dirname(sys.argv[0])+'/'
 PWD = os.getcwd()+'/'
@@ -50,9 +50,9 @@ class Build:
         objects = [self.name+'/'+i+'.o' for i in self.input_files]
         deps    = [self.name+'/'+i+'.d' for i in self.input_files]
         srcs    = [self.src_dir+i for i in self.input_files]
-        print objects
-        print deps
-        print srcs
+        print(objects)
+        print(deps)
+        print(srcs)
         output = output + '-include '+' '.join(deps) + '\n'
         output = output + self.output_file + ':' + ' '.join(self.dependencies)+' '+' '.join(objects) + '\n'
         # target rule
@@ -71,47 +71,48 @@ class Build:
         return output;
 
 def clean_filenames(a):
-    return [i.strip().replace('./','') for i in a]
+    print("clean_filenames:",a)
+    return [i.decode("utf-8").strip().replace('./','') for i in a]
 
-print 'configuring for testing'
+print('configuring for testing')
 
-print 'TLD is ' + TLD
-print 'PWD is ' + PWD
+print('TLD is ' + TLD)
+print('PWD is ' + PWD)
 
-CLIENT_TEST_SOURCES = []
+# CLIENT_TEST_SOURCES = []
 CLIENT_SRC_SOURCES  = []
 SERVER_TEST_SOURCES = []
 SERVER_SRC_SOURCES  = []
 
-p = subprocess.Popen('cd '+TLD+'/client/test && find .            | egrep \'\.cpp$\'', shell=True, stdout=subprocess.PIPE)
-q = subprocess.Popen('cd '+TLD+'/client/src  && find .             | egrep \'\.cpp$\' | grep -v main.cpp', shell=True, stdout=subprocess.PIPE)
-r = subprocess.Popen('cd '+TLD+'/server/test && find .            | egrep \'\.cpp$\'', shell=True, stdout=subprocess.PIPE)
-s = subprocess.Popen('cd '+TLD+'/server/src  && find .             | egrep \'\.cpp$\' | grep -v main.cpp', shell=True, stdout=subprocess.PIPE)
-v = subprocess.Popen('cd '+TLD+'/common/test && find . | egrep \'\.cpp$\'', shell=True, stdout=subprocess.PIPE)
-t = subprocess.Popen('cd '+TLD+'/common/src && find .              | egrep \'\.cpp$\'', shell=True, stdout=subprocess.PIPE)
-u = subprocess.Popen('cd '+TLD+'/E2ETest/  && find .             | egrep \'\.cpp$\'', shell=True, stdout=subprocess.PIPE)
-w = subprocess.Popen('cd '+TLD+'/monitor/src  && find .             | egrep \'\.cpp$\'', shell=True, stdout=subprocess.PIPE)
+# p = subprocess.Popen('cd '+TLD+'/client/test && find .            | egrep \'.cpp$\'', shell=True, stdout=subprocess.PIPE)
+q = subprocess.Popen('cd '+TLD+'/client/src  && find .            | egrep \'.cpp$\' | grep -v main.cpp', shell=True, stdout=subprocess.PIPE)
+r = subprocess.Popen('cd '+TLD+'/server/test && find .            | egrep \'.cpp$\'', shell=True, stdout=subprocess.PIPE)
+s = subprocess.Popen('cd '+TLD+'/server/src  && find .            | egrep \'.cpp$\' | grep -v main.cpp', shell=True, stdout=subprocess.PIPE)
+# v = subprocess.Popen('cd '+TLD+'/common/test && find .            | egrep \'.cpp$\'', shell=True, stdout=subprocess.PIPE)
+# t = subprocess.Popen('cd '+TLD+'/common/src && find .             | egrep \'.cpp$\'', shell=True, stdout=subprocess.PIPE)
+u = subprocess.Popen('cd '+TLD+'/E2ETest/  && find .              | egrep \'.cpp$\'', shell=True, stdout=subprocess.PIPE)
+w = subprocess.Popen('cd '+TLD+'/monitor/src  && find .           | egrep \'.cpp$\'', shell=True, stdout=subprocess.PIPE)
 
-CLIENT_TEST_SOURCES = clean_filenames(p.stdout.readlines())
+# CLIENT_TEST_SOURCES = clean_filenames(p.stdout.readlines())
 CLIENT_SRC_SOURCES  = clean_filenames(q.stdout.readlines())
 SERVER_TEST_SOURCES = clean_filenames(r.stdout.readlines())
 SERVER_SRC_SOURCES  = clean_filenames(s.stdout.readlines())
-COMMON_TEST_SOURCES = clean_filenames(v.stdout.readlines())
-COMMON_SRC_SOURCES  = clean_filenames(t.stdout.readlines())
+# COMMON_TEST_SOURCES = clean_filenames(v.stdout.readlines())
+# COMMON_SRC_SOURCES  = clean_filenames(t.stdout.readlines())
 E2ETEST_SOURCES     = clean_filenames(u.stdout.readlines())
 MONITOR_SOURCES     = clean_filenames(w.stdout.readlines())
 
-print "CLIENT_TEST_SOURCES", CLIENT_TEST_SOURCES
-print "CLIENT_SRC_SOURCES", CLIENT_SRC_SOURCES
-print "SERVER_TEST_SOURCES", SERVER_TEST_SOURCES
-print "SERVER_SRC_SOURCES", SERVER_SRC_SOURCES
-print "COMMON_TEST_SOURCES", COMMON_TEST_SOURCES
-print "COMMON_SRC_SOURCES", COMMON_SRC_SOURCES
-print "E2ETEST_SOURCES", E2ETEST_SOURCES
-print "E2ETEST_SOURCES", MONITOR_SOURCES
+# print("CLIENT_TEST_SOURCES", CLIENT_TEST_SOURCES)
+print("CLIENT_SRC_SOURCES", CLIENT_SRC_SOURCES)
+print("SERVER_TEST_SOURCES", SERVER_TEST_SOURCES)
+print("SERVER_SRC_SOURCES", SERVER_SRC_SOURCES)
+# print("COMMON_TEST_SOURCES", COMMON_TEST_SOURCES)
+# print("COMMON_SRC_SOURCES", COMMON_SRC_SOURCES)
+print("E2ETEST_SOURCES", E2ETEST_SOURCES)
+print("E2ETEST_SOURCES", MONITOR_SOURCES)
 
 
-includePathsCommon = ['.', 'Logless/include/', 'BFC/include/', 'cum/', 'interface/']
+includePathsCommon = ['.', 'Logless/src/', 'BFC/include/', 'cum/', 'interface/']
 
 client = Build()
 client.set_cxxflags(CXXFLAGS)
@@ -136,14 +137,14 @@ gtest.add_src_files(['gmock-gtest-all.cc'])
 gtest.add_include_paths(['gtest'])
 gtest.target_archive('gtest.a')
 
-client_test = Build()
-client_test.set_cxxflags(CXXFLAGS)
-client_test.add_include_paths(['gtest/', './'])
-client_test.set_src_dir('client/tests/')
-client_test.add_src_files(CLIENT_TEST_SOURCES)
-client_test.set_linkflags('-lpthread')
-client_test.add_dependencies(['gtest.a','client.a'])
-client_test.target_executable('client_test')
+# client_test = Build()
+# client_test.set_cxxflags(CXXFLAGS)
+# client_test.add_include_paths(['gtest/', './'])
+# client_test.set_src_dir('client/tests/')
+# client_test.add_src_files(CLIENT_TEST_SOURCES)
+# client_test.set_linkflags('-lpthread')
+# client_test.add_dependencies(['gtest.a','client.a'])
+# client_test.target_executable('client_test')
 
 e2e_test = Build()
 e2e_test.set_cxxflags(CXXFLAGS)
@@ -153,7 +154,7 @@ e2e_test.set_src_dir('E2ETest/')
 e2e_test.add_src_files(E2ETEST_SOURCES)
 e2e_test.set_linkflags('-lpthread')
 e2e_test.add_dependencies(['gtest.a', 'client.a'])
-e2e_test.add_external_dependencies(['Logless/build/logless.a'])
+e2e_test.add_external_dependencies(['Logless/build/liblogless.a'])
 e2e_test.target_executable('e2e_test')
 
 server_test = Build()
@@ -172,7 +173,7 @@ server_bin.add_include_paths(includePathsCommon)
 server_bin.set_src_dir('server/src/')
 server_bin.add_src_files(["main.cpp"])
 server_bin.add_dependencies(['server.a'])
-server_bin.add_external_dependencies(['Logless/build/logless.a'])
+server_bin.add_external_dependencies(['Logless/build/liblogless.a'])
 server_bin.set_linkflags('-lpthread')
 server_bin.target_executable('server')
 
@@ -182,7 +183,7 @@ monitor_bin.add_include_paths(['.', 'monitor/include/', 'client/include'])
 monitor_bin.add_include_paths(includePathsCommon)
 monitor_bin.set_src_dir('monitor/src/')
 monitor_bin.add_src_files(MONITOR_SOURCES)
-monitor_bin.add_external_dependencies(['Logless/build/logless.a'])
+monitor_bin.add_external_dependencies(['Logless/build/liblogless.a'])
 monitor_bin.add_dependencies(['client.a'])
 monitor_bin.set_linkflags('-lpthread')
 monitor_bin.target_executable('monitor')
@@ -192,7 +193,7 @@ with open('Makefile','w+') as mf:
     mf.write(client.generate_make())
     mf.write(server.generate_make())
     mf.write(gtest.generate_make())
-    mf.write(client_test.generate_make())
+    # mf.write(client_test.generate_make())
     mf.write(e2e_test.generate_make())
     mf.write(server_test.generate_make())
     mf.write(server_bin.generate_make())

@@ -7,12 +7,16 @@
 #include <mutex>
 #include <unordered_map>
 
+#include <stdexcept>
+
 #include <bfc/EpollReactor.hpp>
 #include <bfc/Buffer.hpp>
 
 #include <interface/protocol.hpp>
 
 #include <propertytree/Node.hpp>
+
+#include <logless/Logger.hpp>
 
 namespace propertytree
 {
@@ -95,6 +99,8 @@ private:
     std::function<void(Property)> mTreeAddHandler;
     std::function<void(Property)> mTreeRemoveHandler;
     std::mutex mmTreeHandlerMutex;
+
+    Logger logger;
 };
 
 } // propertytree

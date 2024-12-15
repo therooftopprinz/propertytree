@@ -2,8 +2,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include <logless/Logger.hpp>
-
 #include <propertytree/Client.hpp>
 #include <propertytree/Property.hpp>
 
@@ -11,6 +9,7 @@ namespace propertytree
 {
 
 Client::Client(const ClientConfig& pConfig)
+    : logger("propertytree::client.bin")
 {
     mRunner = std::thread([this](){
             mReactor.run();
@@ -82,7 +81,7 @@ Property Client::root()
 
 Property Client::create(Property& pParent, const std::string& pName)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     auto& node = pParent.node();
 
     std::unique_lock<std::mutex> lgChildren(node->childrenMutex);
@@ -138,7 +137,7 @@ Property Client::create(Property& pParent, const std::string& pName)
 
 Property Client::get(Property& pParent, const std::string& pName, bool pRecursive)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     auto& node = pParent.node();
 
     std::unique_lock<std::mutex> lg(node->childrenMutex);
@@ -196,7 +195,7 @@ void Client::handle(uint16_t, TreeUpdateNotification&& pMsg)
 
 void Client::handle(uint16_t, UpdateNotification&& pMsg)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     std::unique_lock<std::mutex> lgTree(mTreeMutex);
     auto nodeIt = mTree.find(pMsg.uuid);
     if (mTree.end() == nodeIt)
@@ -227,7 +226,7 @@ void Client::handle(uint16_t, UpdateNotification&& pMsg)
 
 void Client::handle(uint16_t pTransactionId, RpcRequest&& pMsg)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = RpcReject{};
@@ -266,7 +265,7 @@ void Client::handle(uint16_t pTransactionId, RpcRequest&& pMsg)
 
 void Client::commit(Property& pProp)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = SetValueRequest{};
@@ -289,7 +288,7 @@ void Client::commit(Property& pProp)
 
 void Client::fetch(Property& pProp)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = GetRequest{};
@@ -321,7 +320,7 @@ void Client::fetch(Property& pProp)
 
 bool Client::subscribe(Property& pProp)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = SubscribeRequest{};
@@ -344,7 +343,7 @@ bool Client::subscribe(Property& pProp)
 
 bool Client::unsubscribe(Property& pProp)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = UnsubscribeRequest{};
@@ -367,7 +366,7 @@ bool Client::unsubscribe(Property& pProp)
 
 bool Client::destroy(Property& pProp)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = DeleteRequest{};
@@ -400,7 +399,7 @@ bool Client::destroy(Property& pProp)
 
 void Client::beat()
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = HearbeatRequest{};
@@ -417,7 +416,7 @@ void Client::beat()
 
 std::vector<uint8_t> Client::call(Property& pProp, const bfc::BufferView& pValue)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = RpcRequest{};
@@ -463,7 +462,7 @@ void Client::setTreeRemoveHandler(std::function<void(Property)> pHandler)
 
 void Client::handleRead()
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     int readSize = 0;
     if (WAIT_HEADER == mReadState)
     {
@@ -478,7 +477,7 @@ void Client::handleRead()
 
     if (res>0)
     {
-        Logless("DBG Client: handleRead: size=_ data=_", res, BufferLog(res, mBuff+mBuffIdx));
+        Logless(logger, "DBG Client: handleRead: size=_ data=_", res, BufferLog(res, mBuff+mBuffIdx));
     }
 
     if (-1 == res)
@@ -510,14 +509,14 @@ void Client::handleRead()
 
 void Client::decodeMessage()
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     PropertyTreeProtocol message;
     cum::per_codec_ctx context(mBuff, mBuffIdx);
     decode_per(message, context);
 
     std::string stred;
     str("root", message, stred, true);
-    Logless("DBG Client: decode: decoded=_ raw=_", stred.c_str(), BufferLog(mBuffIdx, mBuff));
+    Logless(logger, "DBG Client: decode: decoded=_ raw=_", stred.c_str(), BufferLog(mBuffIdx, mBuff));
 
     std::visit([this](auto&& pMsg){
             handle(std::move(pMsg));
@@ -526,7 +525,7 @@ void Client::decodeMessage()
 
 void Client::send(PropertyTreeProtocol&& pMsg)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
 
     std::byte buffer[512];
     auto& msgSize = *(new (buffer) uint16_t(0));
@@ -538,7 +537,7 @@ void Client::send(PropertyTreeProtocol&& pMsg)
 
     std::string stred;
     str("root", pMsg, stred, true);
-    Logless("DBG Client: send: encoded=_ raw=_", stred.c_str(), BufferLog(msgSize+2, buffer));
+    Logless(logger, "DBG Client: send: encoded=_ raw=_", stred.c_str(), BufferLog(msgSize+2, buffer));
 
     auto res = ::send(mFd, buffer, msgSize+2, 0);
     if (-1 == res)
@@ -549,7 +548,7 @@ void Client::send(PropertyTreeProtocol&& pMsg)
 
 void Client::handle(PropertyTreeMessage&& pMsg)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     auto trId = pMsg.transactionId;
     std::unique_lock<std::mutex> lg(mTransactionsMutex);
     auto foundIt = mTransactions.find(trId);
@@ -580,7 +579,7 @@ void Client::handle(PropertyTreeMessageArray&& pMsg)
 
 void Client::removeNodes(const std::vector<uint64_t>& pNodes)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     for (auto i : pNodes)
     {
         std::unique_lock<std::mutex> lgTree(mTreeMutex);
@@ -611,7 +610,7 @@ void Client::removeNodes(const std::vector<uint64_t>& pNodes)
 
 void Client::addNodes(NamedNodeList& pNodeList)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     for (auto& i : pNodeList)
     {
         std::unique_lock<std::mutex> lgTree(mTreeMutex);
@@ -668,7 +667,7 @@ void Client::addNodes(NamedNodeList& pNodeList)
 
 uint16_t Client::addTransaction(PropertyTreeProtocol&& pMsg)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     uint16_t trId = mTransactioIdCtr.fetch_add(1);
     if (0xFFFF == trId)
     {
@@ -688,7 +687,7 @@ uint16_t Client::addTransaction(PropertyTreeProtocol&& pMsg)
 
 PropertyTreeMessages Client::waitTransaction(uint16_t pTrId)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     std::unique_lock<std::mutex> lg(mTransactionsMutex);
     auto& transaction = mTransactions.find(pTrId)->second;
     lg.unlock();

@@ -13,6 +13,8 @@
 
 #include <ProtocolHandler.hpp>
 
+extern Logger logger;
+
 namespace propertytree
 {
 
@@ -28,7 +30,7 @@ ProtocolHandler::ProtocolHandler(bfc::LightFn<void()> pTerminator)
 
 void ProtocolHandler::onDisconnect(IConnectionSession* pConnection)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     auto sessionIdIt = mConnectionToSessionId.find(pConnection);
     if (mConnectionToSessionId.end() == sessionIdIt)
     {
@@ -42,14 +44,14 @@ void ProtocolHandler::onDisconnect(IConnectionSession* pConnection)
 
 void ProtocolHandler::onMsg(bfc::ConstBufferView pMsg, std::shared_ptr<IConnectionSession> pConnection)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     PropertyTreeProtocol message;
     cum::per_codec_ctx context((std::byte*)pMsg.data(), pMsg.size());
     decode_per(message, context);
 
     std::string stred;
     str("root", message, stred, true);
-    Logless("DBG ProtocolHandler: receive: session=_ decoded=_", pConnection.get(),  stred.c_str());
+    Logless(logger, "DBG ProtocolHandler: receive: session=%p decoded=%s", pConnection.get(),  stred.c_str());
 
     std::visit([this, &pConnection](auto&& pMsg) {
             onMsg(std::move(pMsg), pConnection);
@@ -73,7 +75,7 @@ void ProtocolHandler::onMsg(PropertyTreeMessageArray&& pMsg, std::shared_ptr<ICo
 
 void ProtocolHandler::handle(uint16_t pTransactionId, SigninRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.transactionId = pTransactionId;
@@ -88,7 +90,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SigninRequest&& pMsg, std:
 
 void ProtocolHandler::handle(uint16_t pTransactionId, CreateRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.transactionId = pTransactionId;
@@ -108,7 +110,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, CreateRequest&& pMsg, std:
     auto sessionIdIt = mConnectionToSessionId.find(pConnection.get());
     if (mConnectionToSessionId.end() == sessionIdIt)
     {
-        Logless("ERR ProtocolHandler:: CreateRequest from a non signedin connection.");
+        Logless(logger, "ERR ProtocolHandler:: CreateRequest from a non signedin connection.");
         return;
     }
     auto sessionId = sessionIdIt->second;
@@ -155,7 +157,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, CreateRequest&& pMsg, std:
 template <typename T>
 void ProtocolHandler::fillToAddListFromTree(T& pIe, std::shared_ptr<Node>& pNode, bool pRecursive)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     struct TraversalContext
     {
         TraversalContext(std::shared_ptr<Node> pNode, std::map<std::string, std::shared_ptr<Node>>::iterator pIt)
@@ -199,7 +201,7 @@ void ProtocolHandler::fillToAddListFromTree(T& pIe, std::shared_ptr<Node>& pNode
 
 void ProtocolHandler::handle(uint16_t pTransactionId, TreeInfoRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.transactionId = pTransactionId;
@@ -246,14 +248,14 @@ void ProtocolHandler::handle(uint16_t pTransactionId, TreeInfoRequest&& pMsg, st
 
 void ProtocolHandler::handle(uint16_t pTransactionId, SetValueRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     if (0 == pMsg.uuid && 4 == pMsg.data.size())
     {
         uint32_t value;
         std::memcpy(&value, pMsg.data.data(), 4);
         if (9u == value)
         {
-            Logless("INF ProtocolHandler: terminate signal received!");
+            Logless(logger, "INF ProtocolHandler: terminate signal received!");
             mTerminator();
             return;
         }
@@ -309,7 +311,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SetValueRequest&& pMsg, st
 
 void ProtocolHandler::handle(uint16_t pTransactionId, GetRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.transactionId = pTransactionId;
@@ -334,7 +336,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, GetRequest&& pMsg, std::sh
 
 void ProtocolHandler::handle(uint16_t pTransactionId, SubscribeRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.transactionId = pTransactionId;
@@ -353,7 +355,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SubscribeRequest&& pMsg, s
     auto sessionIdIt = mConnectionToSessionId.find(pConnection.get());
     if (mConnectionToSessionId.end() == sessionIdIt)
     {
-        Logless("ERR ProtocolHandler: SubscribeRequest from a non signedin connection.");
+        Logless(logger, "ERR ProtocolHandler: SubscribeRequest from a non signedin connection.");
         return;
     }
     auto sessionId = sessionIdIt->second;
@@ -366,7 +368,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, SubscribeRequest&& pMsg, s
 
 void ProtocolHandler::handle(uint16_t pTransactionId, UnsubscribeRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.transactionId = pTransactionId;
@@ -403,7 +405,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, UnsubscribeRequest&& pMsg,
 
 void ProtocolHandler::handle(uint16_t pTransactionId, DeleteRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
 
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
@@ -457,7 +459,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, DeleteRequest&& pMsg, std:
 
 void ProtocolHandler::handle(uint16_t pTransactionId, RpcRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = std::move(pMsg);
@@ -502,7 +504,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, RpcRequest&& pMsg, std::sh
 template<typename T>
 void ProtocolHandler::handleRpc(uint16_t pTransactionId, T&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     auto translationIt = mTrIdTranslation.find(pTransactionId);
     if (mTrIdTranslation.end() == translationIt)
     {
@@ -537,7 +539,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, RpcReject&& pMsg, std::sha
 
 void ProtocolHandler::handle(uint16_t pTransactionId, HearbeatRequest&& pMsg, std::shared_ptr<IConnectionSession>& pConnection)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     PropertyTreeProtocol message = PropertyTreeMessage{};
     auto& propertyTreeMessage = std::get<PropertyTreeMessage>(message);
     propertyTreeMessage.message = HearbeatResponse{};
@@ -547,7 +549,7 @@ void ProtocolHandler::handle(uint16_t pTransactionId, HearbeatRequest&& pMsg, st
 
 size_t ProtocolHandler::encode(const PropertyTreeProtocol& pMsg, std::byte* pData, size_t pSize)
 {
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
     auto& msgSize = *(new (pData) uint16_t(0));
     cum::per_codec_ctx context(pData+sizeof(msgSize), pSize-sizeof(msgSize));
     encode_per(pMsg, context);
@@ -555,7 +557,7 @@ size_t ProtocolHandler::encode(const PropertyTreeProtocol& pMsg, std::byte* pDat
 
     std::string stred;
     str("root", pMsg, stred, true);
-    Logless("DBG ProtocolHandler: send: encoded=_", stred.c_str());
+    Logless(logger, "DBG ProtocolHandler: send: encoded=_", stred.c_str());
 
     return msgSize + 2;
 }
@@ -566,12 +568,12 @@ void ProtocolHandler::send(const PropertyTreeProtocol& pMsg, std::shared_ptr<ICo
     {
         return;
     }
-    LOGLESS_TRACE();
+    LOGLESS_TRACE(logger);
 
     std::byte buffer[ENCODE_SIZE];
     auto msgSize = encode(pMsg, buffer, sizeof(buffer));
 
-    Logless("DBG ProtocolHandler: send: session=_", pConnection.get());
+    Logless(logger, "DBG ProtocolHandler: send: session=%p", pConnection.get());
     pConnection->send(bfc::ConstBufferView(buffer, msgSize));
  }
 
@@ -581,8 +583,8 @@ void ProtocolHandler::send(const std::byte* pData, size_t pSize, std::shared_ptr
     {
         return;
     }
-    LOGLESS_TRACE();
-    Logless("DBG ProtocolHandler: send: session=_", pConnection.get());
+    LOGLESS_TRACE(logger);
+    Logless(logger, "DBG ProtocolHandler: send: session=%p", pConnection.get());
     pConnection->send(bfc::ConstBufferView(pData, pSize));
 }
 

@@ -2,6 +2,7 @@
 #define __SERVER_HPP__
 
 #include <map>
+#include <stdexcept>
 
 #include <bfc/EpollReactor.hpp>
 
