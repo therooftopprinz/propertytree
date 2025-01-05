@@ -34,7 +34,7 @@ Server::Server()
 
     char loc[24];
     inet_ntop(AF_INET, &addr.sin_addr.s_addr, loc, sizeof(loc));
-    Logless(logger, "Server: binding %s:%d", loc, port);
+    Logless(logger, "Server: binding %s;:%d;", loc, port);
 
     res = bind(mServerFd, (sockaddr*)&addr, sizeof(addr));
 
@@ -65,7 +65,7 @@ void Server::run()
 
 void Server::onDisconnect(int pFd)
 {
-    Logless(logger, "Server: client disconnected fd=%d", pFd);
+    Logless(logger, "Server: client disconnected fd=%d;", pFd);
     mReactor.removeHandler(pFd);
     auto connectionRaw = mConnections.find(pFd)->second.get();
     mConnections.erase(pFd);
@@ -86,7 +86,7 @@ void Server::handleServerRead()
 
     char loc[24];
     inet_ntop(AF_INET, &addr.sin_addr.s_addr, loc, sizeof(loc));
-    Logless(logger, "Server: connected client fd=%d address=%s:%u", res, loc, ntohs(addr.sin_port));
+    Logless(logger, "Server: connected client fd=%d; address=%s;:%u;", res, loc, ntohs(addr.sin_port));
 
     std::unique_lock<std::mutex> lg(mConnectionsMutex);
     auto session = std::make_shared<ConnectionSession>(res, *this, mProto);
@@ -98,7 +98,7 @@ void Server::handleServerRead()
             session->handleRead();
         }))
     {
-        Logless(logger, "Server: Failed to register connection fd=%d to EpollReactor, errno=\"%s\"", res, strerror(errno));
+        Logless(logger, "Server: Failed to register connection fd=%d; to EpollReactor, errno=\"%s;\"", res, strerror(errno));
         onDisconnect(res);
     }
 }

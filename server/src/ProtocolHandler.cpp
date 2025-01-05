@@ -51,7 +51,7 @@ void ProtocolHandler::onMsg(bfc::ConstBufferView pMsg, std::shared_ptr<IConnecti
 
     std::string stred;
     str("root", message, stred, true);
-    Logless(logger, "DBG ProtocolHandler: receive: session=%p decoded=%s", pConnection.get(),  stred.c_str());
+    Logless(logger, "DBG ProtocolHandler: receive: session=%p; decoded=%s;", pConnection.get(),  stred.c_str());
 
     std::visit([this, &pConnection](auto&& pMsg) {
             onMsg(std::move(pMsg), pConnection);
@@ -573,7 +573,7 @@ void ProtocolHandler::send(const PropertyTreeProtocol& pMsg, std::shared_ptr<ICo
     std::byte buffer[ENCODE_SIZE];
     auto msgSize = encode(pMsg, buffer, sizeof(buffer));
 
-    Logless(logger, "DBG ProtocolHandler: send: session=%p", pConnection.get());
+    Logless(logger, "DBG ProtocolHandler: send: session=%p;", pConnection.get());
     pConnection->send(bfc::ConstBufferView(buffer, msgSize));
  }
 
@@ -584,7 +584,7 @@ void ProtocolHandler::send(const std::byte* pData, size_t pSize, std::shared_ptr
         return;
     }
     LOGLESS_TRACE(logger);
-    Logless(logger, "DBG ProtocolHandler: send: session=%p", pConnection.get());
+    Logless(logger, "DBG ProtocolHandler: send: session=%p;", pConnection.get());
     pConnection->send(bfc::ConstBufferView(pData, pSize));
 }
 

@@ -477,7 +477,7 @@ void Client::handleRead()
 
     if (res>0)
     {
-        Logless(logger, "DBG Client: handleRead: size=_ data=_", res, BufferLog(res, mBuff+mBuffIdx));
+        Logless(logger, "DBG Client: handleRead: size=%zu; data=%%;", res, BufferLog(res, mBuff+mBuffIdx));
     }
 
     if (-1 == res)

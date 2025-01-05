@@ -23,11 +23,11 @@ ConnectionSession::~ConnectionSession()
 
 void ConnectionSession::send(const bfc::ConstBufferView& pBuffer)
 {
-    Logless(logger, "DBG ConnectionSession[%d]: send: %x", mFd, BufferLog(pBuffer.size(), pBuffer.data()));
+    Logless(logger, "DBG ConnectionSession[%d;]: send: %x;", mFd, BufferLog(pBuffer.size(), pBuffer.data()));
     auto res = ::send(mFd, pBuffer.data(), pBuffer.size(), 0);
     if (-1 == res)
     {
-        Logless(logger, "ERR ConnectionSession[%d]: write error=%s", mFd, strerror(errno));
+        Logless(logger, "ERR ConnectionSession[%d;]: write error=%s;", mFd, strerror(errno));
         // TODO: this causes recursive locking in ProtocolHandler::mSessionsMutex 
         // mServer.onDisconnect(mFd);
         return;
@@ -50,7 +50,7 @@ void ConnectionSession::handleRead()
 
     if (0 >= res)
     {
-        Logless(logger, "DBG ConnectionSession[%d]: read error=%s", mFd, strerror(errno));
+        Logless(logger, "DBG ConnectionSession[%d;]: read error=%s;", mFd, strerror(errno));
         mServer.onDisconnect(mFd);
         return;
     }
@@ -67,7 +67,7 @@ void ConnectionSession::handleRead()
 
     if (mExpectedReadSize == mBuffIdx)
     {
-        Logless(logger, "DBG ConnectionSession[%d]: receive: %x", mFd, BufferLog(mBuffIdx, mBuff));
+        Logless(logger, "DBG ConnectionSession[%d;]: receive: %x;", mFd, BufferLog(mBuffIdx, mBuff));
 
         mProto.onMsg(bfc::ConstBufferView(mBuff, mBuffIdx), shared_from_this());
 
