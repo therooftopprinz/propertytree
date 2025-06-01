@@ -557,7 +557,7 @@ size_t ProtocolHandler::encode(const PropertyTreeProtocol& pMsg, std::byte* pDat
 
     std::string stred;
     str("root", pMsg, stred, true);
-    Logless(logger, "DBG ProtocolHandler: send: encoded=_", stred.c_str());
+    Logless(logger, "DBG ProtocolHandler: send: encoded=%s;", stred.c_str());
 
     return msgSize + 2;
 }

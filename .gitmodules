@@ -1,9 +1,9 @@
-[submodule "BFC"]
-	path = BFC
-	url = https://github.com/therooftopprinz/BFC.git
-[submodule "Logless"]
-	path = Logless
-	url = https://github.com/therooftopprinz/Logless.git
-[submodule "cum"]
-	path = cum
+[submodule "cxx_dependency/bfc"]
+	path = cxx_dependency/bfc
+	url = https://github.com/therooftopprinz/bfc.git
+[submodule "cxx_dependency/logless"]
+	path = cxx_dependency/logless
+	url = https://github.com/therooftopprinz/logless.git
+[submodule "cxx_dependency/cum"]
+	path = cxx_dependency/cum
 	url = https://github.com/therooftopprinz/cum.git

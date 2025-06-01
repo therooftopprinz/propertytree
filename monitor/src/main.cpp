@@ -65,7 +65,7 @@ public:
                         prop.subscribe();
                         prop.setUpdateHandler([this, prop]() mutable {
                                 auto data = prop.raw();
-                                consoleLog("[Monitor]: Property upt uuid=", prop.uuid(), " name=\"", prop.name(), "\" data=[", data.size(), "]{", toHexString(data.data(), data.size()) ,"}");
+                                consoleLog("[Monitor]: Property CHG uuid=", prop.uuid(), " name=\"", prop.name(), "\" data=[", data.size(), "]{", toHexString(data.data(), data.size()) ,"}");
                             });
                     }
                 }
@@ -82,7 +82,7 @@ public:
                     parentInfo += std::to_string(parent->uuid());
                 }
 
-                consoleLog("[Monitor]: Property add uuid=", pProp.uuid(), " name=\"", pProp.name(), "\"", parentInfo);
+                consoleLog("[Monitor]: Property ADD uuid=", pProp.uuid(), " name=\"", pProp.name(), "\"", parentInfo);
 
                 if (!mAutowatch)
                 {
@@ -95,7 +95,7 @@ public:
             });
 
         mClient.setTreeRemoveHandler([this](Property pProp){
-                consoleLog("[Monitor]: Property rem uuid=", pProp.uuid(), " name=\"", pProp.name(), "\"");
+                consoleLog("[Monitor]: Property DEL uuid=", pProp.uuid(), " name=\"", pProp.name(), "\"");
             });
 
         mCmdMan.addCommand("create", [this](bfc::ArgsMap&& pMap) -> std::string {return onCmdCreate(std::move(pMap));});
@@ -241,7 +241,7 @@ private:
                     prop.subscribe();
                     prop.setUpdateHandler([this, prop]() mutable {
                             auto data = prop.raw();
-                            consoleLog("[Monitor]: Property upt uuid=", prop.uuid(), " name=\"", prop.name(), "\" data=[", data.size(), "]{", toHexString(data.data(), data.size()) ,"}");
+                            consoleLog("[Monitor]: Property CHG uuid=", prop.uuid(), " name=\"", prop.name(), "\" data=[", data.size(), "]{", toHexString(data.data(), data.size()) ,"}");
                         });
                 }
                 else if (UNSUB == action)
@@ -305,7 +305,7 @@ private:
         prop.subscribe();
         prop.setUpdateHandler([this, prop]() mutable {
                 auto data = prop.raw();
-                consoleLog("[Monitor]: Property upt uuid=", prop.uuid(), " name=\"", prop.name(), "\" data=[", data.size(), "]{", toHexString(data.data(), data.size()) ,"}");
+                consoleLog("[Monitor]: Property CHG uuid=", prop.uuid(), " name=\"", prop.name(), "\" data=[", data.size(), "]{", toHexString(data.data(), data.size()) ,"}");
             });
         return "subscribed!";
     }

@@ -9,7 +9,7 @@ namespace propertytree
 {
 
 Client::Client(const ClientConfig& pConfig)
-    : logger("propertytree::client.bin")
+    : logger(("client_" + std::to_string(uintptr_t(this) & 0xFFFF) + ".bin").c_str())
 {
     mRunner = std::thread([this](){
             mReactor.run();
@@ -82,7 +82,7 @@ Property Client::root()
 Property Client::create(Property& pParent, const std::string& pName)
 {
     LOGLESS_TRACE(logger);
-    auto& node = pParent.node();
+    auto node = pParent.node();
 
     std::unique_lock<std::mutex> lgChildren(node->childrenMutex);
     auto foundIt = node->children.find(pName);
@@ -138,7 +138,7 @@ Property Client::create(Property& pParent, const std::string& pName)
 Property Client::get(Property& pParent, const std::string& pName, bool pRecursive)
 {
     LOGLESS_TRACE(logger);
-    auto& node = pParent.node();
+    auto node = pParent.node();
 
     std::unique_lock<std::mutex> lg(node->childrenMutex);
     auto foundIt = node->children.find(pName);
@@ -387,6 +387,7 @@ bool Client::destroy(Property& pProp)
         auto name = pProp.node()->name;
         if (parent)
         {
+            std::unique_lock<std::mutex> lgChildren(parent->childrenMutex);
             parent->children.erase(name);
         }
         return true;

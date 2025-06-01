@@ -178,7 +178,7 @@ private:
         , mNode(pNode)
     {}
 
-    std::shared_ptr<Node>& node()
+    std::shared_ptr<Node> node()
     {
         return mNode;
     }

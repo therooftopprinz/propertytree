@@ -6,7 +6,7 @@ import subprocess
 CXX      = 'g++'
 AR       = 'ar'
 MAKE     = 'make'
-CXXFLAGS = '-std=c++17 -ggdb3 -O0 -Wall -pg'
+CXXFLAGS = '-std=c++17 -ggdb3 -O0 -Wall'
 
 TLD = os.path.dirname(sys.argv[0])+'/'
 PWD = os.getcwd()+'/'
@@ -160,7 +160,7 @@ e2e_test.target_executable('e2e_test')
 server_test = Build()
 server_test.set_cxxflags(CXXFLAGS)
 server_test.add_include_paths(['gtest/', './'])
-server_test.set_src_dir('server/tests/')
+server_test.set_src_dir('server/test/')
 server_test.add_src_files(SERVER_TEST_SOURCES)
 server_test.add_dependencies(['gtest.a', 'server.a'])
 server_test.set_linkflags('-lpthread')

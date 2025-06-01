@@ -1,0 +1,93 @@
+using value_ptr = shared_ptr<value>
+using value_client_ptr = shared_ptr<value_client>
+
+class value_client
+{
+    + value_client(reactor_t reactor, server_config_s config) : void
+    + get_reactor()                                  : reactor_t
+    + prefetch(u64 id)                               : value_ptr
+    + get(u64 id)                                    : value_ptr
+    + allocate()                                     : u64
+    - set_value(u64 id, buffer& data)                : void
+    - get_value(u64 id)                              : pair<buffer, u64>
+    - register_update_callback(u64 id, u64 interval) : void
+    - unregister_update_callback(u64 id)             : void
+    - handle_update(update data)                     : void
+    - value_map                                      : unordered_map<u64, value_ptr>
+}
+
+class value
+{
+    - value(value_client_ptr client, u64 id)   : void
+    + as<T>()                                  : optional<T>
+    + operator=(T value)                       : value&
+    + operator=(buffer value)                  : value&
+    + fetch()                                  : void
+    + watch(u64 interval)                      : void
+    + unwatch()                                : void
+    + subscribe(function<void(value_ptr>)> cb) : u64
+    + unsubscribe(u64 id)                      : bool
+    + size()                                   : size_t
+    + raw()                                    : buffer
+    + delete()                                 : void
+    + handle_update(buffer date, u64 sn)       : void
+    + valid()                                  : bool
+    - value_mtx                                : mutex 
+    - data                                     : buffer
+    - cb_map                                   : unordered_map<u64, function<void(value_ptr)>>
+    - marked_deleted                           : bool
+}
+
+using node_ptr = shared_ptr<node>
+
+class node_client
+{
+    + node_client(value_client client, server_config_s config)
+    + get(u64 id)                              : node_ptr
+    - resolve(u64 origin, string path)         : node_ptr
+    - list()                                   : map<name, node_ptr>
+    - aquire()                                 : node_ptr
+    - release(u64 id)                          : bool
+    - attach(u64 parent, u64 id, string name)  : bool
+    - handle_update(node_upate data)           : void
+    - node_map                                 : unordered_map<u64, node_ptr>
+}
+
+class node
+{
+    - node(node_client_ptr client)
+    + value()                                                : value_ptr
+    + list()                                                 : value_ptr
+    + resolve(string path)                                   : node_ptr
+    + aquire()                                               : bool
+    + release()                                              : bool
+    + register_update_callback(function<void(node_action&)>) : u64
+    + unregister_update_callback(u64)                        : bool
+    + attach(node_ptr, sring name)                           : bool
+    + detach(node_ptr)                                       : bool
+    + bool is_aquired()                                      : bool
+    - node_mtx                                               : mutex
+    - cb_map                                                 : unordered_map<u64, function<void(node_action)>>
+}
+
+--------------
+auto root = nc->get(0);
+auto calculate_vspeed = nc->get(vc->allocate());
+root->attach(calculate_vspeed, "calculate_vspeed");
+
+auto id = calculate_vspeed->value()->subscribe([&calculate_cvscvs
+vspeed](value_ptr v){
+        auto req = v->as<calculate_vspeed_request>();
+        auto v_speeds = calculate(req.to_data);
+        auto rv = vc->prefetch(req.rv.id);
+        *rv = v_speeds;
+    });
+
+-------------
+auto v_speed = nc->get(vc->allocate());
+calculate_vspeed_request req;
+req.rv.id = v_speed->id();
+req.rv.to_data = data;
+auto calculator = nc->get(0)->resolve("/calculate_vspeed")->value;
+*calculator = req;
+-------------
