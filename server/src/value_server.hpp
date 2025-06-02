@@ -16,14 +16,20 @@ namespace propertytree
 class value_server
 {
 public:
-    using reactor_t = bfc::epoll_reactor<>;
-    value_server(bfc::configuration_parser& config, reactor_t& reactor);
+    using reactor_t = bfc::epoll_reactor<std::function<void()>>;
+    value_server(const bfc::configuration_parser&, reactor_t&);
 private:
     struct client_context
     {
-        bfc::socket client;
+        bfc::socket client_socket;
+        reactor_t::context client_rctx;
         sockaddr client_address;
-        reactor_t::context client_context;
+
+        std::byte read_buffer[512];
+        uint16_t read_buffer_idx = 0;
+        enum read_state_e {WAIT_HEADER, WAIT_REMAINING};
+        read_state_e read_state = WAIT_HEADER;
+        size_t expected_read_size = 0;
     };
 
     using client_context_ptr = std::shared_ptr<client_context>;
@@ -36,15 +42,25 @@ private:
 
     void on_accept_ready();
 
-    void handle(cum::set_value& msg);
-    void handle(cum::get_value_request& msg);
-    void handle(cum::subscribe& msg);
-    void handle(cum::unsubscribe& msg);
+    void handle(std::shared_ptr<client_context>, cum::allocate_request&&);
+    void handle(std::shared_ptr<client_context>, cum::set_value&&);
+    void handle(std::shared_ptr<client_context>, cum::get_value_request&&);
+    void handle(std::shared_ptr<client_context>, cum::subscribe&&);
+    void handle(std::shared_ptr<client_context>, cum::unsubscribe&&);
 
-    const bfc::configuration_parser& config;
-    reactor_t& reactor;
-    bfc::socket server;
-    std::optional<reactor_t::context> server_ctx;
+    void handle(std::shared_ptr<client_context>, cum::allocate_response&&)      {}
+    void handle(std::shared_ptr<client_context>, cum::get_value_response&&)     {}
+    void handle(std::shared_ptr<client_context>, cum::update&&)                 {}
+
+    void read_client(std::shared_ptr<client_context>&);
+    void disconnect_client(std::shared_ptr<client_context>&);
+
+    const bfc::configuration_parser& m_config;
+    reactor_t& m_reactor;
+    bfc::socket m_server_socket;
+    reactor_t::context m_server_rctx;
+
+    std::map<int, std::shared_ptr<client_context>> m_client_map;
 };
 
 } // propertytree

@@ -19,7 +19,7 @@
 // Sequence:  get_value_request ('u16', 'trId')
 // Sequence:  get_value_request ('u64', 'id')
 // Sequence:  get_value_response ('u16', 'trId')
-// Sequence:  get_value_response ('value', 'value')
+// Sequence:  get_value_response ('value', 'data')
 // Sequence:  get_value_response ('u64', 'sn')
 // Sequence:  subscribe ('u64', 'id')
 // Sequence:  subscribe ('u64', 'interval')
@@ -66,6 +66,25 @@
 // Sequence:  attach_request ('string', 'name')
 // Sequence:  attach_response ('u16', 'trId')
 // Sequence:  attach_response ('status_code', 'status')
+// Choice:  ('protocol_value', 'allocate_request')
+// Choice:  ('protocol_value', 'allocate_response')
+// Choice:  ('protocol_value', 'set_value')
+// Choice:  ('protocol_value', 'get_value_request')
+// Choice:  ('protocol_value', 'get_value_response')
+// Choice:  ('protocol_value', 'subscribe')
+// Choice:  ('protocol_value', 'unsubscribe')
+// Choice:  ('protocol_value', 'update')
+// Choice:  ('protocol_node', 'list_request')
+// Choice:  ('protocol_node', 'list_response')
+// Choice:  ('protocol_node', 'resolve_path_request')
+// Choice:  ('protocol_node', 'resolve_path_response')
+// Choice:  ('protocol_node', 'aquire_node_request')
+// Choice:  ('protocol_node', 'aquire_node_response')
+// Choice:  ('protocol_node', 'release_node_request')
+// Choice:  ('protocol_node', 'release_node_response')
+// Choice:  ('protocol_node', 'node_update')
+// Choice:  ('protocol_node', 'attach_request')
+// Choice:  ('protocol_node', 'attach_response')
 // Generating for C++
 #ifndef __CUM_MSG_HPP__
 #define __CUM_MSG_HPP__
@@ -120,7 +139,7 @@ struct get_value_request
 struct get_value_response
 {
     u16 trId;
-    value value;
+    value data;
     u64 sn;
 };
 
@@ -238,6 +257,8 @@ struct attach_response
     status_code status;
 };
 
+using protocol_value = std::variant<allocate_request,allocate_response,set_value,get_value_request,get_value_response,subscribe,unsubscribe,update>;
+using protocol_node = std::variant<list_request,list_response,resolve_path_request,resolve_path_response,aquire_node_request,aquire_node_response,release_node_request,release_node_response,node_update,attach_request,attach_response>;
 /***********************************************
 /
 /            Codec Definitions
@@ -407,7 +428,7 @@ inline void encode_per(const get_value_response& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     encode_per(pIe.trId, pCtx);
-    encode_per(pIe.value, pCtx);
+    encode_per(pIe.data, pCtx);
     encode_per(pIe.sn, pCtx);
 }
 
@@ -415,7 +436,7 @@ inline void decode_per(get_value_response& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     decode_per(pIe.trId, pCtx);
-    decode_per(pIe.value, pCtx);
+    decode_per(pIe.data, pCtx);
     decode_per(pIe.sn, pCtx);
 }
 
@@ -433,7 +454,7 @@ inline void str(const char* pName, const get_value_response& pIe, std::string& p
     size_t nOptional = 0;
     size_t nMandatory = 3;
     str("trId", pIe.trId, pCtx, !(--nMandatory+nOptional));
-    str("value", pIe.value, pCtx, !(--nMandatory+nOptional));
+    str("data", pIe.data, pCtx, !(--nMandatory+nOptional));
     str("sn", pIe.sn, pCtx, !(--nMandatory+nOptional));
     pCtx = pCtx + "}";
     if (!pIsLast)
@@ -1177,6 +1198,421 @@ inline void str(const char* pName, const attach_response& pIe, std::string& pCtx
     str("trId", pIe.trId, pCtx, !(--nMandatory+nOptional));
     str("status", pIe.status, pCtx, !(--nMandatory+nOptional));
     pCtx = pCtx + "}";
+    if (!pIsLast)
+    {
+        pCtx += ",";
+    }
+}
+
+inline void encode_per(const protocol_value& pIe, cum::per_codec_ctx& pCtx)
+{
+    using namespace cum;
+    using TypeIndex = uint8_t;
+    TypeIndex type = pIe.index();
+    encode_per(type, pCtx);
+    if (0 == type)
+    {
+        encode_per(std::get<0>(pIe), pCtx);
+    }
+    else if (1 == type)
+    {
+        encode_per(std::get<1>(pIe), pCtx);
+    }
+    else if (2 == type)
+    {
+        encode_per(std::get<2>(pIe), pCtx);
+    }
+    else if (3 == type)
+    {
+        encode_per(std::get<3>(pIe), pCtx);
+    }
+    else if (4 == type)
+    {
+        encode_per(std::get<4>(pIe), pCtx);
+    }
+    else if (5 == type)
+    {
+        encode_per(std::get<5>(pIe), pCtx);
+    }
+    else if (6 == type)
+    {
+        encode_per(std::get<6>(pIe), pCtx);
+    }
+    else if (7 == type)
+    {
+        encode_per(std::get<7>(pIe), pCtx);
+    }
+}
+
+inline void decode_per(protocol_value& pIe, cum::per_codec_ctx& pCtx)
+{
+    using namespace cum;
+    using TypeIndex = uint8_t;
+    TypeIndex type;
+    decode_per(type, pCtx);
+    if (0 == type)
+    {
+        pIe = allocate_request();
+        decode_per(std::get<0>(pIe), pCtx);
+    }
+    else if (1 == type)
+    {
+        pIe = allocate_response();
+        decode_per(std::get<1>(pIe), pCtx);
+    }
+    else if (2 == type)
+    {
+        pIe = set_value();
+        decode_per(std::get<2>(pIe), pCtx);
+    }
+    else if (3 == type)
+    {
+        pIe = get_value_request();
+        decode_per(std::get<3>(pIe), pCtx);
+    }
+    else if (4 == type)
+    {
+        pIe = get_value_response();
+        decode_per(std::get<4>(pIe), pCtx);
+    }
+    else if (5 == type)
+    {
+        pIe = subscribe();
+        decode_per(std::get<5>(pIe), pCtx);
+    }
+    else if (6 == type)
+    {
+        pIe = unsubscribe();
+        decode_per(std::get<6>(pIe), pCtx);
+    }
+    else if (7 == type)
+    {
+        pIe = update();
+        decode_per(std::get<7>(pIe), pCtx);
+    }
+}
+
+inline void str(const char* pName, const protocol_value& pIe, std::string& pCtx, bool pIsLast)
+{
+    using namespace cum;
+    using TypeIndex = uint8_t;
+    TypeIndex type = pIe.index();
+    if (0 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "allocate_request";
+        str(name.c_str(), std::get<0>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (1 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "allocate_response";
+        str(name.c_str(), std::get<1>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (2 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "set_value";
+        str(name.c_str(), std::get<2>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (3 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "get_value_request";
+        str(name.c_str(), std::get<3>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (4 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "get_value_response";
+        str(name.c_str(), std::get<4>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (5 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "subscribe";
+        str(name.c_str(), std::get<5>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (6 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "unsubscribe";
+        str(name.c_str(), std::get<6>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (7 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "update";
+        str(name.c_str(), std::get<7>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    if (!pIsLast)
+    {
+        pCtx += ",";
+    }
+}
+
+inline void encode_per(const protocol_node& pIe, cum::per_codec_ctx& pCtx)
+{
+    using namespace cum;
+    using TypeIndex = uint8_t;
+    TypeIndex type = pIe.index();
+    encode_per(type, pCtx);
+    if (0 == type)
+    {
+        encode_per(std::get<0>(pIe), pCtx);
+    }
+    else if (1 == type)
+    {
+        encode_per(std::get<1>(pIe), pCtx);
+    }
+    else if (2 == type)
+    {
+        encode_per(std::get<2>(pIe), pCtx);
+    }
+    else if (3 == type)
+    {
+        encode_per(std::get<3>(pIe), pCtx);
+    }
+    else if (4 == type)
+    {
+        encode_per(std::get<4>(pIe), pCtx);
+    }
+    else if (5 == type)
+    {
+        encode_per(std::get<5>(pIe), pCtx);
+    }
+    else if (6 == type)
+    {
+        encode_per(std::get<6>(pIe), pCtx);
+    }
+    else if (7 == type)
+    {
+        encode_per(std::get<7>(pIe), pCtx);
+    }
+    else if (8 == type)
+    {
+        encode_per(std::get<8>(pIe), pCtx);
+    }
+    else if (9 == type)
+    {
+        encode_per(std::get<9>(pIe), pCtx);
+    }
+    else if (10 == type)
+    {
+        encode_per(std::get<10>(pIe), pCtx);
+    }
+}
+
+inline void decode_per(protocol_node& pIe, cum::per_codec_ctx& pCtx)
+{
+    using namespace cum;
+    using TypeIndex = uint8_t;
+    TypeIndex type;
+    decode_per(type, pCtx);
+    if (0 == type)
+    {
+        pIe = list_request();
+        decode_per(std::get<0>(pIe), pCtx);
+    }
+    else if (1 == type)
+    {
+        pIe = list_response();
+        decode_per(std::get<1>(pIe), pCtx);
+    }
+    else if (2 == type)
+    {
+        pIe = resolve_path_request();
+        decode_per(std::get<2>(pIe), pCtx);
+    }
+    else if (3 == type)
+    {
+        pIe = resolve_path_response();
+        decode_per(std::get<3>(pIe), pCtx);
+    }
+    else if (4 == type)
+    {
+        pIe = aquire_node_request();
+        decode_per(std::get<4>(pIe), pCtx);
+    }
+    else if (5 == type)
+    {
+        pIe = aquire_node_response();
+        decode_per(std::get<5>(pIe), pCtx);
+    }
+    else if (6 == type)
+    {
+        pIe = release_node_request();
+        decode_per(std::get<6>(pIe), pCtx);
+    }
+    else if (7 == type)
+    {
+        pIe = release_node_response();
+        decode_per(std::get<7>(pIe), pCtx);
+    }
+    else if (8 == type)
+    {
+        pIe = node_update();
+        decode_per(std::get<8>(pIe), pCtx);
+    }
+    else if (9 == type)
+    {
+        pIe = attach_request();
+        decode_per(std::get<9>(pIe), pCtx);
+    }
+    else if (10 == type)
+    {
+        pIe = attach_response();
+        decode_per(std::get<10>(pIe), pCtx);
+    }
+}
+
+inline void str(const char* pName, const protocol_node& pIe, std::string& pCtx, bool pIsLast)
+{
+    using namespace cum;
+    using TypeIndex = uint8_t;
+    TypeIndex type = pIe.index();
+    if (0 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "list_request";
+        str(name.c_str(), std::get<0>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (1 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "list_response";
+        str(name.c_str(), std::get<1>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (2 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "resolve_path_request";
+        str(name.c_str(), std::get<2>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (3 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "resolve_path_response";
+        str(name.c_str(), std::get<3>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (4 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "aquire_node_request";
+        str(name.c_str(), std::get<4>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (5 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "aquire_node_response";
+        str(name.c_str(), std::get<5>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (6 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "release_node_request";
+        str(name.c_str(), std::get<6>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (7 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "release_node_response";
+        str(name.c_str(), std::get<7>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (8 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "node_update";
+        str(name.c_str(), std::get<8>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (9 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "attach_request";
+        str(name.c_str(), std::get<9>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (10 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "attach_response";
+        str(name.c_str(), std::get<10>(pIe), pCtx, true);
+        pCtx += "}";
+    }
     if (!pIsLast)
     {
         pCtx += ",";

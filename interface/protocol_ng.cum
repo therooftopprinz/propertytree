@@ -23,7 +23,7 @@ sequence allocate_response       {u16 trId, u64 id};
 type     set_value               type=value;
 
 sequence get_value_request       {u16 trId, u64 id};
-sequence get_value_response      {u16 trId, value value, u64 sn};
+sequence get_value_response      {u16 trId, value data, u64 sn};
 
 sequence subscribe               {u64 id, u64 interval};
 sequence unsubscribe             {u64 id};
@@ -57,3 +57,30 @@ sequence node_update             {node_action update, u64 sn};
 
 sequence attach_request          {u16 trId, u64 parent, u64 id, string name};
 sequence attach_response         {u16 trId, status_code status};
+
+choice protocol_value
+{
+    allocate_request,
+    allocate_response,
+    set_value,
+    get_value_request,
+    get_value_response,
+    subscribe,
+    unsubscribe,
+    update
+};
+
+choice protocol_node
+{
+    list_request,
+    list_response,
+    resolve_path_request,
+    resolve_path_response,
+    aquire_node_request,
+    aquire_node_response,
+    release_node_request,
+    release_node_response,
+    node_update,
+    attach_request,
+    attach_response
+};

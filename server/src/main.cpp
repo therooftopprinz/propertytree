@@ -1,3 +1,5 @@
+#include <functional>
+
 #include <signal.h>
 
 #include <logless/logger.hpp>
@@ -6,6 +8,9 @@
 
 #include <value_server.hpp>
 #include <node_server.hpp>
+#include <logger.hpp>
+#include <utils.hpp>
+
 
 using logless::log;
 using logless::INFO;
@@ -27,31 +32,28 @@ int main(int argc, const char* argv[])
     auto config_file = args.arg("--config").value_or("server.cfg");
     args.load(config_file);
 
-    log(logger, INFO, LOGALL, "INFO | main | %s; - config:", config_file.c_str());
+    LOG_INF("main | %s; - config:", config_file.c_str());
     for (auto i : args)
     {
-        log(logger, INFO, LOGALL, "INFO | main |  %s; = %s;", i.first.c_str(), i.second.c_str());
+        LOG_INF("main |  %s; = %s;", i.first.c_str(), i.second.c_str());
     }
 
-    bfc::epoll_reactor reactor;
+    bfc::epoll_reactor<std::function<void()>> reactor;
 
     std::optional<propertytree::value_server> value_server;
-    std::optional<propertytree::node_server>  node_server;
+    // std::optional<propertytree::node_server>  node_server;
 
-    auto value_port = args.arg("--service.value.port");
-    auto value_port2 = args.arg("service.value.port");
-    if (value_port || value_port2)
+    auto value_port = utils::get_config<unsigned>(args, "service.value.port");
+    if (value_port)
     {
-        args.emplace("service.value.port", value_port.value_or(*value_port2));
         value_server.emplace(args, reactor);
     }
 
-    auto node_port = args.arg("--service.node.port");
-    auto node_port2 = args.arg("service.node.port");
-    if (node_port || node_port2)
+    auto node_port = utils::get_config<unsigned>(args, "service.node.port");
+    if (node_port)
     {
-        args.emplace("service.node.port", node_port.value_or(*node_port2));
-        node_server.emplace(args, reactor);
+        // args.emplace("service.node.port", node_port.value_or(*node_port2));
+        // node_server.emplace(args, reactor);
     }
 
     reactor.run();
