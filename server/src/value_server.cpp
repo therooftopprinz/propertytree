@@ -34,17 +34,17 @@ value_server::value_server(
     m_server_socket.listen();
 }
 
-void value_server::disconnect_client(std::shared_ptr<client_context>& context)
+void value_server::disconnect_client(std::shared_ptr<client_context>& ctx)
 {
-    auto& c = *context;
+    auto& c =  *ctx;
     LOG_ERR("value_server | fd=%d; | removing client...", c.client_socket.fd());
     m_reactor.rem_read_rdy(c.client_rctx);
     m_client_map.erase(c.client_socket.fd());
 }
 
-void value_server::read_client(std::shared_ptr<client_context>& context)
+void value_server::read_client(std::shared_ptr<client_context>& ctx)
 {
-    auto& c = *context;
+    auto& c =  *ctx;
     int read_size = 0;
     if (client_context::WAIT_HEADER == c.read_state)
     {
@@ -60,7 +60,7 @@ void value_server::read_client(std::shared_ptr<client_context>& context)
     if (0 >= res)
     {
         LOG_ERR("value_server | fd=%d; | Unexpected disconnect!", c.client_socket.fd());
-        disconnect_client(context);
+        disconnect_client(ctx);
         return;
     }
 
@@ -76,24 +76,24 @@ void value_server::read_client(std::shared_ptr<client_context>& context)
 
     if (c.expected_read_size == c.read_buffer_idx)
     {
-        IF_LB(LB_DUMP_CLIENT_RAW) LOG_DBG("value_server | fd=%d; | data=%x;", c.client_socket.fd(), buffer_log_t(c.read_buffer_idx, c.read_buffer));
+        IF_LB(LB_DUMP_MSG_RAW) LOG_DBG("value_server | fd=%d; | data=%x;", c.client_socket.fd(), buffer_log_t(c.read_buffer_idx, c.read_buffer));
 
         auto cbuff = bfc::const_buffer_view(c.read_buffer, c.read_buffer_idx);
 
         // decode message and process
-        cum::protocol_value message;
+        cum::protocol_value_server message;
         cum::per_codec_ctx dec_ctx((std::byte*)cbuff.data(), cbuff.size());
         decode_per(message, dec_ctx);
 
-        IF_LB(LB_DUMP_CLIENT_PM)
+        IF_LB(LB_DUMP_MSG_PROTO)
         {
             std::string stred;
             cum::str("root", message, stred, true);
             LOG_DBG("value_server | fd=%d; | message=%x;", c.client_socket.fd(), stred.c_str());
         }
 
-        std::visit([this, context](auto&& msg) mutable {
-                handle(context, std::move(msg));
+        std::visit([this, &ctx](auto&& msg) mutable {
+                handle(ctx, std::move(msg));
             }, std::move(message));
 
         c.read_state = client_context::WAIT_HEADER;
@@ -119,6 +119,91 @@ void value_server::on_accept_ready()
     m_reactor.add_read_rdy(client_ctx->client_rctx, [this, client_ctx]() mutable {
             read_client(client_ctx);
         });
+}
+
+size_t value_server::encode(const cum::protocol_value_client& msg, std::byte* data, size_t size)
+{
+    auto& msg_size = *(new (data) uint16_t(0));
+    cum::per_codec_ctx context(data+sizeof(msg_size), size-sizeof(msg_size));
+    encode_per(msg, context);
+    msg_size = size-context.size()-2;
+
+    IF_LB(LB_DUMP_MSG_PROTO)
+    {
+        std::string stred;
+        cum::str("root", msg, stred, true);
+        LOG_INF("value_server | to_encode=%s;", stred.c_str());
+    }
+
+    return msg_size + sizeof(msg_size);
+}
+
+value_server::value& value_server::get_value(uint64_t id)
+{
+    if (id >= value_map.size())
+    {
+        value_map.reserve(id*2);
+        value_map.resize(id+1);
+    }
+
+    return value_map[id];
+}
+
+void value_server::set_value(uint64_t id, std::vector<uint8_t>&& data)
+{
+    auto& value = get_value(id);
+    value.data  = std::move(data);
+
+    if (value.subscribers.size())
+    {
+        cum::protocol_value_client rsp = cum::update{};
+        auto& update = std::get<cum::update>(rsp);
+
+        std::byte buffer[ENCODE_SIZE];
+        auto size = encode(rsp, buffer, sizeof(buffer));
+        auto bv = bfc::const_buffer_view(buffer, size);
+        for (auto& client : value.subscribers)
+        {
+            client->client_socket.send(bv);
+        }
+    }
+}
+
+void value_server::handle(std::shared_ptr<client_context>&, cum::set_value&& msg)
+{
+    set_value(msg.id, std::move(msg.data));
+    value_sequence++;
+}
+
+void value_server::handle(std::shared_ptr<client_context>& client, cum::get_value_request&& req)
+{
+    auto& value = get_value(req.id);
+
+    cum::protocol_value_client rspu = cum::get_value_response{};
+    auto& rsp = std::get<cum::get_value_response>(rspu);
+
+    rsp.transaction_id  = req.transaction_id;
+    rsp.data.data       = value.data;
+    rsp.data.id         = req.id;
+    rsp.sequence_number = value_sequence;
+
+    std::byte buffer[ENCODE_SIZE];
+    auto size = encode(rspu, buffer, sizeof(buffer));
+    auto bv = bfc::const_buffer_view(buffer, size);
+
+    client->client_socket.send(bv);
+}
+
+void value_server::handle(std::shared_ptr<client_context>& client, cum::subscribe&& msg)
+{
+    auto& value = get_value(msg.id);
+    value.subscribers.emplace(client);
+}
+
+void value_server::handle(std::shared_ptr<client_context>& client, cum::unsubscribe&& msg)
+{
+    auto& value = get_value(msg.id);
+    value.subscribers.erase(client);
 }
 
 } // namespace propertytree

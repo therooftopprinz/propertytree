@@ -2,6 +2,7 @@
 #define __VALUE_SERVER_HPP__
 
 #include <map>
+#include <set>
 #include <stdexcept>
 
 #include <bfc/epoll_reactor.hpp>
@@ -16,6 +17,7 @@ namespace propertytree
 class value_server
 {
 public:
+    static constexpr size_t ENCODE_SIZE = 1024*64;
     using reactor_t = bfc::epoll_reactor<std::function<void()>>;
     value_server(const bfc::configuration_parser&, reactor_t&);
 private:
@@ -36,21 +38,21 @@ private:
 
     struct value
     {
-        bfc::buffer value;
-        std::vector<client_context_ptr> subscribers; 
+        std::vector<uint8_t> data;
+        std::set<client_context_ptr> subscribers; 
     };
 
     void on_accept_ready();
 
-    void handle(std::shared_ptr<client_context>, cum::allocate_request&&);
-    void handle(std::shared_ptr<client_context>, cum::set_value&&);
-    void handle(std::shared_ptr<client_context>, cum::get_value_request&&);
-    void handle(std::shared_ptr<client_context>, cum::subscribe&&);
-    void handle(std::shared_ptr<client_context>, cum::unsubscribe&&);
+    size_t encode(const cum::protocol_value_client& msg, std::byte* data, size_t size);
 
-    void handle(std::shared_ptr<client_context>, cum::allocate_response&&)      {}
-    void handle(std::shared_ptr<client_context>, cum::get_value_response&&)     {}
-    void handle(std::shared_ptr<client_context>, cum::update&&)                 {}
+    value& get_value(uint64_t);
+    void set_value(uint64_t, std::vector<uint8_t>&&);
+
+    void handle(std::shared_ptr<client_context>&, cum::set_value&&);
+    void handle(std::shared_ptr<client_context>&, cum::get_value_request&&);
+    void handle(std::shared_ptr<client_context>&, cum::subscribe&&);
+    void handle(std::shared_ptr<client_context>&, cum::unsubscribe&&);
 
     void read_client(std::shared_ptr<client_context>&);
     void disconnect_client(std::shared_ptr<client_context>&);
@@ -61,6 +63,9 @@ private:
     reactor_t::context m_server_rctx;
 
     std::map<int, std::shared_ptr<client_context>> m_client_map;
+    std::vector<value> value_map;
+
+    uint64_t value_sequence = 0;
 };
 
 } // propertytree

@@ -2,85 +2,72 @@ type buf         type=u8,     dynamic_array=256;
 type u64_list    type=u64,    dynamic_array=256;
 type string_list type=string, dynamic_array=256;
 
-enumeration status_code
-{
-    OK,
-    NOT_FOUND,
-    PARENT_NOT_FOUND,
-    NAME_EXISTS
-};
-
 //--------------------------------------------------------------------------------------//
 //                                   Value Protocol                                     //
 //--------------------------------------------------------------------------------------//
 
-sequence value                   {u64 id, buf data};
-type     value_list              type=value, dynamic_array=256;
+sequence value                    {u64 id, buf data};
 
-sequence allocate_request        {u16 trId};
-sequence allocate_response       {u16 trId, u64 id};
-
-type     set_value               type=value;
-
-sequence get_value_request       {u16 trId, u64 id};
-sequence get_value_response      {u16 trId, value data, u64 sn};
-
-sequence subscribe               {u64 id, u64 interval};
-sequence unsubscribe             {u64 id};
-sequence update                  {value_list values, u64 sn};
+type     set_value                type=value;
+sequence get_value_request        {u16 transaction_id, u64 id};
+sequence get_value_response       {u16 transaction_id, value data, u64 sequence_number};
+sequence subscribe                {u64 id, u64 interval};
+sequence unsubscribe              {u64 id};
+sequence update                   {value data, u64 sequence_number};
 
 //--------------------------------------------------------------------------------------//
 //                                   Node Protocol                                      //
 //--------------------------------------------------------------------------------------//
 
-sequence node                    {u64 id, u64 parent, string name};
-type     node_list               type=node, dynamic_array=4294967296;
-type     node_optional           type=node;
+sequence node                        {u64 id, u64 parent, string name};
+type     node_list                   type=node,          dynamic_array=4294967296;
+type     node_optional               type=node,          optional;
+type     node_attach_list            type=node_list;
+type     node_detach_list            type=u64_list;
 
-sequence list_request            {u16 trId, u64 id};
-sequence list_response           {u16 trId, node_list nodes, u64 sn};
+sequence list_request                {u16 transaction_id, u64 id};
+sequence list_response               {u16 transaction_id, node_list nodes, u64 sequence_number};
+sequence list_all_request            {u16 transaction_id};
+sequence list_all_response           {u16 transaction_id, node_list nodes, u64 sequence_number};
+sequence resolve_path_request        {u16 transaction_id, u64 origin,               string path};
+sequence resolve_path_response       {u16 transaction_id, node_optional node ,      u64 sequence_number};
+sequence attach                      {u16 transaction_id, u64 parent, u64 id, string name};
+sequence detach                      {u16 transaction_id, u64 id};
+sequence node_subscribe              {u64 id};
+sequence node_unsubscribe            {u64 id};
+sequence node_update_attach          {node to_attach, u64 sequence_number};
+sequence node_update_detach          {u64 to_detach,  u64 sequence_number};
 
-sequence resolve_path_request    {u16 trId, u64 origin, string_list path};
-sequence resolve_path_response   {u16 trId, node_optional node , u64 sn};
-
-sequence aquire_node_request     {u16 trId, u64 id};
-sequence aquire_node_response    {u16 trId, node_optional node, u64 sn};
-
-sequence release_node_request    {u16 trId, u64 id};
-sequence release_node_response   {u16 trId, status_code status};
-
-sequence node_action_add         {node to_add};
-sequence node_action_delete      {u64  to_delete};
-sequence node_action_update      {node to_update};
-choice   node_action             {node_action_add, node_action_delete, node_action_update};
-sequence node_update             {node_action update, u64 sn};
-
-sequence attach_request          {u16 trId, u64 parent, u64 id, string name};
-sequence attach_response         {u16 trId, status_code status};
-
-choice protocol_value
+choice protocol_value_server
 {
-    allocate_request,
-    allocate_response,
     set_value,
     get_value_request,
-    get_value_response,
     subscribe,
-    unsubscribe,
+    unsubscribe
+};
+
+choice protocol_value_client
+{
+    get_value_response,
     update
 };
 
-choice protocol_node
+choice protocol_node_server
 {
     list_request,
-    list_response,
+    list_all_request,
     resolve_path_request,
+    attach,
+    detach,
+    node_subscribe,
+    node_unsubscribe
+};
+
+choice protocol_node_client
+{
+    list_response,
+    list_all_response,
     resolve_path_response,
-    aquire_node_request,
-    aquire_node_response,
-    release_node_request,
-    release_node_response,
-    node_update,
-    attach_request,
-    attach_response
+    node_update_attach,
+    node_update_detach
 };
