@@ -13,7 +13,6 @@
 // Sequence:  get_value_response ('value', 'data')
 // Sequence:  get_value_response ('u64', 'sequence_number')
 // Sequence:  subscribe ('u64', 'id')
-// Sequence:  subscribe ('u64', 'interval')
 // Sequence:  unsubscribe ('u64', 'id')
 // Sequence:  update ('value', 'data')
 // Sequence:  update ('u64', 'sequence_number')
@@ -112,7 +111,6 @@ struct get_value_response
 struct subscribe
 {
     u64 id;
-    u64 interval;
 };
 
 struct unsubscribe
@@ -337,14 +335,12 @@ inline void encode_per(const subscribe& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     encode_per(pIe.id, pCtx);
-    encode_per(pIe.interval, pCtx);
 }
 
 inline void decode_per(subscribe& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     decode_per(pIe.id, pCtx);
-    decode_per(pIe.interval, pCtx);
 }
 
 inline void str(const char* pName, const subscribe& pIe, std::string& pCtx, bool pIsLast)
@@ -359,9 +355,8 @@ inline void str(const char* pName, const subscribe& pIe, std::string& pCtx, bool
         pCtx = pCtx + "\"" + pName + "\":{";
     }
     size_t nOptional = 0;
-    size_t nMandatory = 2;
+    size_t nMandatory = 1;
     str("id", pIe.id, pCtx, !(--nMandatory+nOptional));
-    str("interval", pIe.interval, pCtx, !(--nMandatory+nOptional));
     pCtx = pCtx + "}";
     if (!pIsLast)
     {

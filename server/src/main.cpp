@@ -18,7 +18,7 @@ using logless::log;
 using logless::INFO;
 using logless::LOGALL;
 
-logless::logger logger("server.bin");
+logless::logger logger("server.log");
 
 int main(int argc, const char* argv[])
 {
@@ -34,7 +34,7 @@ int main(int argc, const char* argv[])
     auto config_file = args.arg("--config").value_or("server.cfg");
     args.load(config_file);
 
-    std::stringstream lbss(utils::get_config<std::string>(args, "logbit").value_or(""));
+    std::stringstream lbss(utils::get_config<std::string>(args, "log.bit").value_or(""));
 
     uint64_t bit = 0;
     while(lbss.good())
@@ -49,19 +49,29 @@ int main(int argc, const char* argv[])
         if (lbmap.end() != bitit)
         {
             auto lbit = bitit->second;
-            LOG_INF("main | logbit: %-24s; %16lx;", substr.c_str(), lbit);
+            LOG_INF("main | log.bit: %-24s; %16lx;", substr.c_str(), lbit);
             bit |= lbit;
         }
     }
 
     logger.set_logbit(bit);
 
-    LOG_INF("main | logbit: %lx;", logger.get_logbit());
+    LOG_INF("main | log.bit: %lx;", logger.get_logbit());
 
     LOG_INF("main | %s; - config:", config_file.c_str());
     for (auto i : args)
     {
         LOG_INF("main |  %s; = %s;", i.first.c_str(), i.second.c_str());
+    }
+
+    if (0 == utils::get_config<unsigned>(args, "log.ful").value_or(0))
+    {
+        logger.logless();
+    }
+
+    if (auto lvl = utils::get_config<unsigned>(args, "log.level"))
+    {
+        logger.set_level(lvl.value());
     }
 
     bfc::epoll_reactor<std::function<void()>> reactor;

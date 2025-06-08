@@ -69,7 +69,7 @@ value_client::value_client(const config_s& cfg, reactor_t& reactor)
 
     if (0 > m_server_socket.fd())
     {
-        PTLOG_ERR("value_client | fd=%3d; | connection_error=%s" PRIu64, m_server_socket.fd(), strerror(errno));
+        PTLOG_ERR("value_client | fd=%3d; | connection_error=%s;" PRIu64, m_server_socket.fd(), strerror(errno));
         return;
     }
 
@@ -80,7 +80,7 @@ value_client::value_client(const config_s& cfg, reactor_t& reactor)
     auto res = m_server_socket.connect(bfc::ip4_port_to_sockaddr(cfg.ip, cfg.port));
     if (res < 0)
     {
-        PTLOG_ERR("value_client | fd=%3d; | connection_error=%s" PRIu64, m_server_socket.fd(), strerror(errno));
+        PTLOG_ERR("value_client | fd=%3d; | connection_error=%s;" PRIu64, m_server_socket.fd(), strerror(errno));
         return;
     }
 
@@ -94,7 +94,9 @@ logless::logger& value_client::get_logger()
 
 value_ptr value_client::get(uint64_t id)
 {
-    return std::make_shared<value>(id, *this);
+    auto vp = std::make_shared<value>(id, *this);
+    m_value_map.emplace(id, vp);
+    return vp;
 }
 
 void value_client::disconnect()
@@ -130,6 +132,11 @@ void value_client::handle(cum::update&& rsp)
 {
     std::unique_lock lg(m_value_map_mutex);
     auto value_ptr = m_value_map[rsp.data.id];
+    if (!value_ptr)
+    {
+        value_ptr = std::make_shared<value>(rsp.data.id, *this);
+        m_value_map.emplace(rsp.data.id, value_ptr);
+    }
     lg.unlock();
 
     std::unique_lock lg2(value_ptr->mutex);
@@ -160,7 +167,7 @@ void value_client::read_server()
 
     if (0 >= res)
     {
-        PTLOG_ERR("value_client | fd=%3d; | connection_error=%s", m_server_socket.fd(), strerror(errno));
+        PTLOG_ERR("value_client | fd=%3d; | connection_error=%s;", m_server_socket.fd(), strerror(errno));
         disconnect();
         return;
     }
@@ -207,6 +214,7 @@ void value_client::read_server()
 
         m_read_state = WAIT_HEADER;
         m_read_buffer_idx = 0;
+        m_expected_read_size = 2;
     }
 }
 

@@ -11,7 +11,7 @@ sequence value                    {u64 id, buf data};
 type     set_value                type=value;
 sequence get_value_request        {u16 transaction_id, u64 id};
 sequence get_value_response       {u16 transaction_id, value data, u64 sequence_number};
-sequence subscribe                {u64 id, u64 interval};
+sequence subscribe                {u64 id};
 sequence unsubscribe              {u64 id};
 sequence update                   {value data, u64 sequence_number};
 

@@ -87,7 +87,8 @@ void value_server::read_client(std::shared_ptr<client_context>& ctx)
 
     if (c.expected_read_size == c.read_buffer_idx)
     {
-        IF_LB(LB_DUMP_MSG_RAW) LOG_INF("value_server | fd=%3d; | to_decode=%x;", c.client_socket.fd(), buffer_log_t(c.read_buffer_idx, c.read_buffer));
+        IF_LB(LB_DUMP_MSG_RAW) LOG_INF("value_server | fd=%3d; | to_decode[%u;]=%x;",
+            c.client_socket.fd(), unsigned(c.read_buffer_idx), buffer_log_t(c.read_buffer_idx, c.read_buffer));
 
         auto cbuff = bfc::const_buffer_view(c.read_buffer, c.read_buffer_idx);
 
@@ -107,6 +108,7 @@ void value_server::read_client(std::shared_ptr<client_context>& ctx)
             }, std::move(message));
 
         c.read_state = client_context::WAIT_HEADER;
+        c.expected_read_size = 2;
         c.read_buffer_idx = 0;
     }
 }
@@ -177,13 +179,32 @@ void value_server::set_value(uint64_t id, std::vector<uint8_t>&& data)
     {
         cum::protocol_value_client rsp = cum::update{};
         auto& update = std::get<cum::update>(rsp);
+        update.data.id = id;
+        update.data.data = value.data;
+        update.sequence_number = value_sequence;
 
         std::byte buffer[ENCODE_SIZE];
         auto size = encode(-1, rsp, buffer, sizeof(buffer));
         auto bv = bfc::const_buffer_view(buffer, size);
+
+        std::vector<client_context_ptr> to_delete;
         for (auto& client : value.subscribers)
         {
-            client->client_socket.send(bv);
+            auto res = client->client_socket.send(bv);
+            if (0 > res)
+            {
+                LOG_DBG("value_server | fd=%3d; | (can't update)", client->client_socket.fd());
+                to_delete.emplace_back(client);
+            }
+            else
+            {
+                LOG_DBG("value_server | fd=%3d; | (to update %" PRIu64 ";)", client->client_socket.fd(), value_sequence);
+            }
+        }
+
+        for (auto& i : to_delete)
+        {
+            value.subscribers.erase(i);
         }
     }
 }
