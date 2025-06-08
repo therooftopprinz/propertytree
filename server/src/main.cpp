@@ -1,4 +1,6 @@
 #include <functional>
+#include <string>
+#include <sstream>
 
 #include <signal.h>
 
@@ -31,6 +33,30 @@ int main(int argc, const char* argv[])
 
     auto config_file = args.arg("--config").value_or("server.cfg");
     args.load(config_file);
+
+    std::stringstream lbss(utils::get_config<std::string>(args, "logbit").value_or(""));
+
+    uint64_t bit = 0;
+    while(lbss.good())
+    {
+        std::string substr;
+        std::getline(lbss, substr, ',' );
+
+        for(;substr.size() && ' ' == substr.front(); substr.erase(0,1));
+        for(;substr.size() && ' ' == substr.back(); substr.pop_back());
+
+        auto bitit = lbmap.find(substr);
+        if (lbmap.end() != bitit)
+        {
+            auto lbit = bitit->second;
+            LOG_INF("main | logbit: %-24s; %16lx;", substr.c_str(), lbit);
+            bit |= lbit;
+        }
+    }
+
+    logger.set_logbit(bit);
+
+    LOG_INF("main | logbit: %lx;", logger.get_logbit());
 
     LOG_INF("main | %s; - config:", config_file.c_str());
     for (auto i : args)

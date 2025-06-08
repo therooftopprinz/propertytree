@@ -4,33 +4,9 @@
 namespace propertytree
 {
 
-template <typename T> std::optional<T> value::as()
-{
-    if (size() != sizeof(T))
-    {
-        return {};
-    }
-
-    T rv;
-    std::memcpy(&rv, data.data(), size());
-    return rv;
-}
-
 buffer value::raw()
 {
     return data;
-}
-
-template <typename T> value& value::operator=(T& t)
-{
-    if (sizeof(T) != size())
-    {
-        data.resize(sizeof(T));
-    }
-
-    std::memcpy(data.data(), &t, sizeof(T));
-    commit();
-    return *this;
 }
 
 value& value::operator=(buffer b)
@@ -82,17 +58,38 @@ value::value(uint64_t id, value_client& client)
 {}
 
 value_client::value_client(const config_s& cfg, reactor_t& reactor)
-    : m_reactor(reactor)
+    : m_logger(cfg.log.c_str())
+    , m_reactor(reactor)
     , m_server_socket(bfc::create_tcp4())
 {
+    if (cfg.logful)
+    {
+        m_logger.logful();
+    }
+
     if (0 > m_server_socket.fd())
     {
+        PTLOG_ERR("value_client | fd=%3d; | connection_error=%s" PRIu64, m_server_socket.fd(), strerror(errno));
         return;
     }
 
     m_server_socket_ctx = m_reactor.make_context(m_server_socket.fd());
-    m_server_socket.connect(bfc::ip4_port_to_sockaddr(cfg.ip, cfg.port));
-    m_reactor.add_read_rdy(m_server_socket_ctx, [this](){});
+
+    m_reactor.add_read_rdy(m_server_socket_ctx, [this](){read_server();});
+
+    auto res = m_server_socket.connect(bfc::ip4_port_to_sockaddr(cfg.ip, cfg.port));
+    if (res < 0)
+    {
+        PTLOG_ERR("value_client | fd=%3d; | connection_error=%s" PRIu64, m_server_socket.fd(), strerror(errno));
+        return;
+    }
+
+    PTLOG_INF("value_client | fd=%3d; | connected!", m_server_socket.fd());
+}
+
+logless::logger& value_client::get_logger()
+{
+    return m_logger;
 }
 
 value_ptr value_client::get(uint64_t id)
@@ -112,7 +109,7 @@ void value_client::handle(cum::get_value_response&& rsp)
     auto it = m_transaction_map.find(rsp.transaction_id);
     if (m_transaction_map.end() == it)
     {
-        LOG_ERR("value_client | protocol_error=unknown_response trid=%" PRIu64, rsp.sequence_number);
+        PTLOG_ERR("value_client | fd=%3d; | protocol_error=unknown_response trid=%" PRIu64, m_server_socket.fd(), rsp.sequence_number);
         disconnect();
         return;
     }
@@ -154,7 +151,7 @@ void value_client::read_server()
 
     if (m_read_buffer_idx + read_size > sizeof(m_read_buffer))
     {
-        LOG_ERR_S("value_client | protocol_error=read_buffer_overrun");
+        PTLOG_ERR("value_client | fd=%3d; | protocol_error=read_buffer_overrun", m_server_socket.fd());
         disconnect();
         return;
     }
@@ -163,10 +160,12 @@ void value_client::read_server()
 
     if (0 >= res)
     {
-        LOG_ERR("value_client | connection_error=%s", strerror(errno));
+        PTLOG_ERR("value_client | fd=%3d; | connection_error=%s", m_server_socket.fd(), strerror(errno));
         disconnect();
         return;
     }
+
+    PTIF_LB(LB_DUMP_MSG_SOCK) PTLOG_INF("value_client | fd=%3d; | read[%zu;]=%x;", m_server_socket.fd(), res, buffer_log_t(res, m_read_buffer + m_read_buffer_idx));
 
     m_read_buffer_idx += res;
 
@@ -180,12 +179,14 @@ void value_client::read_server()
         std::memcpy(&m_expected_read_size, m_read_buffer, 2);
         m_read_buffer_idx = 0;
         m_read_state = WAIT_REMAINING;
+
+        PTIF_LB(LB_DUMP_MSG_SOCK) PTLOG_INF("value_client | fd=%3d; | expected_size=%zu;", m_server_socket.fd(), m_expected_read_size);
         return;
     }
 
     if (m_expected_read_size == m_read_buffer_idx)
     {
-        IF_LB(LB_DUMP_MSG_RAW) LOG_DBG("value_client | data=%x;", buffer_log_t(m_read_buffer_idx, m_read_buffer));
+        PTIF_LB(LB_DUMP_MSG_RAW) PTLOG_INF("value_client | fd=%3d; | to_decode=%x;", m_server_socket.fd(), buffer_log_t(m_read_buffer_idx, m_read_buffer));
 
         auto cbuff = bfc::const_buffer_view(m_read_buffer, m_read_buffer_idx);
 
@@ -193,11 +194,11 @@ void value_client::read_server()
         cum::per_codec_ctx dec_ctx((std::byte*)cbuff.data(), cbuff.size());
         decode_per(message, dec_ctx);
 
-        IF_LB(LB_DUMP_MSG_PROTO)
+        PTIF_LB(LB_DUMP_MSG_PROTO)
         {
             std::string stred;
             cum::str("root", message, stred, true);
-            LOG_DBG("value_client | message=%x;", stred.c_str());
+            PTLOG_INF("value_client | fd=%3d; | decoded=%s;", m_server_socket.fd(), stred.c_str());
         }
 
         std::visit([this](auto&& msg) mutable {
@@ -214,14 +215,18 @@ size_t value_client::encode(const cum::protocol_value_server& msg, std::byte* da
     auto& msg_size = *(new (data) uint16_t(0));
     cum::per_codec_ctx context(data+sizeof(msg_size), size-sizeof(msg_size));
     encode_per(msg, context);
-    msg_size = size-context.size()-2;
+    msg_size = size - context.size() - sizeof(msg_size);
 
-    IF_LB(LB_DUMP_MSG_PROTO)
+    PTIF_LB(LB_DUMP_MSG_PROTO)
     {
         std::string stred;
         cum::str("root", msg, stred, true);
-        LOG_INF("value_server | to_encode=%s;", stred.c_str());
+        PTLOG_INF("value_client | fd=%3d; | to_encode=%s;", m_server_socket.fd(), stred.c_str());
     }
+
+    unsigned encode_size= msg_size+sizeof(msg_size);
+
+    PTIF_LB(LB_DUMP_MSG_RAW) PTLOG_INF("value_client | fd=%3d; | encoded[%u;]=%x;", m_server_socket.fd(), encode_size, buffer_log_t(encode_size, data));
 
     return msg_size + sizeof(msg_size);
 }
@@ -256,23 +261,29 @@ buffer value_client::get_value(uint64_t id)
     auto transaction = std::make_shared<transaction_s>();
     m_transaction_map.emplace(get_value_request.transaction_id, transaction);
     m_server_socket.send(bv);
+    lg.unlock();
 
     std::unique_lock lg2(transaction->mutex);
-    transaction->cv.wait_for(lg2, std::chrono::milliseconds(1000), [&transaction](){
+    // transaction->cv.wait_for(lg2, std::chrono::milliseconds(1000), [&transaction](){
+    transaction->cv.wait(lg2, [&transaction](){
             return transaction->satisfied;
         });
 
+
+    lg.lock();
     m_transaction_map.erase(get_value_request.transaction_id);
+    lg.unlock();
+
     if (!transaction->satisfied)
     {
-        LOG_ERR("value_client | transaction_timeout=%" PRIu64, get_value_request.transaction_id);
+        PTLOG_ERR("value_client | fd=%3d; | transaction_timeout=%" PRIu64 ";", m_server_socket.fd(), get_value_request.transaction_id);
         disconnect();
         return {};
     }
 
     if (transaction->message.index() != 0)
     {
-        LOG_ERR("value_client | incorrect_response=%zu", transaction->message.index());
+        PTLOG_ERR("value_client | fd=%3d; | incorrect_response=%zu",  m_server_socket.fd(), transaction->message.index());
         disconnect();
         return {};
     }

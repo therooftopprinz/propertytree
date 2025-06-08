@@ -18,8 +18,8 @@ add_executable(
 target_include_directories(
     propertytree_server
     PRIVATE
-        server/src
-        interface)
+        interface
+        server/src)
 
 target_link_libraries(
     propertytree_server PRIVATE
@@ -29,10 +29,10 @@ target_link_libraries(
 
 # client
 add_library(propertytree STATIC
-    client/src/value_client.cpp)
+    client/propertytree/value_client.cpp)
 
-target_include_directories(propertytree PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/client/src>
+target_include_directories(propertytree PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/client/propertytree>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/interface>
     $<INSTALL_INTERFACE:include>)
 
@@ -51,8 +51,9 @@ install(
 
 install(
     FILES
-        client/src/logger.hpp
-        client/src/value_client.hpp
+        client/propertytree/logger.hpp
+        client/propertytree/value_client.hpp
+        interface/propertytree/protocol_ng.hpp
     DESTINATION include/propertytree)
 
 install(

@@ -7,11 +7,13 @@
 #include <stdexcept>
 #include <atomic>
 
-#include <bfc/epoll_reactor.hpp>
 #include <bfc/configuration_parser.hpp>
+#include <bfc/epoll_reactor.hpp>
 #include <bfc/socket.hpp>
 #include <bfc/socket.hpp>
-#include <protocol_ng.hpp>
+
+#include <logless/logger.hpp>
+#include <propertytree/protocol_ng.hpp>
 
 namespace propertytree
 {
@@ -28,10 +30,34 @@ public:
 
     using cb_t = std::function<void(const buffer&)>;
 
-    template <typename T> std::optional<T> as();
+    template <typename T> std::optional<T> as()
+    {
+        if (size() != sizeof(T))
+        {
+            return {};
+        }
+
+        T rv;
+        std::memcpy(&rv, data.data(), size());
+        return rv;
+    }
+
     buffer raw();
 
-    template <typename T> value& operator=(T&);
+    template <typename T>
+    value& operator=(T&& t)
+    {
+        if (sizeof(T) != size())
+        {
+            data.resize(sizeof(T));
+        }
+
+        std::memcpy(data.data(), &t, sizeof(T));
+        commit();
+        return *this;
+    }
+
+
     value& operator=(buffer);
 
     size_t size();
@@ -61,12 +87,17 @@ class value_client
 public:
     struct config_s
     {
-        std::string ip;
-        uint16_t port;
+        std::string ip = "127.0.0.1";
+        uint16_t port = 15000;
+        std::string log = "value_client.blog";
+        bool logful = true;
     };
 
     value_client(const config_s&, reactor_t& reactor);
     value_ptr get(uint64_t);
+
+    logless::logger& get_logger();
+
 private:
     static constexpr size_t ENCODE_SIZE = 1024*64;
     friend class value;
@@ -85,6 +116,7 @@ private:
     void subscribe(uint64_t);
     void unsubscribe(uint64_t);
 
+    logless::logger m_logger;
     reactor_t& m_reactor;
     bfc::socket m_server_socket;
     reactor_t::context m_server_socket_ctx;

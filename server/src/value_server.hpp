@@ -9,7 +9,7 @@
 #include <bfc/configuration_parser.hpp>
 #include <bfc/socket.hpp>
 #include <bfc/socket.hpp>
-#include <protocol_ng.hpp>
+#include <propertytree/protocol_ng.hpp>
 
 namespace propertytree
 {
@@ -31,7 +31,7 @@ private:
         uint16_t read_buffer_idx = 0;
         enum read_state_e {WAIT_HEADER, WAIT_REMAINING};
         read_state_e read_state = WAIT_HEADER;
-        size_t expected_read_size = 0;
+        size_t expected_read_size = 2;
     };
 
     using client_context_ptr = std::shared_ptr<client_context>;
@@ -44,7 +44,7 @@ private:
 
     void on_accept_ready();
 
-    size_t encode(const cum::protocol_value_client& msg, std::byte* data, size_t size);
+    size_t encode(int, const cum::protocol_value_client& msg, std::byte* data, size_t size);
 
     value& get_value(uint64_t);
     void set_value(uint64_t, std::vector<uint8_t>&&);
