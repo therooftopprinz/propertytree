@@ -3,6 +3,14 @@ cmake_minimum_required(VERSION 3.15)
 project(propertytree_server VERSION 1.2.38 LANGUAGES CXX)
 project(propertytree VERSION 1.2.38 LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb3")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Ofast -ggdb3")
+# set(CMAKE_CXX_FLAGS_RELEASE "-O0 -ggdb3")
+
+# add_compile_options(-fsanitize=undefined)
+# add_link_options(-fsanitize=undefined)
+
 list(APPEND CMAKE_PREFIX_PATH "install")
 
 find_package(bfc REQUIRED)

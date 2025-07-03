@@ -34,6 +34,7 @@ void log(logless::logger& logger, const char* id, Ts... ts)
 constexpr uint64_t LB_DUMP_MSG_RAW    = uint64_t(1) << 0;
 constexpr uint64_t LB_DUMP_MSG_PROTO  = uint64_t(1) << 1;
 constexpr uint64_t LB_DUMP_MSG_SOCK   = uint64_t(1) << 2;
+constexpr uint64_t LB_DUMP_PERF       = uint64_t(1) << 3;
 
 } // namespace propertytree
 

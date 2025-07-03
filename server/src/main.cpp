@@ -43,7 +43,7 @@ int main(int argc, const char* argv[])
         std::getline(lbss, substr, ',' );
 
         for(;substr.size() && ' ' == substr.front(); substr.erase(0,1));
-        for(;substr.size() && ' ' == substr.back(); substr.pop_back());
+        for(;substr.size() && ' ' == substr.back();  substr.pop_back());
 
         auto bitit = lbmap.find(substr);
         if (lbmap.end() != bitit)

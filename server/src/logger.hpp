@@ -25,7 +25,7 @@ void log(const char* id, Ts... ts)
 }
 
 #define IF_LB(bit) if (bit & logger.get_logbit())
-#define LOG_ERR(id, args...) log("ERR | " id, args)
+#define LOG_ERR(id, args...) log("ERR | " id, args); logger.flush()
 #define LOG_WRN(id, args...) if (logger.get_level() >= WARNING) log("WRN | " id, args)
 #define LOG_INF(id, args...) if (logger.get_level() >= INFO)    log("INF | " id, args)
 #define LOG_DBG(id, args...) if (logger.get_level() >= DEBUG)   log("DBG | " id, args)
@@ -35,11 +35,13 @@ void log(const char* id, Ts... ts)
 constexpr uint64_t LB_DUMP_MSG_RAW    = uint64_t(1) << 0;
 constexpr uint64_t LB_DUMP_MSG_PROTO  = uint64_t(1) << 1;
 constexpr uint64_t LB_DUMP_MSG_SOCK   = uint64_t(1) << 2;
+constexpr uint64_t LB_DUMP_PERF       = uint64_t(1) << 3;
 
 inline std::map<std::string, uint64_t> lbmap = {
     {"LB_DUMP_MSG_RAW",   LB_DUMP_MSG_RAW},
     {"LB_DUMP_MSG_PROTO", LB_DUMP_MSG_PROTO},
-    {"LB_DUMP_MSG_SOCK",  LB_DUMP_MSG_SOCK}
+    {"LB_DUMP_MSG_SOCK",  LB_DUMP_MSG_SOCK},
+    {"LB_DUMP_PERF",      LB_DUMP_PERF}
 };
 
 #endif // __PTLOGGER_HPP__

@@ -5,7 +5,8 @@ function build_dependency()
     pushd .
     mkdir -p build_dependency/$2
     cd build_dependency/$2
-    cmake ../../$1 -DCMAKE_INSTALL_PREFIX=../../install -DCMAKE_BUILD_TYPE=Debug -DCMAKE_VERBOSE_MAKEFILE=true
+    cmake ../../$1 -DCMAKE_INSTALL_PREFIX=../../install -DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=true
+    # cmake ../../$1 -DCMAKE_INSTALL_PREFIX=../../install -DCMAKE_BUILD_TYPE=Debug -DCMAKE_VERBOSE_MAKEFILE=true
     make -j$(nproc) install
     popd
 }

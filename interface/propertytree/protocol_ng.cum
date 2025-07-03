@@ -13,6 +13,8 @@ sequence get_value_request        {u16 transaction_id, u64 id};
 sequence get_value_response       {u16 transaction_id, value data, u64 sequence_number};
 sequence subscribe                {u64 id};
 sequence unsubscribe              {u64 id};
+sequence subscribe_stream         {u64 id};
+sequence unsubscribe_stream       {u64 id};
 sequence update                   {value data, u64 sequence_number};
 
 //--------------------------------------------------------------------------------------//

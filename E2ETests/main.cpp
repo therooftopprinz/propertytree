@@ -24,14 +24,16 @@ void init_clients()
     propertytree::value_client::config_s config2;
     config2.log = "client2.log";
 
-    config1.logful = true;
-    config2.logful = true;
+    // config1.logful = true;
+    // config2.logful = true;
 
     client1.emplace(config1, reactor);
     client2.emplace(config2, reactor);
 
-    client1->get_logger().set_logbit(LB_DUMP_MSG_RAW | LB_DUMP_MSG_PROTO | LB_DUMP_MSG_SOCK);
-    client2->get_logger().set_logbit(LB_DUMP_MSG_RAW | LB_DUMP_MSG_PROTO | LB_DUMP_MSG_SOCK);
+    // client1->get_logger().set_lo gbit(LB_DUMP_MSG_RAW | LB_DUMP_MSG_PROTO | LB_DUMP_MSG_SOCK);
+    // client2->get_logger().set_logbit(LB_DUMP_MSG_RAW | LB_DUMP_MSG_PROTO | LB_DUMP_MSG_SOCK);
+    client1->get_logger().set_logbit(LB_DUMP_MSG_RAW|LB_DUMP_MSG_PROTO|LB_DUMP_PERF);
+    client2->get_logger().set_logbit(LB_DUMP_MSG_RAW|LB_DUMP_MSG_PROTO|LB_DUMP_PERF);
 }
 
 template <typename T>
@@ -46,7 +48,7 @@ uint64_t now()
     return std::chrono::duration_cast<T>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
 
-constexpr auto N = 100000u;
+constexpr auto N = 10u;
 
 void TEST_SET_UPDATE_LATENCY()
 {

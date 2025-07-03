@@ -18,6 +18,15 @@ std::optional<T> get_config(const bfc::configuration_parser& config, const std::
     }
     return def;
 }
+inline std::pair<uint32_t, uint16_t> get_addr(sockaddr* addr)
+{
+    if (addr->sa_family = AF_INET)
+    {
+        auto addr_in = (sockaddr_in*) addr;
+        return std::make_pair(addr_in->sin_addr.s_addr, addr_in->sin_port);
+    }
+    return {};
+}
 
 } // propertytree
 

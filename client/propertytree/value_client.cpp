@@ -4,6 +4,12 @@
 namespace propertytree
 {
 
+template <typename T=std::chrono::microseconds>
+static uint64_t now()
+{
+    return std::chrono::duration_cast<T>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+}
+
 buffer value::raw()
 {
     return data;
@@ -197,9 +203,17 @@ void value_client::read_server()
 
         auto cbuff = bfc::const_buffer_view(m_read_buffer, m_read_buffer_idx);
 
+        uint64_t ts_decode_t0 = 0;
+        uint64_t ts_decode_t1 = 0;
+
+        PTIF_LB(LB_DUMP_PERF) ts_decode_t0 = now();
         cum::protocol_value_client message;
         cum::per_codec_ctx dec_ctx((std::byte*)cbuff.data(), cbuff.size());
         decode_per(message, dec_ctx);
+        PTIF_LB(LB_DUMP_PERF) ts_decode_t1 = now();
+
+        PTIF_LB(LB_DUMP_PERF) PTLOG_INF("value_client | decode_time=%" PRIu64 "; start=% " PRIu64 ";",
+            uint64_t(ts_decode_t1 - ts_decode_t0), ts_decode_t0);
 
         PTIF_LB(LB_DUMP_MSG_PROTO)
         {
@@ -208,9 +222,17 @@ void value_client::read_server()
             PTLOG_INF("value_client | fd=%3d; | decoded=%s;", m_server_socket.fd(), stred.c_str());
         }
 
+        uint64_t ts_process_t0 = 0;
+        uint64_t ts_process_t1 = 0;
+
+        PTIF_LB(LB_DUMP_PERF) ts_process_t0 = now();
         std::visit([this](auto&& msg) mutable {
                 handle(std::move(msg));
             }, std::move(message));
+        PTIF_LB(LB_DUMP_PERF) ts_process_t1 = now();
+
+        PTIF_LB(LB_DUMP_PERF) PTLOG_INF("value_client | process_time=%" PRIu64 "; start=% " PRIu64 ";",
+            uint64_t(ts_process_t1 - ts_process_t0), ts_process_t0);
 
         m_read_state = WAIT_HEADER;
         m_read_buffer_idx = 0;

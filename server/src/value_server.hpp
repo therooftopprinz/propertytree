@@ -8,8 +8,8 @@
 #include <bfc/epoll_reactor.hpp>
 #include <bfc/configuration_parser.hpp>
 #include <bfc/socket.hpp>
-#include <bfc/socket.hpp>
-#include <propertytree/protocol_ng.hpp>
+#include <bfc/buffer.hpp>
+#include <propertytree/protocol_udp.hpp>
 
 namespace propertytree
 {
@@ -17,55 +17,46 @@ namespace propertytree
 class value_server
 {
 public:
-    static constexpr size_t ENCODE_SIZE = 1024*64;
     using reactor_t = bfc::epoll_reactor<std::function<void()>>;
     value_server(const bfc::configuration_parser&, reactor_t&);
+
 private:
     struct client_context
     {
-        bfc::socket client_socket;
-        reactor_t::context client_rctx;
         sockaddr client_address;
-
-        std::byte read_buffer[512];
-        uint16_t read_buffer_idx = 0;
-        enum read_state_e {WAIT_HEADER, WAIT_REMAINING};
-        read_state_e read_state = WAIT_HEADER;
-        size_t expected_read_size = 2;
     };
 
-    using client_context_ptr = std::shared_ptr<client_context>;
+    using cctx_ptr = std::shared_ptr<client_context>;
 
     struct value
     {
         std::vector<uint8_t> data;
-        std::set<client_context_ptr> subscribers; 
+        std::set<cctx_ptr> subscribers;
+        int64_t vsn = 0;
+        int64_t ssn = 0;
     };
 
-    void on_accept_ready();
+    void read();
 
-    size_t encode(int, const cum::protocol_value_client& msg, std::byte* data, size_t size);
+    void handle_set         (cctx_ptr&, const header_s&, const key_s&, const bfc::const_buffer_view&);
+    void handle_get         (cctx_ptr&, const header_s&, const key_s&);
+    void handle_subscribe   (cctx_ptr&, const header_s&, const key_s&);
+    void handle_unsubscribe (cctx_ptr&, const header_s&, const key_s&);
+    void handle             (cctx_ptr&, const bfc::const_buffer_view&);
 
-    value& get_value(uint64_t);
-    void set_value(uint64_t, std::vector<uint8_t>&&);
-
-    void handle(std::shared_ptr<client_context>&, cum::set_value&&);
-    void handle(std::shared_ptr<client_context>&, cum::get_value_request&&);
-    void handle(std::shared_ptr<client_context>&, cum::subscribe&&);
-    void handle(std::shared_ptr<client_context>&, cum::unsubscribe&&);
-
-    void read_client(std::shared_ptr<client_context>&);
-    void disconnect_client(std::shared_ptr<client_context>&);
+    value& get_value(uint16_t);
+    bool set_value(uint16_t, const bfc::const_buffer_view&);
 
     const bfc::configuration_parser& m_config;
     reactor_t& m_reactor;
     bfc::socket m_server_socket;
     reactor_t::context m_server_rctx;
 
-    std::map<int, std::shared_ptr<client_context>> m_client_map;
-    std::vector<value> value_map;
+    std::map<std::pair<uint32_t, uint16_t>, cctx_ptr> m_client_map;
+    std::vector<value> m_value_map;
 
-    uint64_t value_sequence = 0;
+    std::byte m_rcv_buff[1024*64];
+    std::byte m_snd_buff[1024*64];
 };
 
 } // propertytree
