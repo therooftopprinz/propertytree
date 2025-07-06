@@ -1,4 +1,4 @@
-// Type:  ('buf', {'type': 'u8'})
+// Type:  ('buf', {'type': 'std::byte'})
 // Type:  ('buf', {'dynamic_array': '256'})
 // Type:  ('u64_list', {'type': 'u64'})
 // Type:  ('u64_list', {'dynamic_array': '256'})
@@ -76,7 +76,7 @@ namespace cum
 /
 ************************************************/
 
-using buf = cum::vector<u8, 256>;
+using buf = cum::vector<std::byte, 256>;
 using u64_list = cum::vector<u64, 256>;
 using string_list = cum::vector<string, 256>;
 struct value

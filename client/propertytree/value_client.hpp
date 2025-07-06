@@ -20,7 +20,7 @@ namespace propertytree
 {
 
 using reactor_t = bfc::epoll_reactor<std::function<void()>>;
-using buffer = std::vector<uint8_t>;
+using buffer = std::vector<std::byte>;
 
 class value_client;
 

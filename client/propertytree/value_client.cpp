@@ -142,7 +142,7 @@ void value_client::tcp_handle(cum::update&& rsp)
         auto& cb = cbit.second;
         if (cb)
         {
-            // cb(value_ptr->data);
+            cb(value_ptr->data);
         }
     }
 }

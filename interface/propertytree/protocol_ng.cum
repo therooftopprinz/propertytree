@@ -1,4 +1,4 @@
-type buf         type=u8,     dynamic_array=256;
+type buf         type=std::byte,   dynamic_array=256;
 type u64_list    type=u64,    dynamic_array=256;
 type string_list type=string, dynamic_array=256;
 
