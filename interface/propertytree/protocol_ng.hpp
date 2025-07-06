@@ -6,16 +6,10 @@
 // Type:  ('string_list', {'dynamic_array': '256'})
 // Sequence:  value ('u64', 'id')
 // Sequence:  value ('buf', 'data')
-// Type:  ('set_value', {'type': 'value'})
-// Sequence:  get_value_request ('u16', 'transaction_id')
-// Sequence:  get_value_request ('u64', 'id')
-// Sequence:  get_value_response ('u16', 'transaction_id')
-// Sequence:  get_value_response ('value', 'data')
-// Sequence:  get_value_response ('u64', 'sequence_number')
 // Sequence:  subscribe ('u64', 'id')
 // Sequence:  unsubscribe ('u64', 'id')
 // Sequence:  update ('value', 'data')
-// Sequence:  update ('u64', 'sequence_number')
+// Sequence:  update ('u64', 'sn')
 // Sequence:  node ('u64', 'id')
 // Sequence:  node ('u64', 'parent')
 // Sequence:  node ('string', 'name')
@@ -52,11 +46,8 @@
 // Sequence:  node_update_attach ('u64', 'sequence_number')
 // Sequence:  node_update_detach ('u64', 'to_detach')
 // Sequence:  node_update_detach ('u64', 'sequence_number')
-// Choice:  ('protocol_value_server', 'set_value')
-// Choice:  ('protocol_value_server', 'get_value_request')
 // Choice:  ('protocol_value_server', 'subscribe')
 // Choice:  ('protocol_value_server', 'unsubscribe')
-// Choice:  ('protocol_value_client', 'get_value_response')
 // Choice:  ('protocol_value_client', 'update')
 // Choice:  ('protocol_node_server', 'list_request')
 // Choice:  ('protocol_node_server', 'list_all_request')
@@ -94,20 +85,6 @@ struct value
     buf data;
 };
 
-using set_value = value;
-struct get_value_request
-{
-    u16 transaction_id;
-    u64 id;
-};
-
-struct get_value_response
-{
-    u16 transaction_id;
-    value data;
-    u64 sequence_number;
-};
-
 struct subscribe
 {
     u64 id;
@@ -121,7 +98,7 @@ struct unsubscribe
 struct update
 {
     value data;
-    u64 sequence_number;
+    u64 sn;
 };
 
 struct node
@@ -210,8 +187,8 @@ struct node_update_detach
     u64 sequence_number;
 };
 
-using protocol_value_server = std::variant<set_value,get_value_request,subscribe,unsubscribe>;
-using protocol_value_client = std::variant<get_value_response,update>;
+using protocol_value_server = std::variant<subscribe,unsubscribe>;
+using protocol_value_client = std::variant<update>;
 using protocol_node_server = std::variant<list_request,list_all_request,resolve_path_request,attach,detach,node_subscribe,node_unsubscribe>;
 using protocol_node_client = std::variant<list_response,list_all_response,resolve_path_response,node_update_attach,node_update_detach>;
 /***********************************************
@@ -249,81 +226,6 @@ inline void str(const char* pName, const value& pIe, std::string& pCtx, bool pIs
     size_t nMandatory = 2;
     str("id", pIe.id, pCtx, !(--nMandatory+nOptional));
     str("data", pIe.data, pCtx, !(--nMandatory+nOptional));
-    pCtx = pCtx + "}";
-    if (!pIsLast)
-    {
-        pCtx += ",";
-    }
-}
-
-inline void encode_per(const get_value_request& pIe, cum::per_codec_ctx& pCtx)
-{
-    using namespace cum;
-    encode_per(pIe.transaction_id, pCtx);
-    encode_per(pIe.id, pCtx);
-}
-
-inline void decode_per(get_value_request& pIe, cum::per_codec_ctx& pCtx)
-{
-    using namespace cum;
-    decode_per(pIe.transaction_id, pCtx);
-    decode_per(pIe.id, pCtx);
-}
-
-inline void str(const char* pName, const get_value_request& pIe, std::string& pCtx, bool pIsLast)
-{
-    using namespace cum;
-    if (!pName)
-    {
-        pCtx = pCtx + "{";
-    }
-    else
-    {
-        pCtx = pCtx + "\"" + pName + "\":{";
-    }
-    size_t nOptional = 0;
-    size_t nMandatory = 2;
-    str("transaction_id", pIe.transaction_id, pCtx, !(--nMandatory+nOptional));
-    str("id", pIe.id, pCtx, !(--nMandatory+nOptional));
-    pCtx = pCtx + "}";
-    if (!pIsLast)
-    {
-        pCtx += ",";
-    }
-}
-
-inline void encode_per(const get_value_response& pIe, cum::per_codec_ctx& pCtx)
-{
-    using namespace cum;
-    encode_per(pIe.transaction_id, pCtx);
-    encode_per(pIe.data, pCtx);
-    encode_per(pIe.sequence_number, pCtx);
-}
-
-inline void decode_per(get_value_response& pIe, cum::per_codec_ctx& pCtx)
-{
-    using namespace cum;
-    decode_per(pIe.transaction_id, pCtx);
-    decode_per(pIe.data, pCtx);
-    decode_per(pIe.sequence_number, pCtx);
-}
-
-inline void str(const char* pName, const get_value_response& pIe, std::string& pCtx, bool pIsLast)
-{
-    using namespace cum;
-    if (!pName)
-    {
-        pCtx = pCtx + "{";
-    }
-    else
-    {
-        pCtx = pCtx + "\"" + pName + "\":{";
-    }
-    size_t nOptional = 0;
-    size_t nMandatory = 3;
-    str("transaction_id", pIe.transaction_id, pCtx, !(--nMandatory+nOptional));
-    str("data", pIe.data, pCtx, !(--nMandatory+nOptional));
-    str("sequence_number", pIe.sequence_number, pCtx, !(--nMandatory+nOptional));
     pCtx = pCtx + "}";
     if (!pIsLast)
     {
@@ -401,14 +303,14 @@ inline void encode_per(const update& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     encode_per(pIe.data, pCtx);
-    encode_per(pIe.sequence_number, pCtx);
+    encode_per(pIe.sn, pCtx);
 }
 
 inline void decode_per(update& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     decode_per(pIe.data, pCtx);
-    decode_per(pIe.sequence_number, pCtx);
+    decode_per(pIe.sn, pCtx);
 }
 
 inline void str(const char* pName, const update& pIe, std::string& pCtx, bool pIsLast)
@@ -425,7 +327,7 @@ inline void str(const char* pName, const update& pIe, std::string& pCtx, bool pI
     size_t nOptional = 0;
     size_t nMandatory = 2;
     str("data", pIe.data, pCtx, !(--nMandatory+nOptional));
-    str("sequence_number", pIe.sequence_number, pCtx, !(--nMandatory+nOptional));
+    str("sn", pIe.sn, pCtx, !(--nMandatory+nOptional));
     pCtx = pCtx + "}";
     if (!pIsLast)
     {
@@ -946,14 +848,6 @@ inline void encode_per(const protocol_value_server& pIe, cum::per_codec_ctx& pCt
     {
         encode_per(std::get<1>(pIe), pCtx);
     }
-    else if (2 == type)
-    {
-        encode_per(std::get<2>(pIe), pCtx);
-    }
-    else if (3 == type)
-    {
-        encode_per(std::get<3>(pIe), pCtx);
-    }
 }
 
 inline void decode_per(protocol_value_server& pIe, cum::per_codec_ctx& pCtx)
@@ -964,23 +858,13 @@ inline void decode_per(protocol_value_server& pIe, cum::per_codec_ctx& pCtx)
     decode_per(type, pCtx);
     if (0 == type)
     {
-        pIe = set_value();
+        pIe = subscribe();
         decode_per(std::get<0>(pIe), pCtx);
     }
     else if (1 == type)
     {
-        pIe = get_value_request();
-        decode_per(std::get<1>(pIe), pCtx);
-    }
-    else if (2 == type)
-    {
-        pIe = subscribe();
-        decode_per(std::get<2>(pIe), pCtx);
-    }
-    else if (3 == type)
-    {
         pIe = unsubscribe();
-        decode_per(std::get<3>(pIe), pCtx);
+        decode_per(std::get<1>(pIe), pCtx);
     }
 }
 
@@ -995,7 +879,7 @@ inline void str(const char* pName, const protocol_value_server& pIe, std::string
             pCtx += std::string(pName) + ":{";
         else
             pCtx += "{";
-        std::string name = "set_value";
+        std::string name = "subscribe";
         str(name.c_str(), std::get<0>(pIe), pCtx, true);
         pCtx += "}";
     }
@@ -1005,28 +889,8 @@ inline void str(const char* pName, const protocol_value_server& pIe, std::string
             pCtx += std::string(pName) + ":{";
         else
             pCtx += "{";
-        std::string name = "get_value_request";
-        str(name.c_str(), std::get<1>(pIe), pCtx, true);
-        pCtx += "}";
-    }
-    else if (2 == type)
-    {
-        if (pName)
-            pCtx += std::string(pName) + ":{";
-        else
-            pCtx += "{";
-        std::string name = "subscribe";
-        str(name.c_str(), std::get<2>(pIe), pCtx, true);
-        pCtx += "}";
-    }
-    else if (3 == type)
-    {
-        if (pName)
-            pCtx += std::string(pName) + ":{";
-        else
-            pCtx += "{";
         std::string name = "unsubscribe";
-        str(name.c_str(), std::get<3>(pIe), pCtx, true);
+        str(name.c_str(), std::get<1>(pIe), pCtx, true);
         pCtx += "}";
     }
     if (!pIsLast)
@@ -1045,10 +909,6 @@ inline void encode_per(const protocol_value_client& pIe, cum::per_codec_ctx& pCt
     {
         encode_per(std::get<0>(pIe), pCtx);
     }
-    else if (1 == type)
-    {
-        encode_per(std::get<1>(pIe), pCtx);
-    }
 }
 
 inline void decode_per(protocol_value_client& pIe, cum::per_codec_ctx& pCtx)
@@ -1059,13 +919,8 @@ inline void decode_per(protocol_value_client& pIe, cum::per_codec_ctx& pCtx)
     decode_per(type, pCtx);
     if (0 == type)
     {
-        pIe = get_value_response();
-        decode_per(std::get<0>(pIe), pCtx);
-    }
-    else if (1 == type)
-    {
         pIe = update();
-        decode_per(std::get<1>(pIe), pCtx);
+        decode_per(std::get<0>(pIe), pCtx);
     }
 }
 
@@ -1080,18 +935,8 @@ inline void str(const char* pName, const protocol_value_client& pIe, std::string
             pCtx += std::string(pName) + ":{";
         else
             pCtx += "{";
-        std::string name = "get_value_response";
-        str(name.c_str(), std::get<0>(pIe), pCtx, true);
-        pCtx += "}";
-    }
-    else if (1 == type)
-    {
-        if (pName)
-            pCtx += std::string(pName) + ":{";
-        else
-            pCtx += "{";
         std::string name = "update";
-        str(name.c_str(), std::get<1>(pIe), pCtx, true);
+        str(name.c_str(), std::get<0>(pIe), pCtx, true);
         pCtx += "}";
     }
     if (!pIsLast)

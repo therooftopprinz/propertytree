@@ -53,14 +53,14 @@ struct acknowledge_s
 // MSG UNSUBSCRIBE
 struct key_s
 {
-    uint16_t key;
+    uint64_t key;
 };
 
 // MSG VALUE
 struct key_sn_s
 {
-    uint16_t key;
-    uint16_t sn;
+    uint64_t key;
+    uint64_t sn;
 };
 
 template <typename T, typename U>

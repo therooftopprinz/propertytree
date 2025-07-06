@@ -8,14 +8,9 @@ type string_list type=string, dynamic_array=256;
 
 sequence value                    {u64 id, buf data};
 
-type     set_value                type=value;
-sequence get_value_request        {u16 transaction_id, u64 id};
-sequence get_value_response       {u16 transaction_id, value data, u64 sequence_number};
 sequence subscribe                {u64 id};
 sequence unsubscribe              {u64 id};
-sequence subscribe_stream         {u64 id};
-sequence unsubscribe_stream       {u64 id};
-sequence update                   {value data, u64 sequence_number};
+sequence update                   {value data, u64 sn};
 
 //--------------------------------------------------------------------------------------//
 //                                   Node Protocol                                      //
@@ -42,15 +37,12 @@ sequence node_update_detach          {u64 to_detach,  u64 sequence_number};
 
 choice protocol_value_server
 {
-    set_value,
-    get_value_request,
     subscribe,
     unsubscribe
 };
 
 choice protocol_value_client
 {
-    get_value_response,
     update
 };
 

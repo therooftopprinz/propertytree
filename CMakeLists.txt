@@ -21,7 +21,8 @@ find_package(logless REQUIRED)
 add_executable(
     propertytree_server
     server/src/main.cpp
-    server/src/value_server.cpp)
+    server/src/udp_value_server.cpp
+    server/src/tcp_value_server.cpp)
 
 target_include_directories(
     propertytree_server

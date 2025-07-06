@@ -5,36 +5,41 @@
 #include <set>
 #include <stdexcept>
 
-#include <bfc/epoll_reactor.hpp>
+#include <propertytree/protocol_udp.hpp>
 #include <bfc/configuration_parser.hpp>
+#include <bfc/epoll_reactor.hpp>
 #include <bfc/socket.hpp>
 #include <bfc/buffer.hpp>
-#include <propertytree/protocol_udp.hpp>
+
+#include <value_map.hpp>
 
 namespace propertytree
 {
 
-class value_server
+struct udp_client_context : client_context
+{
+    bfc::socket* server_sock;
+    sockaddr client_address;
+
+    udp_client_context(bfc::socket* s, sockaddr c)
+        : server_sock(s)
+        , client_address(c)
+    {}
+
+    int send(const bfc::const_buffer_view& b) override
+    {
+        return server_sock->send(b, 0, &client_address, sizeof(client_address));
+    }
+};
+
+class udp_value_server
 {
 public:
     using reactor_t = bfc::epoll_reactor<std::function<void()>>;
-    value_server(const bfc::configuration_parser&, reactor_t&);
+    udp_value_server(const bfc::configuration_parser*, reactor_t*, value_map*);
 
 private:
-    struct client_context
-    {
-        sockaddr client_address;
-    };
-
-    using cctx_ptr = std::shared_ptr<client_context>;
-
-    struct value
-    {
-        std::vector<uint8_t> data;
-        std::set<cctx_ptr> subscribers;
-        int64_t vsn = 0;
-        int64_t ssn = 0;
-    };
+    using cctx_ptr = std::shared_ptr<udp_client_context>;
 
     void read();
 
@@ -44,16 +49,14 @@ private:
     void handle_unsubscribe (cctx_ptr&, const header_s&, const key_s&);
     void handle             (cctx_ptr&, const bfc::const_buffer_view&);
 
-    value& get_value(uint16_t);
-    bool set_value(uint16_t, const bfc::const_buffer_view&);
+    const bfc::configuration_parser* m_config;
+    reactor_t* m_reactor;
+    value_map* m_value_map;
 
-    const bfc::configuration_parser& m_config;
-    reactor_t& m_reactor;
+    std::map<std::pair<uint32_t,uint16_t>, cctx_ptr> m_client_map;
+
     bfc::socket m_server_socket;
     reactor_t::context m_server_rctx;
-
-    std::map<std::pair<uint32_t, uint16_t>, cctx_ptr> m_client_map;
-    std::vector<value> m_value_map;
 
     std::byte m_rcv_buff[1024*64];
     std::byte m_snd_buff[1024*64];

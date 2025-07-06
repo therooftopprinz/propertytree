@@ -14,6 +14,7 @@
 
 #include <logless/logger.hpp>
 #include <propertytree/protocol_ng.hpp>
+#include <propertytree/protocol_udp.hpp>
 
 namespace propertytree
 {
@@ -28,7 +29,7 @@ class value
 public:
     value(uint64_t id, value_client& client);
 
-    using cb_t = std::function<void(const buffer&)>;
+    using cb_t = std::function<void(const bfc::const_buffer_view&)>;
 
     template <typename T> std::optional<T> as()
     {
@@ -57,15 +58,14 @@ public:
         return *this;
     }
 
-
     value& operator=(buffer);
 
     size_t size();
-
     void fetch();
-
     unsigned subscribe(cb_t);
     void unsubscribe(unsigned);
+    unsigned stream_subscribe(cb_t);
+    void stream_unsubscribe(unsigned);
 
 private:
     void commit();
@@ -77,6 +77,7 @@ private:
     buffer data;
     std::atomic<unsigned> m_watchers_id;
     std::map<unsigned, cb_t> watchers;
+    std::map<unsigned, cb_t> stream_watchers;
     value_client& client;
 };
 
@@ -93,53 +94,67 @@ public:
         bool logful = true;
     };
 
-    value_client(const config_s&, reactor_t& reactor);
+    value_client(const config_s*, reactor_t* reactor);
     value_ptr get(uint64_t);
 
     logless::logger& get_logger();
 
 private:
-    static constexpr size_t ENCODE_SIZE = 1024*64;
+    static constexpr size_t ENCODE_SIZE = 1024*16;
     friend class value;
-    enum read_state_e {WAIT_HEADER, WAIT_REMAINING};
 
-    void disconnect();
-    void handle(cum::get_value_response&&);
-    void handle(cum::update&&);
-
-    void read_server();
-
+    // tcp
+    enum tcp_read_state_e {WAIT_HEADER, WAIT_REMAINING};
+    void tcp_read_server();
+    void tcp_disconnect();
+    void tcp_handle(cum::update&&);
     size_t encode(const cum::protocol_value_server& msg, std::byte* data, size_t size);
 
+    // udp
+    void udp_read_server();
+    void udp_handle_ack         (const header_s&, const acknowledge_s&);
+    void udp_handle_value       (const header_s&, const key_sn_s&, const bfc::const_buffer_view&);
+    void udp_handle             (const bfc::const_buffer_view&&);
+
+    // api
+    void stream(uint64_t, const buffer&);
     void set_value(uint64_t, const buffer&);
     buffer get_value(uint64_t);
     void subscribe(uint64_t);
     void unsubscribe(uint64_t);
-
-    logless::logger m_logger;
-    reactor_t& m_reactor;
-    bfc::socket m_server_socket;
-    reactor_t::context m_server_socket_ctx;
-
-    std::byte m_read_buffer[512];
-    read_state_e m_read_state = WAIT_HEADER;
-    size_t m_expected_read_size = 2;
-    size_t m_read_buffer_idx = 0;
+    void stream_subscribe(uint64_t);
+    void stream_unsubscribe(uint64_t);
 
     std::mutex m_value_map_mutex;
     std::unordered_map<uint64_t, value_ptr> m_value_map;
+    logless::logger m_logger;
+    reactor_t* m_reactor;
 
-    struct transaction_s
+    // tcp
+    bfc::socket m_tcp_server_socket;
+    reactor_t::context m_tcp_server_socket_ctx;
+    std::byte m_tcp_read_buffer[1024*16];
+    tcp_read_state_e m_tcp_read_state = WAIT_HEADER;
+    size_t m_tcp_expected_read_size = 2;
+    size_t m_tcp_read_buffer_idx = 0;
+
+    // udp
+    struct udp_transaction_s
     {
+        std::byte snd_msg[ENCODE_SIZE];
+        std::byte rcv_msg[ENCODE_SIZE];
         bool satisfied = false;
-        cum::protocol_value_client message;
         std::condition_variable cv;
         std::mutex mutex;
     };
 
-    std::atomic_uint64_t m_transaction_id = 0;
-    std::mutex m_transaction_map_mutex;
-    std::unordered_map<uint64_t, std::shared_ptr<transaction_s>> m_transaction_map;
+    sockaddr_in m_udp_server_addr;
+    bfc::socket m_udp_server_socket;
+    reactor_t::context m_udp_server_socket_ctx;
+    std::byte m_udp_read_buffer[1024*16];
+    std::atomic_uint64_t m_udp_transaction_id = 0;
+    std::mutex m_udp_transaction_map_mutex;
+    std::unordered_map<uint64_t, std::shared_ptr<udp_transaction_s>> m_udp_transaction_map;
 };
 
 } // propertytree

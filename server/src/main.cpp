@@ -8,11 +8,12 @@
 #include <bfc/epoll_reactor.hpp>
 #include <bfc/configuration_parser.hpp>
 
-#include <value_server.hpp>
+#include <udp_value_server.hpp>
+#include <tcp_value_server.hpp>
 #include <node_server.hpp>
 #include <logger.hpp>
 #include <utils.hpp>
-
+#include <value_map.hpp>
 
 using logless::log;
 using logless::INFO;
@@ -75,14 +76,18 @@ int main(int argc, const char* argv[])
     }
 
     bfc::epoll_reactor<std::function<void()>> reactor;
+    propertytree::value_map value_map;
 
-    std::optional<propertytree::value_server> value_server;
+
+    std::optional<propertytree::udp_value_server> udp_value_server;
+    std::optional<propertytree::tcp_value_server> tcp_value_server;
     // std::optional<propertytree::node_server>  node_server;
 
     auto value_port = utils::get_config<unsigned>(args, "service.value.port");
     if (value_port)
     {
-        value_server.emplace(args, reactor);
+        udp_value_server.emplace(&args, &reactor, &value_map);
+        tcp_value_server.emplace(&args, &reactor, &value_map);
     }
 
     auto node_port = utils::get_config<unsigned>(args, "service.node.port");
