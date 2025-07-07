@@ -1,6 +1,8 @@
 #include "value_client.hpp"
 #include "logger.hpp"
 
+#include <netinet/tcp.h>
+
 namespace propertytree
 {
 
@@ -71,6 +73,11 @@ value_client::value_client(const config_s& cfg, reactor_t& reactor)
     {
         PTLOG_ERR("value_client | fd=%3d; | connection_error=%s;" PRIu64, m_server_socket.fd(), strerror(errno));
         return;
+    }
+
+    if (cfg.no_delay)
+    {
+        m_server_socket.set_sock_opt(SOL_SOCKET, TCP_NODELAY, 1);
     }
 
     m_server_socket_ctx = m_reactor.make_context(m_server_socket.fd());

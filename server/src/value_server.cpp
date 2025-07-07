@@ -1,4 +1,5 @@
 #include <value_server.hpp>
+#include <netinet/tcp.h>
 #include <logger.hpp>
 #include <utils.hpp>
 
@@ -18,6 +19,11 @@ value_server::value_server(
     auto bind_addr = bfc::ip4_port_to_sockaddr(interface, port);
 
     LOG_INF("value_server | bind_address=%s;", bfc::sockaddr_to_string((sockaddr*) &bind_addr).c_str());
+
+    if (utils::get_config<unsigned>(config, "service.value.no_delay").value_or(0))
+    {
+        m_server_socket.set_sock_opt(IPPROTO_TCP, TCP_NODELAY, 1);
+    }
 
     m_server_socket.set_sock_opt(SOL_SOCKET, SO_REUSEADDR, 1);
 

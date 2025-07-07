@@ -90,6 +90,7 @@ public:
         std::string ip = "127.0.0.1";
         uint16_t port = 15000;
         std::string log = "value_client.blog";
+        bool no_delay = false;
         bool logful = true;
     };
 
