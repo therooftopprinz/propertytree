@@ -202,10 +202,6 @@ void value_server::set_value(uint64_t id, std::vector<uint8_t>&& data)
                 LOG_DBG("value_server | fd=%3d; | (can't update)", client->client_socket.fd());
                 to_delete.emplace_back(client);
             }
-            else
-            {
-                LOG_DBG("value_server | fd=%3d; | (to update %" PRIu64 ";)", client->client_socket.fd(), value_sequence);
-            }
         }
 
         for (auto& i : to_delete)
