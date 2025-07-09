@@ -21,8 +21,8 @@ void init_clients()
     propertytree::value_client::config_s config1;
     propertytree::value_client::config_s config2;
 
-    config1.logful = false;
-    config2.logful = false;
+    config1.logful = true;
+    config2.logful = true;
     // config1.no_delay = true;
     // config2.no_delay = true;
     config1.log = "client1.log";
@@ -30,11 +30,12 @@ void init_clients()
 
     client1.emplace(config1, reactor);
     client2.emplace(config2, reactor);
-
+    // client1->get_logger().set_logbit(LB_DUMP_MSG_PROTO);
+    // client2->get_logger().set_logbit(LB_DUMP_MSG_PROTO);
     // client1->get_logger().set_logbit(LB_DUMP_MSG_RAW | LB_DUMP_MSG_PROTO | LB_DUMP_MSG_SOCK);
     // client2->get_logger().set_logbit(LB_DUMP_MSG_RAW | LB_DUMP_MSG_PROTO | LB_DUMP_MSG_SOCK);
-    client1->get_logger().set_level(logless::FATAL);
-    client2->get_logger().set_level(logless::FATAL);
+    // client1->get_logger().set_level(logless::FATAL);
+    // client2->get_logger().set_level(logless::FATAL);
 }
 
 template <typename T>
@@ -54,7 +55,7 @@ void hot_delay(uint64_t n, uint64_t tt = now())
     while (tt+n > now());
 }
 
-void TEST_SET_UPDATE_LATENCY(uint64_t id=0, uint64_t period=50, uint64_t N = 100000u)
+void TEST_SET_UPDATE_LATENCY(uint64_t id=0, uint64_t period=20, uint64_t N = 50000)
 {
     auto c1v0 = client1->get(id);
     auto c2v0 = client2->get(id);
@@ -92,7 +93,8 @@ void TEST_SET_UPDATE_LATENCY(uint64_t id=0, uint64_t period=50, uint64_t N = 100
     {
         t.t = now();
         t.n = i;
-        *c1v0 = t;
+        // *c1v0 = t;
+        c1v0->fast_set(t);
         hot_delay(period, t.t);
     }
 

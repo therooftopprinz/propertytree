@@ -1,42 +1,33 @@
-type buf         type=u8,     dynamic_array=256;
+type buffer      type=byte,   dynamic_array=256;
 type u64_list    type=u64,    dynamic_array=256;
 type string_list type=string, dynamic_array=256;
+
+constant NONTRANSACTIONAL 0xFF;
+enumeration EStatus
+{
+    OK,
+    INVALID_KEY,
+    INVALID_SIZE
+};
+
+//--------------------------------------------------------------------------------------//
+//                                  Common Protocol                                     //
+//--------------------------------------------------------------------------------------//
+
+sequence acknowledge              {u16 transaction_id, u16 status};
 
 //--------------------------------------------------------------------------------------//
 //                                   Value Protocol                                     //
 //--------------------------------------------------------------------------------------//
 
-sequence value                    {u64 id, buf data};
+sequence value                    {u32 key, buffer value};
 
-type     set_value                type=value;
-sequence get_value_request        {u16 transaction_id, u64 id};
+sequence set_value                {u16 transaction_id, value data};
+sequence get_value_request        {u16 transaction_id, u32 key};
 sequence get_value_response       {u16 transaction_id, value data, u64 sequence_number};
-sequence subscribe                {u64 id};
-sequence unsubscribe              {u64 id};
+sequence subscribe                {u16 transaction_id, u32 key};
+sequence unsubscribe              {u16 transaction_id, u32 key};
 sequence update                   {value data, u64 sequence_number};
-
-//--------------------------------------------------------------------------------------//
-//                                   Node Protocol                                      //
-//--------------------------------------------------------------------------------------//
-
-sequence node                        {u64 id, u64 parent, string name};
-type     node_list                   type=node,          dynamic_array=4294967296;
-type     node_optional               type=node,          optional;
-type     node_attach_list            type=node_list;
-type     node_detach_list            type=u64_list;
-
-sequence list_request                {u16 transaction_id, u64 id};
-sequence list_response               {u16 transaction_id, node_list nodes, u64 sequence_number};
-sequence list_all_request            {u16 transaction_id};
-sequence list_all_response           {u16 transaction_id, node_list nodes, u64 sequence_number};
-sequence resolve_path_request        {u16 transaction_id, u64 origin,               string path};
-sequence resolve_path_response       {u16 transaction_id, node_optional node ,      u64 sequence_number};
-sequence attach                      {u16 transaction_id, u64 parent, u64 id, string name};
-sequence detach                      {u16 transaction_id, u64 id};
-sequence node_subscribe              {u64 id};
-sequence node_unsubscribe            {u64 id};
-sequence node_update_attach          {node to_attach, u64 sequence_number};
-sequence node_update_detach          {u64 to_detach,  u64 sequence_number};
 
 choice protocol_value_server
 {
@@ -48,15 +39,33 @@ choice protocol_value_server
 
 choice protocol_value_client
 {
+    acknowledge,
     get_value_response,
     update
 };
 
+//--------------------------------------------------------------------------------------//
+//                                   Node Protocol                                      //
+//--------------------------------------------------------------------------------------//
+
+sequence node                        {u32 key, u32 parent, string name};
+type     node_list                   type=node,          dynamic_array=4294967296;
+type     node_optional               type=node,          optional;
+type     node_attach_list            type=node_list;
+type     node_detach_list            type=u64_list;
+
+sequence list_request                {u16 transaction_id, u32 key};
+sequence list_response               {u16 transaction_id, node_list nodes};
+sequence attach                      {u16 transaction_id, u64 parent, u32 key, string name};
+sequence detach                      {u16 transaction_id, u32 key};
+sequence node_subscribe              {u16 transaction_id, u32 key};
+sequence node_unsubscribe            {u16 transaction_id, u32 key};
+sequence node_update_attach          {node to_attach};
+sequence node_update_detach          {u32 to_detach};
+
 choice protocol_node_server
 {
     list_request,
-    list_all_request,
-    resolve_path_request,
     attach,
     detach,
     node_subscribe,
@@ -65,9 +74,8 @@ choice protocol_node_server
 
 choice protocol_node_client
 {
+    acknowledge,
     list_response,
-    list_all_response,
-    resolve_path_response,
     node_update_attach,
     node_update_detach
 };

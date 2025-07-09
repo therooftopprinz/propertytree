@@ -38,16 +38,19 @@ private:
 
     struct value
     {
-        std::vector<uint8_t> data;
-        std::set<client_context_ptr> subscribers; 
+        std::vector<std::byte> data;
+        std::set<client_context_ptr> subscribers;
+        uint64_t sequence_number = 0;
     };
 
     void on_accept_ready();
 
     size_t encode(int, const cum::protocol_value_client& msg, std::byte* data, size_t size);
 
-    value& get_value(uint64_t);
-    void set_value(uint64_t, std::vector<uint8_t>&&);
+    value& get_value(uint32_t);
+    void set_value(uint32_t, std::vector<std::byte>&&);
+
+    void send_ack(std::shared_ptr<client_context>& client, uint16_t transaction_id, cum::EStatus status);
 
     void handle(std::shared_ptr<client_context>&, cum::set_value&&);
     void handle(std::shared_ptr<client_context>&, cum::get_value_request&&);
@@ -65,7 +68,7 @@ private:
     std::map<int, std::shared_ptr<client_context>> m_client_map;
     std::vector<value> value_map;
 
-    uint64_t value_sequence = 0;
+    std::byte send_buffer[ENCODE_SIZE];
 };
 
 } // propertytree

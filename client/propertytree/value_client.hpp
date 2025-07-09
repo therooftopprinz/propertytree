@@ -7,19 +7,23 @@
 #include <stdexcept>
 #include <atomic>
 
+#include <netinet/tcp.h>
+
 #include <bfc/configuration_parser.hpp>
 #include <bfc/epoll_reactor.hpp>
 #include <bfc/socket.hpp>
 #include <bfc/socket.hpp>
 
 #include <logless/logger.hpp>
+
 #include <propertytree/protocol_ng.hpp>
+#include <propertytree/logger.hpp>
 
 namespace propertytree
 {
 
 using reactor_t = bfc::epoll_reactor<std::function<void()>>;
-using buffer = std::vector<uint8_t>;
+using buffer = std::vector<std::byte>;
 
 class value_client;
 
@@ -57,6 +61,19 @@ public:
         return *this;
     }
 
+    template <typename T>
+    value& fast_set(T&& t)
+    {
+        if (sizeof(T) != size())
+        {
+            data.resize(sizeof(T));
+        }
+
+        std::memcpy(data.data(), &t, sizeof(T));
+        commit(false);
+        return *this;
+    }
+
 
     value& operator=(buffer);
 
@@ -68,7 +85,7 @@ public:
     void unsubscribe(unsigned);
 
 private:
-    void commit();
+    void commit(bool=true);
 
     friend class value_client;
 
@@ -103,8 +120,42 @@ private:
     static constexpr size_t ENCODE_SIZE = 1024*64;
     friend class value;
     enum read_state_e {WAIT_HEADER, WAIT_REMAINING};
+    struct transaction_s
+    {
+        uint16_t id = 0xFF;
+        bool satisfied = false;
+        cum::protocol_value_client message;
+        std::condition_variable cv;
+        std::mutex mutex;
+    };
+
+    std::shared_ptr<transaction_s> create_transaction();
+    bool wait_transaction(transaction_s&);
 
     void disconnect();
+
+    template <typename T>
+    void handle_transactional(T&& rsp)
+    {
+        std::unique_lock lg(m_transaction_map_mutex);
+        auto it = m_transaction_map.find(rsp.transaction_id);
+        if (m_transaction_map.end() == it)
+        {
+            PTLOG_ERR("value_client | fd=%3d; | protocol_error=unknown_response trid=%u;", m_server_socket.fd(), rsp.transaction_id);
+            disconnect();
+            return;
+        }
+        auto transaction = it->second;
+        lg.unlock();
+
+        std::unique_lock lg2(transaction->mutex);
+        transaction->message = std::move(rsp);
+        transaction->satisfied = true;
+        lg2.unlock();
+        transaction->cv.notify_all();
+    }
+
+    void handle(cum::acknowledge&&);
     void handle(cum::get_value_response&&);
     void handle(cum::update&&);
 
@@ -113,6 +164,7 @@ private:
     size_t encode(const cum::protocol_value_server& msg, std::byte* data, size_t size);
 
     void set_value(uint64_t, const buffer&);
+    void set_value_nowait(uint64_t, const buffer&);
     buffer get_value(uint64_t);
     void subscribe(uint64_t);
     void unsubscribe(uint64_t);
@@ -130,17 +182,9 @@ private:
     std::mutex m_value_map_mutex;
     std::unordered_map<uint64_t, value_ptr> m_value_map;
 
-    struct transaction_s
-    {
-        bool satisfied = false;
-        cum::protocol_value_client message;
-        std::condition_variable cv;
-        std::mutex mutex;
-    };
-
-    std::atomic_uint64_t m_transaction_id = 0;
     std::mutex m_transaction_map_mutex;
-    std::unordered_map<uint64_t, std::shared_ptr<transaction_s>> m_transaction_map;
+    std::uint16_t m_transaction_id = 0;
+    std::unordered_map<uint16_t, std::shared_ptr<transaction_s>> m_transaction_map;
 };
 
 } // propertytree
