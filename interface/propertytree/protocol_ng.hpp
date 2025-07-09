@@ -6,10 +6,20 @@
 // Type:  ('string_list', {'dynamic_array': '256'})
 // Sequence:  value ('u64', 'id')
 // Sequence:  value ('buf', 'data')
+// Sequence:  subscribe ('u16', 'transaction_id')
+// Sequence:  subscribe ('u16', 'spare0')
+// Sequence:  subscribe ('u32', 'spare1')
 // Sequence:  subscribe ('u64', 'id')
+// Sequence:  unsubscribe ('u16', 'transaction_id')
+// Sequence:  unsubscribe ('u16', 'spare0')
+// Sequence:  unsubscribe ('u32', 'spare1')
 // Sequence:  unsubscribe ('u64', 'id')
-// Sequence:  update ('value', 'data')
 // Sequence:  update ('u64', 'sn')
+// Sequence:  update ('value', 'data')
+// Sequence:  acknowledge ('u16', 'transaction_id')
+// Sequence:  acknowledge ('u16', 'spare0')
+// Sequence:  acknowledge ('u32', 'spare1')
+// Sequence:  acknowledge ('u64', 'status')
 // Sequence:  node ('u64', 'id')
 // Sequence:  node ('u64', 'parent')
 // Sequence:  node ('string', 'name')
@@ -20,25 +30,41 @@
 // Type:  ('node_attach_list', {'type': 'node_list'})
 // Type:  ('node_detach_list', {'type': 'u64_list'})
 // Sequence:  list_request ('u16', 'transaction_id')
+// Sequence:  list_request ('u16', 'spare0')
+// Sequence:  list_request ('u32', 'spare1')
 // Sequence:  list_request ('u64', 'id')
 // Sequence:  list_response ('u16', 'transaction_id')
+// Sequence:  list_response ('u16', 'spare0')
+// Sequence:  list_response ('u32', 'spare1')
 // Sequence:  list_response ('node_list', 'nodes')
 // Sequence:  list_response ('u64', 'sequence_number')
 // Sequence:  list_all_request ('u16', 'transaction_id')
+// Sequence:  list_all_request ('u16', 'spare0')
+// Sequence:  list_all_request ('u32', 'spare1')
 // Sequence:  list_all_response ('u16', 'transaction_id')
+// Sequence:  list_all_response ('u16', 'spare0')
+// Sequence:  list_all_response ('u32', 'spare1')
 // Sequence:  list_all_response ('node_list', 'nodes')
 // Sequence:  list_all_response ('u64', 'sequence_number')
 // Sequence:  resolve_path_request ('u16', 'transaction_id')
+// Sequence:  resolve_path_request ('u16', 'spare0')
+// Sequence:  resolve_path_request ('u32', 'spare1')
 // Sequence:  resolve_path_request ('u64', 'origin')
 // Sequence:  resolve_path_request ('string', 'path')
 // Sequence:  resolve_path_response ('u16', 'transaction_id')
+// Sequence:  resolve_path_response ('u16', 'spare0')
+// Sequence:  resolve_path_response ('u32', 'spare1')
 // Sequence:  resolve_path_response ('node_optional', 'node')
 // Sequence:  resolve_path_response ('u64', 'sequence_number')
 // Sequence:  attach ('u16', 'transaction_id')
+// Sequence:  attach ('u16', 'spare0')
+// Sequence:  attach ('u32', 'spare1')
 // Sequence:  attach ('u64', 'parent')
 // Sequence:  attach ('u64', 'id')
 // Sequence:  attach ('string', 'name')
 // Sequence:  detach ('u16', 'transaction_id')
+// Sequence:  detach ('u16', 'spare0')
+// Sequence:  detach ('u32', 'spare1')
 // Sequence:  detach ('u64', 'id')
 // Sequence:  node_subscribe ('u64', 'id')
 // Sequence:  node_unsubscribe ('u64', 'id')
@@ -48,6 +74,7 @@
 // Sequence:  node_update_detach ('u64', 'sequence_number')
 // Choice:  ('protocol_value_server', 'subscribe')
 // Choice:  ('protocol_value_server', 'unsubscribe')
+// Choice:  ('protocol_value_client', 'acknowledge')
 // Choice:  ('protocol_value_client', 'update')
 // Choice:  ('protocol_node_server', 'list_request')
 // Choice:  ('protocol_node_server', 'list_all_request')
@@ -87,18 +114,32 @@ struct value
 
 struct subscribe
 {
+    u16 transaction_id;
+    u16 spare0;
+    u32 spare1;
     u64 id;
 };
 
 struct unsubscribe
 {
+    u16 transaction_id;
+    u16 spare0;
+    u32 spare1;
     u64 id;
 };
 
 struct update
 {
-    value data;
     u64 sn;
+    value data;
+};
+
+struct acknowledge
+{
+    u16 transaction_id;
+    u16 spare0;
+    u32 spare1;
+    u64 status;
 };
 
 struct node
@@ -115,12 +156,16 @@ using node_detach_list = u64_list;
 struct list_request
 {
     u16 transaction_id;
+    u16 spare0;
+    u32 spare1;
     u64 id;
 };
 
 struct list_response
 {
     u16 transaction_id;
+    u16 spare0;
+    u32 spare1;
     node_list nodes;
     u64 sequence_number;
 };
@@ -128,11 +173,15 @@ struct list_response
 struct list_all_request
 {
     u16 transaction_id;
+    u16 spare0;
+    u32 spare1;
 };
 
 struct list_all_response
 {
     u16 transaction_id;
+    u16 spare0;
+    u32 spare1;
     node_list nodes;
     u64 sequence_number;
 };
@@ -140,6 +189,8 @@ struct list_all_response
 struct resolve_path_request
 {
     u16 transaction_id;
+    u16 spare0;
+    u32 spare1;
     u64 origin;
     string path;
 };
@@ -147,6 +198,8 @@ struct resolve_path_request
 struct resolve_path_response
 {
     u16 transaction_id;
+    u16 spare0;
+    u32 spare1;
     node_optional node;
     u64 sequence_number;
 };
@@ -154,6 +207,8 @@ struct resolve_path_response
 struct attach
 {
     u16 transaction_id;
+    u16 spare0;
+    u32 spare1;
     u64 parent;
     u64 id;
     string name;
@@ -162,6 +217,8 @@ struct attach
 struct detach
 {
     u16 transaction_id;
+    u16 spare0;
+    u32 spare1;
     u64 id;
 };
 
@@ -188,7 +245,7 @@ struct node_update_detach
 };
 
 using protocol_value_server = std::variant<subscribe,unsubscribe>;
-using protocol_value_client = std::variant<update>;
+using protocol_value_client = std::variant<acknowledge,update>;
 using protocol_node_server = std::variant<list_request,list_all_request,resolve_path_request,attach,detach,node_subscribe,node_unsubscribe>;
 using protocol_node_client = std::variant<list_response,list_all_response,resolve_path_response,node_update_attach,node_update_detach>;
 /***********************************************
@@ -236,12 +293,18 @@ inline void str(const char* pName, const value& pIe, std::string& pCtx, bool pIs
 inline void encode_per(const subscribe& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
+    encode_per(pIe.transaction_id, pCtx);
+    encode_per(pIe.spare0, pCtx);
+    encode_per(pIe.spare1, pCtx);
     encode_per(pIe.id, pCtx);
 }
 
 inline void decode_per(subscribe& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
+    decode_per(pIe.transaction_id, pCtx);
+    decode_per(pIe.spare0, pCtx);
+    decode_per(pIe.spare1, pCtx);
     decode_per(pIe.id, pCtx);
 }
 
@@ -257,7 +320,10 @@ inline void str(const char* pName, const subscribe& pIe, std::string& pCtx, bool
         pCtx = pCtx + "\"" + pName + "\":{";
     }
     size_t nOptional = 0;
-    size_t nMandatory = 1;
+    size_t nMandatory = 4;
+    str("transaction_id", pIe.transaction_id, pCtx, !(--nMandatory+nOptional));
+    str("spare0", pIe.spare0, pCtx, !(--nMandatory+nOptional));
+    str("spare1", pIe.spare1, pCtx, !(--nMandatory+nOptional));
     str("id", pIe.id, pCtx, !(--nMandatory+nOptional));
     pCtx = pCtx + "}";
     if (!pIsLast)
@@ -269,12 +335,18 @@ inline void str(const char* pName, const subscribe& pIe, std::string& pCtx, bool
 inline void encode_per(const unsubscribe& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
+    encode_per(pIe.transaction_id, pCtx);
+    encode_per(pIe.spare0, pCtx);
+    encode_per(pIe.spare1, pCtx);
     encode_per(pIe.id, pCtx);
 }
 
 inline void decode_per(unsubscribe& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
+    decode_per(pIe.transaction_id, pCtx);
+    decode_per(pIe.spare0, pCtx);
+    decode_per(pIe.spare1, pCtx);
     decode_per(pIe.id, pCtx);
 }
 
@@ -290,7 +362,10 @@ inline void str(const char* pName, const unsubscribe& pIe, std::string& pCtx, bo
         pCtx = pCtx + "\"" + pName + "\":{";
     }
     size_t nOptional = 0;
-    size_t nMandatory = 1;
+    size_t nMandatory = 4;
+    str("transaction_id", pIe.transaction_id, pCtx, !(--nMandatory+nOptional));
+    str("spare0", pIe.spare0, pCtx, !(--nMandatory+nOptional));
+    str("spare1", pIe.spare1, pCtx, !(--nMandatory+nOptional));
     str("id", pIe.id, pCtx, !(--nMandatory+nOptional));
     pCtx = pCtx + "}";
     if (!pIsLast)
@@ -302,15 +377,15 @@ inline void str(const char* pName, const unsubscribe& pIe, std::string& pCtx, bo
 inline void encode_per(const update& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
-    encode_per(pIe.data, pCtx);
     encode_per(pIe.sn, pCtx);
+    encode_per(pIe.data, pCtx);
 }
 
 inline void decode_per(update& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
-    decode_per(pIe.data, pCtx);
     decode_per(pIe.sn, pCtx);
+    decode_per(pIe.data, pCtx);
 }
 
 inline void str(const char* pName, const update& pIe, std::string& pCtx, bool pIsLast)
@@ -326,8 +401,50 @@ inline void str(const char* pName, const update& pIe, std::string& pCtx, bool pI
     }
     size_t nOptional = 0;
     size_t nMandatory = 2;
-    str("data", pIe.data, pCtx, !(--nMandatory+nOptional));
     str("sn", pIe.sn, pCtx, !(--nMandatory+nOptional));
+    str("data", pIe.data, pCtx, !(--nMandatory+nOptional));
+    pCtx = pCtx + "}";
+    if (!pIsLast)
+    {
+        pCtx += ",";
+    }
+}
+
+inline void encode_per(const acknowledge& pIe, cum::per_codec_ctx& pCtx)
+{
+    using namespace cum;
+    encode_per(pIe.transaction_id, pCtx);
+    encode_per(pIe.spare0, pCtx);
+    encode_per(pIe.spare1, pCtx);
+    encode_per(pIe.status, pCtx);
+}
+
+inline void decode_per(acknowledge& pIe, cum::per_codec_ctx& pCtx)
+{
+    using namespace cum;
+    decode_per(pIe.transaction_id, pCtx);
+    decode_per(pIe.spare0, pCtx);
+    decode_per(pIe.spare1, pCtx);
+    decode_per(pIe.status, pCtx);
+}
+
+inline void str(const char* pName, const acknowledge& pIe, std::string& pCtx, bool pIsLast)
+{
+    using namespace cum;
+    if (!pName)
+    {
+        pCtx = pCtx + "{";
+    }
+    else
+    {
+        pCtx = pCtx + "\"" + pName + "\":{";
+    }
+    size_t nOptional = 0;
+    size_t nMandatory = 4;
+    str("transaction_id", pIe.transaction_id, pCtx, !(--nMandatory+nOptional));
+    str("spare0", pIe.spare0, pCtx, !(--nMandatory+nOptional));
+    str("spare1", pIe.spare1, pCtx, !(--nMandatory+nOptional));
+    str("status", pIe.status, pCtx, !(--nMandatory+nOptional));
     pCtx = pCtx + "}";
     if (!pIsLast)
     {
@@ -378,6 +495,8 @@ inline void encode_per(const list_request& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     encode_per(pIe.transaction_id, pCtx);
+    encode_per(pIe.spare0, pCtx);
+    encode_per(pIe.spare1, pCtx);
     encode_per(pIe.id, pCtx);
 }
 
@@ -385,6 +504,8 @@ inline void decode_per(list_request& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     decode_per(pIe.transaction_id, pCtx);
+    decode_per(pIe.spare0, pCtx);
+    decode_per(pIe.spare1, pCtx);
     decode_per(pIe.id, pCtx);
 }
 
@@ -400,8 +521,10 @@ inline void str(const char* pName, const list_request& pIe, std::string& pCtx, b
         pCtx = pCtx + "\"" + pName + "\":{";
     }
     size_t nOptional = 0;
-    size_t nMandatory = 2;
+    size_t nMandatory = 4;
     str("transaction_id", pIe.transaction_id, pCtx, !(--nMandatory+nOptional));
+    str("spare0", pIe.spare0, pCtx, !(--nMandatory+nOptional));
+    str("spare1", pIe.spare1, pCtx, !(--nMandatory+nOptional));
     str("id", pIe.id, pCtx, !(--nMandatory+nOptional));
     pCtx = pCtx + "}";
     if (!pIsLast)
@@ -414,6 +537,8 @@ inline void encode_per(const list_response& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     encode_per(pIe.transaction_id, pCtx);
+    encode_per(pIe.spare0, pCtx);
+    encode_per(pIe.spare1, pCtx);
     encode_per(pIe.nodes, pCtx);
     encode_per(pIe.sequence_number, pCtx);
 }
@@ -422,6 +547,8 @@ inline void decode_per(list_response& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     decode_per(pIe.transaction_id, pCtx);
+    decode_per(pIe.spare0, pCtx);
+    decode_per(pIe.spare1, pCtx);
     decode_per(pIe.nodes, pCtx);
     decode_per(pIe.sequence_number, pCtx);
 }
@@ -438,8 +565,10 @@ inline void str(const char* pName, const list_response& pIe, std::string& pCtx, 
         pCtx = pCtx + "\"" + pName + "\":{";
     }
     size_t nOptional = 0;
-    size_t nMandatory = 3;
+    size_t nMandatory = 5;
     str("transaction_id", pIe.transaction_id, pCtx, !(--nMandatory+nOptional));
+    str("spare0", pIe.spare0, pCtx, !(--nMandatory+nOptional));
+    str("spare1", pIe.spare1, pCtx, !(--nMandatory+nOptional));
     str("nodes", pIe.nodes, pCtx, !(--nMandatory+nOptional));
     str("sequence_number", pIe.sequence_number, pCtx, !(--nMandatory+nOptional));
     pCtx = pCtx + "}";
@@ -453,12 +582,16 @@ inline void encode_per(const list_all_request& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     encode_per(pIe.transaction_id, pCtx);
+    encode_per(pIe.spare0, pCtx);
+    encode_per(pIe.spare1, pCtx);
 }
 
 inline void decode_per(list_all_request& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     decode_per(pIe.transaction_id, pCtx);
+    decode_per(pIe.spare0, pCtx);
+    decode_per(pIe.spare1, pCtx);
 }
 
 inline void str(const char* pName, const list_all_request& pIe, std::string& pCtx, bool pIsLast)
@@ -473,8 +606,10 @@ inline void str(const char* pName, const list_all_request& pIe, std::string& pCt
         pCtx = pCtx + "\"" + pName + "\":{";
     }
     size_t nOptional = 0;
-    size_t nMandatory = 1;
+    size_t nMandatory = 3;
     str("transaction_id", pIe.transaction_id, pCtx, !(--nMandatory+nOptional));
+    str("spare0", pIe.spare0, pCtx, !(--nMandatory+nOptional));
+    str("spare1", pIe.spare1, pCtx, !(--nMandatory+nOptional));
     pCtx = pCtx + "}";
     if (!pIsLast)
     {
@@ -486,6 +621,8 @@ inline void encode_per(const list_all_response& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     encode_per(pIe.transaction_id, pCtx);
+    encode_per(pIe.spare0, pCtx);
+    encode_per(pIe.spare1, pCtx);
     encode_per(pIe.nodes, pCtx);
     encode_per(pIe.sequence_number, pCtx);
 }
@@ -494,6 +631,8 @@ inline void decode_per(list_all_response& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     decode_per(pIe.transaction_id, pCtx);
+    decode_per(pIe.spare0, pCtx);
+    decode_per(pIe.spare1, pCtx);
     decode_per(pIe.nodes, pCtx);
     decode_per(pIe.sequence_number, pCtx);
 }
@@ -510,8 +649,10 @@ inline void str(const char* pName, const list_all_response& pIe, std::string& pC
         pCtx = pCtx + "\"" + pName + "\":{";
     }
     size_t nOptional = 0;
-    size_t nMandatory = 3;
+    size_t nMandatory = 5;
     str("transaction_id", pIe.transaction_id, pCtx, !(--nMandatory+nOptional));
+    str("spare0", pIe.spare0, pCtx, !(--nMandatory+nOptional));
+    str("spare1", pIe.spare1, pCtx, !(--nMandatory+nOptional));
     str("nodes", pIe.nodes, pCtx, !(--nMandatory+nOptional));
     str("sequence_number", pIe.sequence_number, pCtx, !(--nMandatory+nOptional));
     pCtx = pCtx + "}";
@@ -525,6 +666,8 @@ inline void encode_per(const resolve_path_request& pIe, cum::per_codec_ctx& pCtx
 {
     using namespace cum;
     encode_per(pIe.transaction_id, pCtx);
+    encode_per(pIe.spare0, pCtx);
+    encode_per(pIe.spare1, pCtx);
     encode_per(pIe.origin, pCtx);
     encode_per(pIe.path, pCtx);
 }
@@ -533,6 +676,8 @@ inline void decode_per(resolve_path_request& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     decode_per(pIe.transaction_id, pCtx);
+    decode_per(pIe.spare0, pCtx);
+    decode_per(pIe.spare1, pCtx);
     decode_per(pIe.origin, pCtx);
     decode_per(pIe.path, pCtx);
 }
@@ -549,8 +694,10 @@ inline void str(const char* pName, const resolve_path_request& pIe, std::string&
         pCtx = pCtx + "\"" + pName + "\":{";
     }
     size_t nOptional = 0;
-    size_t nMandatory = 3;
+    size_t nMandatory = 5;
     str("transaction_id", pIe.transaction_id, pCtx, !(--nMandatory+nOptional));
+    str("spare0", pIe.spare0, pCtx, !(--nMandatory+nOptional));
+    str("spare1", pIe.spare1, pCtx, !(--nMandatory+nOptional));
     str("origin", pIe.origin, pCtx, !(--nMandatory+nOptional));
     str("path", pIe.path, pCtx, !(--nMandatory+nOptional));
     pCtx = pCtx + "}";
@@ -570,6 +717,8 @@ inline void encode_per(const resolve_path_response& pIe, cum::per_codec_ctx& pCt
     }
     encode_per(optionalmask, sizeof(optionalmask), pCtx);
     encode_per(pIe.transaction_id, pCtx);
+    encode_per(pIe.spare0, pCtx);
+    encode_per(pIe.spare1, pCtx);
     if (pIe.node)
     {
         encode_per(*pIe.node, pCtx);
@@ -583,6 +732,8 @@ inline void decode_per(resolve_path_response& pIe, cum::per_codec_ctx& pCtx)
     uint8_t optionalmask[1] = {};
     decode_per(optionalmask, sizeof(optionalmask), pCtx);
     decode_per(pIe.transaction_id, pCtx);
+    decode_per(pIe.spare0, pCtx);
+    decode_per(pIe.spare1, pCtx);
     if (check_optional(optionalmask, 0))
     {
         pIe.node = decltype(pIe.node)::value_type{};
@@ -604,8 +755,10 @@ inline void str(const char* pName, const resolve_path_response& pIe, std::string
     }
     size_t nOptional = 0;
     if (pIe.node) nOptional++;
-    size_t nMandatory = 2;
+    size_t nMandatory = 4;
     str("transaction_id", pIe.transaction_id, pCtx, !(--nMandatory+nOptional));
+    str("spare0", pIe.spare0, pCtx, !(--nMandatory+nOptional));
+    str("spare1", pIe.spare1, pCtx, !(--nMandatory+nOptional));
     if (pIe.node)
     {
         str("node", *pIe.node, pCtx, !(nMandatory+--nOptional));
@@ -622,6 +775,8 @@ inline void encode_per(const attach& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     encode_per(pIe.transaction_id, pCtx);
+    encode_per(pIe.spare0, pCtx);
+    encode_per(pIe.spare1, pCtx);
     encode_per(pIe.parent, pCtx);
     encode_per(pIe.id, pCtx);
     encode_per(pIe.name, pCtx);
@@ -631,6 +786,8 @@ inline void decode_per(attach& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     decode_per(pIe.transaction_id, pCtx);
+    decode_per(pIe.spare0, pCtx);
+    decode_per(pIe.spare1, pCtx);
     decode_per(pIe.parent, pCtx);
     decode_per(pIe.id, pCtx);
     decode_per(pIe.name, pCtx);
@@ -648,8 +805,10 @@ inline void str(const char* pName, const attach& pIe, std::string& pCtx, bool pI
         pCtx = pCtx + "\"" + pName + "\":{";
     }
     size_t nOptional = 0;
-    size_t nMandatory = 4;
+    size_t nMandatory = 6;
     str("transaction_id", pIe.transaction_id, pCtx, !(--nMandatory+nOptional));
+    str("spare0", pIe.spare0, pCtx, !(--nMandatory+nOptional));
+    str("spare1", pIe.spare1, pCtx, !(--nMandatory+nOptional));
     str("parent", pIe.parent, pCtx, !(--nMandatory+nOptional));
     str("id", pIe.id, pCtx, !(--nMandatory+nOptional));
     str("name", pIe.name, pCtx, !(--nMandatory+nOptional));
@@ -664,6 +823,8 @@ inline void encode_per(const detach& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     encode_per(pIe.transaction_id, pCtx);
+    encode_per(pIe.spare0, pCtx);
+    encode_per(pIe.spare1, pCtx);
     encode_per(pIe.id, pCtx);
 }
 
@@ -671,6 +832,8 @@ inline void decode_per(detach& pIe, cum::per_codec_ctx& pCtx)
 {
     using namespace cum;
     decode_per(pIe.transaction_id, pCtx);
+    decode_per(pIe.spare0, pCtx);
+    decode_per(pIe.spare1, pCtx);
     decode_per(pIe.id, pCtx);
 }
 
@@ -686,8 +849,10 @@ inline void str(const char* pName, const detach& pIe, std::string& pCtx, bool pI
         pCtx = pCtx + "\"" + pName + "\":{";
     }
     size_t nOptional = 0;
-    size_t nMandatory = 2;
+    size_t nMandatory = 4;
     str("transaction_id", pIe.transaction_id, pCtx, !(--nMandatory+nOptional));
+    str("spare0", pIe.spare0, pCtx, !(--nMandatory+nOptional));
+    str("spare1", pIe.spare1, pCtx, !(--nMandatory+nOptional));
     str("id", pIe.id, pCtx, !(--nMandatory+nOptional));
     pCtx = pCtx + "}";
     if (!pIsLast)
@@ -909,6 +1074,10 @@ inline void encode_per(const protocol_value_client& pIe, cum::per_codec_ctx& pCt
     {
         encode_per(std::get<0>(pIe), pCtx);
     }
+    else if (1 == type)
+    {
+        encode_per(std::get<1>(pIe), pCtx);
+    }
 }
 
 inline void decode_per(protocol_value_client& pIe, cum::per_codec_ctx& pCtx)
@@ -919,8 +1088,13 @@ inline void decode_per(protocol_value_client& pIe, cum::per_codec_ctx& pCtx)
     decode_per(type, pCtx);
     if (0 == type)
     {
-        pIe = update();
+        pIe = acknowledge();
         decode_per(std::get<0>(pIe), pCtx);
+    }
+    else if (1 == type)
+    {
+        pIe = update();
+        decode_per(std::get<1>(pIe), pCtx);
     }
 }
 
@@ -935,8 +1109,18 @@ inline void str(const char* pName, const protocol_value_client& pIe, std::string
             pCtx += std::string(pName) + ":{";
         else
             pCtx += "{";
-        std::string name = "update";
+        std::string name = "acknowledge";
         str(name.c_str(), std::get<0>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (1 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "update";
+        str(name.c_str(), std::get<1>(pIe), pCtx, true);
         pCtx += "}";
     }
     if (!pIsLast)

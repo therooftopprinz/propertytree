@@ -13,6 +13,8 @@
 
 #include <value_map.hpp>
 
+#include "logger.hpp"
+
 namespace propertytree
 {
 
@@ -37,6 +39,8 @@ struct tcp_client_context : client_context
 
     int send(const bfc::const_buffer_view& b) override
     {
+        IF_LB(LB_DUMP_MSG_SOCK) LOG_INF("tcp_value_server | to=%s; write[%zu;]=%x;",
+            bfc::sockaddr_to_string(&client_address).c_str(), b.size(), buffer_log_t(b.size(), b.data()));
         return client_socket.send(b);
     }
 };

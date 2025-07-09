@@ -63,6 +63,7 @@ install(
         client/propertytree/logger.hpp
         client/propertytree/value_client.hpp
         interface/propertytree/protocol_ng.hpp
+        interface/propertytree/protocol_udp.hpp
     DESTINATION include/propertytree)
 
 install(

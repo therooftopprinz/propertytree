@@ -8,9 +8,10 @@ type string_list type=string, dynamic_array=256;
 
 sequence value                    {u64 id, buf data};
 
-sequence subscribe                {u64 id};
-sequence unsubscribe              {u64 id};
-sequence update                   {value data, u64 sn};
+sequence subscribe                {u16 transaction_id, u16 spare0, u32 spare1, u64 id};
+sequence unsubscribe              {u16 transaction_id, u16 spare0, u32 spare1, u64 id};
+sequence update                   {u64 sn,             value data};
+sequence acknowledge              {u16 transaction_id, u16 spare0, u32 spare1, u64 status};
 
 //--------------------------------------------------------------------------------------//
 //                                   Node Protocol                                      //
@@ -22,14 +23,14 @@ type     node_optional               type=node,          optional;
 type     node_attach_list            type=node_list;
 type     node_detach_list            type=u64_list;
 
-sequence list_request                {u16 transaction_id, u64 id};
-sequence list_response               {u16 transaction_id, node_list nodes, u64 sequence_number};
-sequence list_all_request            {u16 transaction_id};
-sequence list_all_response           {u16 transaction_id, node_list nodes, u64 sequence_number};
-sequence resolve_path_request        {u16 transaction_id, u64 origin,               string path};
-sequence resolve_path_response       {u16 transaction_id, node_optional node ,      u64 sequence_number};
-sequence attach                      {u16 transaction_id, u64 parent, u64 id, string name};
-sequence detach                      {u16 transaction_id, u64 id};
+sequence list_request                {u16 transaction_id, u16 spare0, u32 spare1, u64 id};
+sequence list_response               {u16 transaction_id, u16 spare0, u32 spare1, node_list nodes, u64 sequence_number};
+sequence list_all_request            {u16 transaction_id, u16 spare0, u32 spare1};
+sequence list_all_response           {u16 transaction_id, u16 spare0, u32 spare1, node_list nodes, u64 sequence_number};
+sequence resolve_path_request        {u16 transaction_id, u16 spare0, u32 spare1, u64 origin,               string path};
+sequence resolve_path_response       {u16 transaction_id, u16 spare0, u32 spare1, node_optional node ,      u64 sequence_number};
+sequence attach                      {u16 transaction_id, u16 spare0, u32 spare1, u64 parent, u64 id, string name};
+sequence detach                      {u16 transaction_id, u16 spare0, u32 spare1, u64 id};
 sequence node_subscribe              {u64 id};
 sequence node_unsubscribe            {u64 id};
 sequence node_update_attach          {node to_attach, u64 sequence_number};
@@ -43,6 +44,7 @@ choice protocol_value_server
 
 choice protocol_value_client
 {
+    acknowledge,
     update
 };
 

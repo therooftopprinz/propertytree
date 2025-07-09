@@ -66,12 +66,23 @@ void udp_value_server::read()
         ctx = std::make_shared<udp_client_context>(&m_server_socket, client_addr);
         m_client_map.emplace(addr, ctx);
     }
+    else
+    {
+        ctx = client_it->second;
+    }
 
     handle(ctx, bfc::const_buffer_view(m_rcv_buff, res));
 }
 
 void udp_value_server::handle_set(cctx_ptr& c, const header_s& h, const key_s& msg, const bfc::const_buffer_view& data)
 {
+    if (data.size() > 1024*8)
+    {
+        return;
+    }
+
+    auto& v = m_value_map->get_value(msg.key);
+
     if (h.flags & HEADER_FLAG_TRANSACTIONAL)
     {
         auto hdr = (header_s*)(m_snd_buff);
@@ -85,16 +96,31 @@ void udp_value_server::handle_set(cctx_ptr& c, const header_s& h, const key_s& m
             ack->status = E_STATUS_DATA_TOO_BIG;
         }
         auto msz = sizeof(header_s) + sizeof(acknowledge_s);
-        m_server_socket.send(bfc::const_buffer_view(m_snd_buff, msz), 0, &(c->client_address), sizeof(c->client_address));
+        send(c, bfc::const_buffer_view(m_snd_buff, msz));
+
+        if (c->last_transaction == h.transaction)
+        {
+            return;
+        }
+
+        c->last_transaction = h.transaction;
+
+        cum::protocol_value_client smsg = cum::update{};
+        auto& update = std::get<cum::update>(smsg);
+        update.data.id = msg.key;
+        update.data.data = v.data;
+        update.sn = v.vsn;
+
+        auto size = encode(smsg, m_snd_buff, sizeof(m_snd_buff));
+        auto bv = bfc::const_buffer_view(m_snd_buff, size);
+
+        for (auto& s : v.data_subscribers)
+        {
+            s->send(bv);
+        }
         return;
     }
 
-    if (data.size() > 1024*8)
-    {
-        return;
-    }
-
-    auto& v     = m_value_map->get_value(msg.key);
     auto hdr    = (header_s*)(m_snd_buff);
     auto key    = next_struct<key_sn_s>(hdr);
     auto dat    = next_struct<std::byte>(key);
@@ -126,7 +152,7 @@ void udp_value_server::handle_get(cctx_ptr& c, const header_s& h, const key_s& m
     key->key = msg.key;
     std::memcpy(dat, v.data.data(), v.data.size());
     auto msz = sizeof(header_s) + sizeof(key_sn_s) + v.data.size();
-    m_server_socket.send(bfc::const_buffer_view(m_snd_buff, msz), 0, &(c->client_address), sizeof(c->client_address));
+    send(c, bfc::const_buffer_view(m_snd_buff, msz));
     return;
 }
 
@@ -146,7 +172,7 @@ void udp_value_server::handle_subscribe(cctx_ptr& c, const header_s& h, const ke
     ack->status = E_STATUS_OK;
     v.stream_subscribers.emplace(c);
     auto msz = sizeof(header_s) + sizeof(acknowledge_s);
-    m_server_socket.send(bfc::const_buffer_view(m_snd_buff, msz), 0, &(c->client_address), sizeof(c->client_address));
+    send(c, bfc::const_buffer_view(m_snd_buff, msz));
     return;
 }
 
@@ -166,7 +192,7 @@ void udp_value_server::handle_unsubscribe(cctx_ptr& c, const header_s& h, const 
     ack->status = E_STATUS_OK;
     v.stream_subscribers.erase(c);
     auto msz = sizeof(header_s) + sizeof(acknowledge_s);
-    m_server_socket.send(bfc::const_buffer_view(m_snd_buff, msz), 0, &(c->client_address), sizeof(c->client_address));
+    send(c, bfc::const_buffer_view(m_snd_buff, msz));
     return;
 }
 
@@ -198,5 +224,38 @@ void udp_value_server::handle(cctx_ptr& c, const bfc::const_buffer_view& b)
             break;
     }
 }
+
+size_t udp_value_server::encode(const cum::protocol_value_client& msg, std::byte* data, size_t size)
+{
+    auto& msg_size = *(new (data) uint16_t(0));
+    cum::per_codec_ctx context(data+sizeof(msg_size), size-sizeof(msg_size));
+    encode_per(msg, context);
+    msg_size = size-context.size()-2;
+
+    unsigned encode_size = msg_size + sizeof(msg_size);
+
+    IF_LB(LB_DUMP_MSG_PROTO)
+    {
+        std::string stred;
+        cum::str("root", msg, stred, true);
+        LOG_INF("udp_value_server | ToTCP to_encode=%s;", stred.c_str());
+    }
+
+    IF_LB(LB_DUMP_MSG_RAW)
+    {
+        LOG_INF("udp_value_server | ToTCP encoded[%u;]=%x;", encode_size, buffer_log_t(encode_size, data));
+    }
+
+    return encode_size;
+}
+
+void udp_value_server::send(cctx_ptr& c, const bfc::const_buffer_view& buff)
+{
+    IF_LB(LB_DUMP_MSG_SOCK) LOG_INF("udp_value_server | to=%s; write[%zu;]=%x;",
+        bfc::sockaddr_to_string(&c->client_address).c_str(), buff.size(), buffer_log_t(buff.size(), buff.data()));
+
+    m_server_socket.send(buff, 0, &(c->client_address), sizeof(c->client_address));
+}
+
 
 } // namespace propertytree

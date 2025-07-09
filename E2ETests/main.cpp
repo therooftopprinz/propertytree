@@ -24,16 +24,16 @@ void init_clients()
     propertytree::value_client::config_s config2;
     config2.log = "client2.log";
 
-    // config1.logful = true;
-    // config2.logful = true;
+    config1.logful = true;
+    config2.logful = true;
 
-    client1.emplace(config1, reactor);
-    client2.emplace(config2, reactor);
+    client1.emplace(&config1, &reactor);
+    client2.emplace(&config2, &reactor);
 
-    // client1->get_logger().set_lo gbit(LB_DUMP_MSG_RAW | LB_DUMP_MSG_PROTO | LB_DUMP_MSG_SOCK);
+    // client1->get_logger().set_logbit(LB_DUMP_MSG_RAW | LB_DUMP_MSG_PROTO | LB_DUMP_MSG_SOCK);
     // client2->get_logger().set_logbit(LB_DUMP_MSG_RAW | LB_DUMP_MSG_PROTO | LB_DUMP_MSG_SOCK);
-    client1->get_logger().set_logbit(LB_DUMP_MSG_RAW|LB_DUMP_MSG_PROTO|LB_DUMP_PERF);
-    client2->get_logger().set_logbit(LB_DUMP_MSG_RAW|LB_DUMP_MSG_PROTO|LB_DUMP_PERF);
+    // client1->get_logger().set_logbit(LB_DUMP_MSG_RAW|LB_DUMP_MSG_PROTO|LB_DUMP_PERF);
+    // client2->get_logger().set_logbit(LB_DUMP_MSG_RAW|LB_DUMP_MSG_PROTO|LB_DUMP_PERF);
 }
 
 template <typename T>
@@ -48,7 +48,12 @@ uint64_t now()
     return std::chrono::duration_cast<T>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
 
-constexpr auto N = 10u;
+void hot_delay(uint64_t n, uint64_t tt = now())
+{
+    while (tt+n > now());
+}
+
+constexpr auto N = 100000u;
 
 void TEST_SET_UPDATE_LATENCY()
 {
@@ -58,12 +63,12 @@ void TEST_SET_UPDATE_LATENCY()
     double tt = 0;
     std::atomic_uint64_t n = 0;
 
-    c2v0->subscribe([&tt, &n](const propertytree::buffer& data){
+    c2v0->subscribe([&tt, &n](const bfc::const_buffer_view& data){
             if (!data.size())
             {
                 assert(false);
             }
-            auto st = as<uint64_t>(data);
+            auto st = *(uint64_t*)(data.data());
             auto ct = now();
             double diff = (ct-st);
             tt += diff;
@@ -73,7 +78,9 @@ void TEST_SET_UPDATE_LATENCY()
     auto t0 = now();
     for (auto i=0u; i<N; i++)
     {
-        *c1v0 = now();
+        auto t = now();
+        *c1v0 = t;
+        hot_delay(20, t);
     }
 
     while (n.load() < N);

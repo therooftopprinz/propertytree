@@ -108,6 +108,7 @@ private:
     void tcp_read_server();
     void tcp_disconnect();
     void tcp_handle(cum::update&&);
+    void tcp_handle(cum::acknowledge&&);
     size_t encode(const cum::protocol_value_server& msg, std::byte* data, size_t size);
 
     // udp
@@ -131,12 +132,23 @@ private:
     reactor_t* m_reactor;
 
     // tcp
+    struct tcp_transaction_s
+    {
+        cum::protocol_value_client rsp;
+        bool satisfied = false;
+        std::condition_variable cv;
+        std::mutex mutex;
+    };
+
     bfc::socket m_tcp_server_socket;
     reactor_t::context m_tcp_server_socket_ctx;
     std::byte m_tcp_read_buffer[1024*16];
     tcp_read_state_e m_tcp_read_state = WAIT_HEADER;
     size_t m_tcp_expected_read_size = 2;
     size_t m_tcp_read_buffer_idx = 0;
+    std::atomic_uint16_t m_tcp_transaction_id = 0;
+    std::mutex m_tcp_transaction_map_mutex;
+    std::unordered_map<uint16_t, std::shared_ptr<tcp_transaction_s>> m_tcp_transaction_map;
 
     // udp
     struct udp_transaction_s
@@ -152,9 +164,9 @@ private:
     bfc::socket m_udp_server_socket;
     reactor_t::context m_udp_server_socket_ctx;
     std::byte m_udp_read_buffer[1024*16];
-    std::atomic_uint64_t m_udp_transaction_id = 0;
+    std::atomic_uint16_t m_udp_transaction_id = 0;
     std::mutex m_udp_transaction_map_mutex;
-    std::unordered_map<uint64_t, std::shared_ptr<udp_transaction_s>> m_udp_transaction_map;
+    std::unordered_map<uint16_t, std::shared_ptr<udp_transaction_s>> m_udp_transaction_map;
 };
 
 } // propertytree

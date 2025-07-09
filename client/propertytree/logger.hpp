@@ -24,7 +24,7 @@ void log(logless::logger& logger, const char* id, Ts... ts)
 }
 
 #define PTIF_LB(bit) if (bit & m_logger.get_logbit())
-#define PTLOG_ERR(id, args...) log(m_logger, "ERR | " id, args)
+#define PTLOG_ERR(id, args...) if (m_logger.get_level() >= ERROR)   log(m_logger, "ERR | " id, args)
 #define PTLOG_WRN(id, args...) if (m_logger.get_level() >= WARNING) log(m_logger, "WRN | " id, args)
 #define PTLOG_INF(id, args...) if (m_logger.get_level() >= INFO)    log(m_logger, "INF | " id, args)
 #define PTLOG_DBG(id, args...) if (m_logger.get_level() >= DEBUG)   log(m_logger, "DBG | " id, args)

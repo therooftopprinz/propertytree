@@ -131,6 +131,23 @@ void value_client::tcp_disconnect()
     m_tcp_server_socket = {};
 }
 
+void value_client::tcp_handle(cum::acknowledge&& ack)
+{
+    std::unique_lock lg(m_tcp_transaction_map_mutex);
+    auto it = m_tcp_transaction_map.find(ack.transaction_id);
+    if (m_tcp_transaction_map.end() == it)
+    {
+        return;
+    }
+    auto transaction = it->second;
+    m_tcp_transaction_map.erase(it);
+    lg.unlock();
+    transaction->rsp = std::move(ack);
+    std::unique_lock lg2(transaction->mutex);
+    transaction->satisfied = true;
+    transaction->cv.notify_all();
+}
+
 void value_client::tcp_handle(cum::update&& rsp)
 {
     auto value_ptr = get(rsp.data.id);
@@ -296,20 +313,26 @@ void value_client::set_value(uint64_t key, const buffer& value)
     auto data = next_struct<std::byte>(msg);
     hdr->flags = HEADER_FLAG_TRANSACTIONAL;
     hdr->type = E_MSGT_SET;
-    hdr->transaction = m_udp_transaction_id++;
+    hdr->transaction = transaction_id;
     msg->key = key;
     std::memcpy(data, value.data(), value.size());
 
     auto msz = sizeof(header_s) + sizeof(key_s) + value.size();
-    for (auto i=0; i<3 && !transaction->satisfied; i++)
+    size_t i = 0;
+    for (i=0; i<10 && !transaction->satisfied; i++)
     {
         m_udp_server_socket.send(bfc::const_buffer_view(send_buff, msz),
             0, (sockaddr*)&(m_udp_server_addr), sizeof(m_udp_server_addr));
         std::unique_lock lg(transaction->mutex);
-        transaction->cv.wait_for(lg, std::chrono::milliseconds(1), [&transaction](){
+        transaction->cv.wait_for(lg, std::chrono::milliseconds(50), [&transaction](){
                 return transaction->satisfied;
             });
     }
+    if (!transaction->satisfied)
+        PTLOG_ERR("value_client | transaction failed! trid=%zu;", transaction_id);
+    if (i>1)
+        PTLOG_INF("value_client | transaction completed trid=%zu; in n=%zu;", transaction_id, i);
+
 }
 
 buffer value_client::get_value(uint64_t key)
@@ -327,7 +350,7 @@ buffer value_client::get_value(uint64_t key)
     auto msg = next_struct<key_s>(hdr);
     hdr->flags = HEADER_FLAG_TRANSACTIONAL;
     hdr->type = E_MSGT_GET;
-    hdr->transaction = m_udp_transaction_id++;
+    hdr->transaction = transaction_id;
     msg->key = key;
 
     auto msz = sizeof(header_s) + sizeof(key_s);
@@ -336,7 +359,7 @@ buffer value_client::get_value(uint64_t key)
         m_udp_server_socket.send(bfc::const_buffer_view(send_buff, msz),
             0, (sockaddr*)&(m_udp_server_addr), sizeof(m_udp_server_addr));
         std::unique_lock lg(transaction->mutex);
-        transaction->cv.wait_for(lg, std::chrono::milliseconds(1), [&transaction](){
+        transaction->cv.wait_for(lg, std::chrono::microseconds(10), [&transaction](){
                 return transaction->satisfied;
             });
     }
@@ -346,26 +369,54 @@ buffer value_client::get_value(uint64_t key)
 
 void value_client::subscribe(uint64_t id)
 {
+    auto transaction = std::make_shared<tcp_transaction_s>();
+    auto transaction_id = m_tcp_transaction_id.fetch_add(1);
+
+    {
+        std::unique_lock lg(m_udp_transaction_map_mutex);
+        m_tcp_transaction_map.emplace(transaction_id, transaction);
+    }
+
     cum::protocol_value_server msg = cum::subscribe{};
     auto& subscribe = std::get<cum::subscribe>(msg);
     subscribe.id = id;
+    subscribe.transaction_id = transaction_id;
 
     std::byte buffer[ENCODE_SIZE];
     auto size = encode(msg, buffer, sizeof(buffer));
     auto bv = bfc::const_buffer_view(buffer, size);
     m_tcp_server_socket.send(bv);
+
+    std::unique_lock lg(transaction->mutex);
+    transaction->cv.wait_for(lg, std::chrono::milliseconds(500), [&transaction](){
+            return transaction->satisfied;
+        });
 }
 
 void value_client::unsubscribe(uint64_t id)
 {
+    auto transaction = std::make_shared<tcp_transaction_s>();
+    auto transaction_id = m_tcp_transaction_id.fetch_add(1);
+
+    {
+        std::unique_lock lg(m_udp_transaction_map_mutex);
+        m_tcp_transaction_map.emplace(transaction_id, transaction);
+    }
+
     cum::protocol_value_server msg = cum::unsubscribe{};
     auto& unsubscribe = std::get<cum::unsubscribe>(msg);
     unsubscribe.id = id;
+    unsubscribe.transaction_id = transaction_id;
 
     std::byte buffer[ENCODE_SIZE];
     auto size = encode(msg, buffer, sizeof(buffer));
     auto bv = bfc::const_buffer_view(buffer, size);
     m_tcp_server_socket.send(bv);
+
+    std::unique_lock lg(transaction->mutex);
+    transaction->cv.wait_for(lg, std::chrono::milliseconds(500), [&transaction](){
+            return transaction->satisfied;
+        });
 }
 
 void value_client::udp_read_server()

@@ -162,6 +162,17 @@ void tcp_value_server::handle(std::shared_ptr<client_context>& client, cum::subs
 {
     auto& value = m_value_map->get_value(msg.id);
     value.data_subscribers.emplace(client);
+
+    cum::protocol_value_client smsg = cum::acknowledge{};
+    auto& acknowledge = std::get<cum::acknowledge>(smsg);
+    acknowledge.transaction_id = msg.transaction_id;
+    acknowledge.status = 0;
+
+    std::byte m_snd_buff[ENCODE_SIZE];
+    auto size = encode(client->client_socket.fd(), smsg, m_snd_buff, sizeof(m_snd_buff));
+    auto bv = bfc::const_buffer_view(m_snd_buff, size);
+    client->send(bv);
+
 }
 
 void tcp_value_server::handle(std::shared_ptr<client_context>& client, cum::unsubscribe&& msg)

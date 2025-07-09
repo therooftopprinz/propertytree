@@ -22,7 +22,7 @@ using client_context_ptr = std::shared_ptr<client_context>;
 
 struct value
 {
-    std::vector<uint8_t> data;
+    std::vector<std::byte> data;
     std::unordered_set<client_context_ptr> data_subscribers;
     std::unordered_set<client_context_ptr> stream_subscribers;
     int64_t vsn = 0;

@@ -6,12 +6,15 @@
 #include <stdexcept>
 
 #include <propertytree/protocol_udp.hpp>
+#include <propertytree/protocol_ng.hpp>
 #include <bfc/configuration_parser.hpp>
 #include <bfc/epoll_reactor.hpp>
 #include <bfc/socket.hpp>
 #include <bfc/buffer.hpp>
 
 #include <value_map.hpp>
+
+#include "logger.hpp"
 
 namespace propertytree
 {
@@ -20,6 +23,7 @@ struct udp_client_context : client_context
 {
     bfc::socket* server_sock;
     sockaddr client_address;
+    uint16_t last_transaction = 0xFFFF;
 
     udp_client_context(bfc::socket* s, sockaddr c)
         : server_sock(s)
@@ -28,6 +32,9 @@ struct udp_client_context : client_context
 
     int send(const bfc::const_buffer_view& b) override
     {
+        IF_LB(LB_DUMP_MSG_SOCK) LOG_INF("udpp_value_server | to=%s; write[%zu;]=%x;",
+            bfc::sockaddr_to_string(&client_address).c_str(), b.size(), buffer_log_t(b.size(), b.data()));
+
         return server_sock->send(b, 0, &client_address, sizeof(client_address));
     }
 };
@@ -48,6 +55,10 @@ private:
     void handle_subscribe   (cctx_ptr&, const header_s&, const key_s&);
     void handle_unsubscribe (cctx_ptr&, const header_s&, const key_s&);
     void handle             (cctx_ptr&, const bfc::const_buffer_view&);
+
+    void send(cctx_ptr&, const bfc::const_buffer_view&);
+
+    size_t encode(const cum::protocol_value_client& msg, std::byte*, size_t);
 
     const bfc::configuration_parser* m_config;
     reactor_t* m_reactor;
