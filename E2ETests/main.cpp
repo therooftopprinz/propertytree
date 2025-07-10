@@ -32,8 +32,8 @@ void init_clients()
     client2.emplace(config2, reactor);
     // client1->get_logger().set_logbit(LB_DUMP_MSG_PROTO);
     // client2->get_logger().set_logbit(LB_DUMP_MSG_PROTO);
-    // client1->get_logger().set_logbit(LB_DUMP_MSG_RAW | LB_DUMP_MSG_PROTO | LB_DUMP_MSG_SOCK);
-    // client2->get_logger().set_logbit(LB_DUMP_MSG_RAW | LB_DUMP_MSG_PROTO | LB_DUMP_MSG_SOCK);
+    client1->get_logger().set_logbit(LB_DUMP_MSG_RAW | LB_DUMP_MSG_PROTO | LB_DUMP_MSG_SOCK);
+    client2->get_logger().set_logbit(LB_DUMP_MSG_RAW | LB_DUMP_MSG_PROTO | LB_DUMP_MSG_SOCK);
     // client1->get_logger().set_level(logless::FATAL);
     // client2->get_logger().set_level(logless::FATAL);
 }
@@ -52,10 +52,10 @@ uint64_t now()
 
 void hot_delay(uint64_t n, uint64_t tt = now())
 {
-    while (tt+n > now());
+    while (tt+n > now()) std::this_thread::yield();
 }
 
-void TEST_SET_UPDATE_LATENCY(uint64_t id=0, uint64_t period=20, uint64_t N = 50000)
+void TEST_SET_UPDATE_LATENCY(uint64_t id=0, uint64_t period=10, uint64_t N = 50)
 {
     auto c1v0 = client1->get(id);
     auto c2v0 = client2->get(id);
@@ -98,7 +98,7 @@ void TEST_SET_UPDATE_LATENCY(uint64_t id=0, uint64_t period=20, uint64_t N = 500
         hot_delay(period, t.t);
     }
 
-    while (n.load() < N);
+    while (n.load() < N) std::this_thread::yield();
     auto t1 = now();
 
     {
@@ -112,6 +112,7 @@ void TEST_SET_UPDATE_LATENCY(uint64_t id=0, uint64_t period=20, uint64_t N = 500
     auto tdiff_s = double(t1-t0)/1000000;
     auto ave_lat = tt/N;
 
+    LOG("TEST_SET_UPDATE_LATENCY | ID=%zu N=%zu P=%zu\n", id, N, period);
     LOG("TEST_SET_UPDATE_LATENCY | average_latency_ms=%lf\n", ave_lat/1000);
     LOG("TEST_SET_UPDATE_LATENCY | tdiff_s=%lf throughput=%.3lf\n", tdiff_s, double(N)/tdiff_s);
 }

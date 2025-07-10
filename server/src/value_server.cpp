@@ -6,6 +6,55 @@
 namespace propertytree
 {
 
+template <typename T>
+void protocol_buffer_copy_detail(cum::bufferX& dst, std::vector<std::byte>& src)
+{
+    dst = T{};
+    auto& dstt = std::get<T>(dst);
+    // std::copy(src.begin(), src.end(), dstt.begin());
+    for (auto i : src)
+    {
+        dstt.emplace_back(i);
+    }
+}
+
+void protocol_buffer_copy(cum::bufferX& dst, std::vector<std::byte>& src)
+{
+    if (src.size()<=8)
+        protocol_buffer_copy_detail<cum::buffer8>(dst, src);
+    else if (src.size()<=16)
+        protocol_buffer_copy_detail<cum::buffer16>(dst, src);
+    else if (src.size()<=32)
+        protocol_buffer_copy_detail<cum::buffer32>(dst, src);
+    else if (src.size()<=64)
+        protocol_buffer_copy_detail<cum::buffer64>(dst, src);
+    else if (src.size()<=128)
+        protocol_buffer_copy_detail<cum::buffer128>(dst, src);
+    else
+    {
+        dst = cum::buffer{};
+        auto& dstt = std::get<cum::buffer>(dst);
+        dstt = src;
+    }
+}
+
+size_t protocol_buffer_size(cum::bufferX& b)
+{
+    auto sizer = [](auto& bb){
+        return bb.size();
+    };
+    return std::visit(sizer, b);
+}
+
+void protocol_buffer_copy(std::vector<std::byte>& dst, cum::bufferX& src)
+{
+    dst.resize(protocol_buffer_size(src));
+    auto copier = [&dst](auto& bb){
+        std::copy(bb.begin(), bb.end(), dst.begin());
+    };
+    return std::visit(copier, src);
+}
+
 value_server::value_server(
     const bfc::configuration_parser& config,
     reactor_t& reactor)
@@ -176,17 +225,17 @@ value_server::value& value_server::get_value(uint32_t key)
     return value_map[key];
 }
 
-void value_server::set_value(uint32_t key, std::vector<std::byte>&& data)
+void value_server::set_value(uint32_t key, cum::bufferX&& data)
 {
     auto& value = get_value(key);
-    value.data  = std::move(data);
+    protocol_buffer_copy(value.data, data);
 
     if (value.subscribers.size())
     {
         cum::protocol_value_client rsp = cum::update{};
         auto& update = std::get<cum::update>(rsp);
         update.data.key = key;
-        update.data.value = value.data;
+        update.data.value = std::move(data);
         update.sequence_number = value.sequence_number++;
 
         auto size = encode(-1, rsp, send_buffer, sizeof(send_buffer));
@@ -222,22 +271,12 @@ void value_server::send_ack(std::shared_ptr<client_context>& client, uint16_t tr
     client->client_socket.send(bv);
 }
 
-
 void value_server::handle(std::shared_ptr<client_context>& client, cum::set_value&& req)
 {
-    cum::EStatus status = cum::EStatus::OK;
-    if (1024*32 >= req.data.value.size())
-    {
-        set_value(req.data.key, std::move(req.data.value));
-    }
-    else
-    {
-        status = cum::EStatus::INVALID_SIZE;
-    }
-
+    set_value(req.data.key, std::move(req.data.value));
     if (cum::NONTRANSACTIONAL != req.transaction_id)
     {
-        send_ack(client, req.transaction_id, status);
+        send_ack(client, req.transaction_id, cum::EStatus::OK);
     }
 }
 

@@ -1,7 +1,56 @@
-#include "value_client.hpp"
+#include <propertytree/value_client.hpp>
 
 namespace propertytree
 {
+
+template <typename T>
+void protocol_buffer_copy_detail(cum::bufferX& dst, const std::vector<std::byte>& src)
+{
+    dst = T{};
+    auto& dstt = std::get<T>(dst);
+    for (auto i : src)
+    {
+        dstt.emplace_back(i);
+    }
+}
+
+void protocol_buffer_copy(cum::bufferX& dst, const std::vector<std::byte>& src)
+{
+    if (src.size()<=8)
+        protocol_buffer_copy_detail<cum::buffer8>(dst, src);
+    else if (src.size()<=16)
+        protocol_buffer_copy_detail<cum::buffer16>(dst, src);
+    else if (src.size()<=32)
+        protocol_buffer_copy_detail<cum::buffer32>(dst, src);
+    else if (src.size()<=64)
+        protocol_buffer_copy_detail<cum::buffer64>(dst, src);
+    else if (src.size()<=128)
+        protocol_buffer_copy_detail<cum::buffer128>(dst, src);
+    else
+    {
+        dst = cum::buffer{};
+        auto& dstt = std::get<cum::buffer>(dst);
+        dstt = src;
+    }
+}
+
+size_t protocol_buffer_size(cum::bufferX& b)
+{
+    auto sizer = [](auto& bb){
+        return bb.size();
+    };
+    return std::visit(sizer, b);
+}
+
+void protocol_buffer_copy(std::vector<std::byte>& dst, cum::bufferX& src)
+{
+    dst.resize(protocol_buffer_size(src));
+    auto copier = [&dst](auto& bb){
+        std::copy(bb.begin(), bb.end(), dst.begin());
+    };
+    return std::visit(copier, src);
+}
+
 
 buffer value::raw()
 {
@@ -138,7 +187,7 @@ void value_client::handle(cum::update&& rsp)
     lg.unlock();
 
     std::unique_lock lg2(value_ptr->mutex);
-    value_ptr->data = std::move(rsp.data.value);
+    protocol_buffer_copy(value_ptr->data, rsp.data.value);
     for (auto& cbit : value_ptr->watchers)
     {
         auto& cb = cbit.second;
@@ -277,7 +326,7 @@ void value_client::set_value(uint64_t id, const buffer& data)
     auto& set_value = std::get<cum::set_value>(msg);
 
     set_value.data.key = id;
-    set_value.data.value = data;
+    protocol_buffer_copy(set_value.data.value, data);
     set_value.transaction_id = transaction.id;
 
     std::byte buffer[ENCODE_SIZE];
@@ -294,7 +343,7 @@ void value_client::set_value_nowait(uint64_t id, const buffer& data)
     auto& set_value = std::get<cum::set_value>(msg);
 
     set_value.data.key = id;
-    set_value.data.value = data;
+    protocol_buffer_copy(set_value.data.value, data);
     set_value.transaction_id = cum::NONTRANSACTIONAL;
 
     std::byte buffer[ENCODE_SIZE];
@@ -336,7 +385,9 @@ buffer value_client::get_value(uint64_t key)
     }
 
     auto& rsp = std::get<1>(transaction.message);
-    return std::move(rsp.data.value);
+    propertytree::buffer rv;
+    protocol_buffer_copy(rv, rsp.data.value);
+    return rv;
 }
 
 void value_client::subscribe(uint64_t key)

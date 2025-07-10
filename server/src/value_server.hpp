@@ -48,7 +48,7 @@ private:
     size_t encode(int, const cum::protocol_value_client& msg, std::byte* data, size_t size);
 
     value& get_value(uint32_t);
-    void set_value(uint32_t, std::vector<std::byte>&&);
+    void set_value(uint32_t, cum::bufferX&&);
 
     void send_ack(std::shared_ptr<client_context>& client, uint16_t transaction_id, cum::EStatus status);
 

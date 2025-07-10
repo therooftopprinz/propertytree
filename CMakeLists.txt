@@ -32,7 +32,7 @@ add_library(propertytree STATIC
     client/propertytree/value_client.cpp)
 
 target_include_directories(propertytree PRIVATE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/client/propertytree>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/client>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/interface>
     $<INSTALL_INTERFACE:include>)
 

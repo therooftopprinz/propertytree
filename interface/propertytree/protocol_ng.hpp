@@ -1,5 +1,21 @@
 // Type:  ('buffer', {'type': 'byte'})
 // Type:  ('buffer', {'dynamic_array': '256'})
+// Type:  ('buffer8', {'type': 'byte'})
+// Type:  ('buffer8', {'array': '8'})
+// Type:  ('buffer16', {'type': 'byte'})
+// Type:  ('buffer16', {'array': '16'})
+// Type:  ('buffer32', {'type': 'byte'})
+// Type:  ('buffer32', {'array': '32'})
+// Type:  ('buffer64', {'type': 'byte'})
+// Type:  ('buffer64', {'array': '64'})
+// Type:  ('buffer128', {'type': 'byte'})
+// Type:  ('buffer128', {'array': '128'})
+// Choice:  ('bufferX', 'buffer')
+// Choice:  ('bufferX', 'buffer8')
+// Choice:  ('bufferX', 'buffer16')
+// Choice:  ('bufferX', 'buffer32')
+// Choice:  ('bufferX', 'buffer64')
+// Choice:  ('bufferX', 'buffer128')
 // Type:  ('u64_list', {'type': 'u64'})
 // Type:  ('u64_list', {'dynamic_array': '256'})
 // Type:  ('string_list', {'type': 'string'})
@@ -11,7 +27,7 @@
 // Sequence:  acknowledge ('u16', 'transaction_id')
 // Sequence:  acknowledge ('u16', 'status')
 // Sequence:  value ('u32', 'key')
-// Sequence:  value ('buffer', 'value')
+// Sequence:  value ('bufferX', 'value')
 // Sequence:  set_value ('u16', 'transaction_id')
 // Sequence:  set_value ('value', 'data')
 // Sequence:  get_value_request ('u16', 'transaction_id')
@@ -81,6 +97,12 @@ namespace cum
 ************************************************/
 
 using buffer = cum::vector<byte, 256>;
+using buffer8 = cum::static_array<byte, 8>;
+using buffer16 = cum::static_array<byte, 16>;
+using buffer32 = cum::static_array<byte, 32>;
+using buffer64 = cum::static_array<byte, 64>;
+using buffer128 = cum::static_array<byte, 128>;
+using bufferX = std::variant<buffer,buffer8,buffer16,buffer32,buffer64,buffer128>;
 using u64_list = cum::vector<u64, 256>;
 using string_list = cum::vector<string, 256>;
 constexpr auto NONTRANSACTIONAL = 0xFF;
@@ -100,7 +122,7 @@ struct acknowledge
 struct value
 {
     u32 key;
-    buffer value;
+    bufferX value;
 };
 
 struct set_value
@@ -208,6 +230,147 @@ using protocol_node_client = std::variant<acknowledge,list_response,node_update_
 /            Codec Definitions
 /
 ************************************************/
+
+inline void encode_per(const bufferX& pIe, cum::per_codec_ctx& pCtx)
+{
+    using namespace cum;
+    using TypeIndex = uint8_t;
+    TypeIndex type = pIe.index();
+    encode_per(type, pCtx);
+    if (0 == type)
+    {
+        encode_per(std::get<0>(pIe), pCtx);
+    }
+    else if (1 == type)
+    {
+        encode_per(std::get<1>(pIe), pCtx);
+    }
+    else if (2 == type)
+    {
+        encode_per(std::get<2>(pIe), pCtx);
+    }
+    else if (3 == type)
+    {
+        encode_per(std::get<3>(pIe), pCtx);
+    }
+    else if (4 == type)
+    {
+        encode_per(std::get<4>(pIe), pCtx);
+    }
+    else if (5 == type)
+    {
+        encode_per(std::get<5>(pIe), pCtx);
+    }
+}
+
+inline void decode_per(bufferX& pIe, cum::per_codec_ctx& pCtx)
+{
+    using namespace cum;
+    using TypeIndex = uint8_t;
+    TypeIndex type;
+    decode_per(type, pCtx);
+    if (0 == type)
+    {
+        pIe = buffer();
+        decode_per(std::get<0>(pIe), pCtx);
+    }
+    else if (1 == type)
+    {
+        pIe = buffer8();
+        decode_per(std::get<1>(pIe), pCtx);
+    }
+    else if (2 == type)
+    {
+        pIe = buffer16();
+        decode_per(std::get<2>(pIe), pCtx);
+    }
+    else if (3 == type)
+    {
+        pIe = buffer32();
+        decode_per(std::get<3>(pIe), pCtx);
+    }
+    else if (4 == type)
+    {
+        pIe = buffer64();
+        decode_per(std::get<4>(pIe), pCtx);
+    }
+    else if (5 == type)
+    {
+        pIe = buffer128();
+        decode_per(std::get<5>(pIe), pCtx);
+    }
+}
+
+inline void str(const char* pName, const bufferX& pIe, std::string& pCtx, bool pIsLast)
+{
+    using namespace cum;
+    using TypeIndex = uint8_t;
+    TypeIndex type = pIe.index();
+    if (0 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "buffer";
+        str(name.c_str(), std::get<0>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (1 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "buffer8";
+        str(name.c_str(), std::get<1>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (2 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "buffer16";
+        str(name.c_str(), std::get<2>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (3 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "buffer32";
+        str(name.c_str(), std::get<3>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (4 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "buffer64";
+        str(name.c_str(), std::get<4>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    else if (5 == type)
+    {
+        if (pName)
+            pCtx += std::string(pName) + ":{";
+        else
+            pCtx += "{";
+        std::string name = "buffer128";
+        str(name.c_str(), std::get<5>(pIe), pCtx, true);
+        pCtx += "}";
+    }
+    if (!pIsLast)
+    {
+        pCtx += ",";
+    }
+}
 
 inline void str(const char* pName, const EStatus& pIe, std::string& pCtx, bool pIsLast)
 {

@@ -1,4 +1,20 @@
 type buffer      type=byte,   dynamic_array=256;
+type buffer8     type=byte,   array=8;
+type buffer16    type=byte,   array=16;
+type buffer32    type=byte,   array=32;
+type buffer64    type=byte,   array=64;
+type buffer128   type=byte,   array=128;
+
+choice bufferX
+{
+    buffer,
+    buffer8,
+    buffer16,
+    buffer32,
+    buffer64,
+    buffer128
+};
+
 type u64_list    type=u64,    dynamic_array=256;
 type string_list type=string, dynamic_array=256;
 
@@ -20,7 +36,7 @@ sequence acknowledge              {u16 transaction_id, u16 status};
 //                                   Value Protocol                                     //
 //--------------------------------------------------------------------------------------//
 
-sequence value                    {u32 key, buffer value};
+sequence value                    {u32 key, bufferX value};
 
 sequence set_value                {u16 transaction_id, value data};
 sequence get_value_request        {u16 transaction_id, u32 key};
