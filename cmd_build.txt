@@ -1,0 +1,5 @@
+# PropertyTree
+cmake -DCMAKE_VERBOSE_MAKEFILE=true -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install ..
+
+# PropertyTree E2ETests
+cmake -DCMAKE_VERBOSE_MAKEFILE=true -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install ../E2ETests

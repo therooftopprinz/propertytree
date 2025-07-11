@@ -1,16 +1,16 @@
-// Type:  ('buffer', {'type': 'byte'})
-// Type:  ('buffer', {'dynamic_array': '256'})
+// Type:  ('bufferD', {'type': 'byte'})
+// Type:  ('bufferD', {'dynamic_array': '65536'})
 // Type:  ('buffer8', {'type': 'byte'})
-// Type:  ('buffer8', {'array': '8'})
+// Type:  ('buffer8', {'buffer': '8'})
 // Type:  ('buffer16', {'type': 'byte'})
-// Type:  ('buffer16', {'array': '16'})
+// Type:  ('buffer16', {'buffer': '16'})
 // Type:  ('buffer32', {'type': 'byte'})
-// Type:  ('buffer32', {'array': '32'})
+// Type:  ('buffer32', {'buffer': '32'})
 // Type:  ('buffer64', {'type': 'byte'})
-// Type:  ('buffer64', {'array': '64'})
+// Type:  ('buffer64', {'buffer': '64'})
 // Type:  ('buffer128', {'type': 'byte'})
-// Type:  ('buffer128', {'array': '128'})
-// Choice:  ('bufferX', 'buffer')
+// Type:  ('buffer128', {'buffer': '128'})
+// Choice:  ('bufferX', 'bufferD')
 // Choice:  ('bufferX', 'buffer8')
 // Choice:  ('bufferX', 'buffer16')
 // Choice:  ('bufferX', 'buffer32')
@@ -96,13 +96,13 @@ namespace cum
 /
 ************************************************/
 
-using buffer = cum::vector<byte, 256>;
-using buffer8 = cum::static_array<byte, 8>;
-using buffer16 = cum::static_array<byte, 16>;
-using buffer32 = cum::static_array<byte, 32>;
-using buffer64 = cum::static_array<byte, 64>;
-using buffer128 = cum::static_array<byte, 128>;
-using bufferX = std::variant<buffer,buffer8,buffer16,buffer32,buffer64,buffer128>;
+using bufferD = cum::vector<byte, 65536>;
+using buffer8 = cum::buffer<byte, 8>;
+using buffer16 = cum::buffer<byte, 16>;
+using buffer32 = cum::buffer<byte, 32>;
+using buffer64 = cum::buffer<byte, 64>;
+using buffer128 = cum::buffer<byte, 128>;
+using bufferX = std::variant<bufferD,buffer8,buffer16,buffer32,buffer64,buffer128>;
 using u64_list = cum::vector<u64, 256>;
 using string_list = cum::vector<string, 256>;
 constexpr auto NONTRANSACTIONAL = 0xFF;
@@ -271,7 +271,7 @@ inline void decode_per(bufferX& pIe, cum::per_codec_ctx& pCtx)
     decode_per(type, pCtx);
     if (0 == type)
     {
-        pIe = buffer();
+        pIe = bufferD();
         decode_per(std::get<0>(pIe), pCtx);
     }
     else if (1 == type)
@@ -312,7 +312,7 @@ inline void str(const char* pName, const bufferX& pIe, std::string& pCtx, bool p
             pCtx += std::string(pName) + ":{";
         else
             pCtx += "{";
-        std::string name = "buffer";
+        std::string name = "bufferD";
         str(name.c_str(), std::get<0>(pIe), pCtx, true);
         pCtx += "}";
     }

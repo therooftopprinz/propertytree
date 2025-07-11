@@ -11,10 +11,15 @@ void protocol_buffer_copy_detail(cum::bufferX& dst, std::vector<std::byte>& src)
 {
     dst = T{};
     auto& dstt = std::get<T>(dst);
-    // std::copy(src.begin(), src.end(), dstt.begin());
-    for (auto i : src)
+    if constexpr (std::is_same_v<T, cum::bufferD>)
     {
-        dstt.emplace_back(i);
+        dstt.resize(src.size());
+        std::copy(src.begin(), src.end(), dstt.begin());
+    }
+    else
+    {
+        dstt.size = src.size();
+        std::memcpy(dstt.data, src.data(), src.size());
     }
 }
 
@@ -32,8 +37,8 @@ void protocol_buffer_copy(cum::bufferX& dst, std::vector<std::byte>& src)
         protocol_buffer_copy_detail<cum::buffer128>(dst, src);
     else
     {
-        dst = cum::buffer{};
-        auto& dstt = std::get<cum::buffer>(dst);
+        dst = cum::bufferD{};
+        auto& dstt = std::get<cum::bufferD>(dst);
         dstt = src;
     }
 }
@@ -41,7 +46,16 @@ void protocol_buffer_copy(cum::bufferX& dst, std::vector<std::byte>& src)
 size_t protocol_buffer_size(cum::bufferX& b)
 {
     auto sizer = [](auto& bb){
-        return bb.size();
+        using T = std::remove_cv_t<std::remove_reference_t<decltype(bb)>>;
+        if constexpr (std::is_same_v<T, cum::bufferD>)
+        {
+            return bb.size();
+        }
+        else
+        {
+            return bb.size;
+        }
+
     };
     return std::visit(sizer, b);
 }
@@ -50,7 +64,15 @@ void protocol_buffer_copy(std::vector<std::byte>& dst, cum::bufferX& src)
 {
     dst.resize(protocol_buffer_size(src));
     auto copier = [&dst](auto& bb){
-        std::copy(bb.begin(), bb.end(), dst.begin());
+        using T = std::remove_cv_t<std::remove_reference_t<decltype(bb)>>;
+        if constexpr (std::is_same_v<T, cum::bufferD>)
+        {
+            std::copy(bb.begin(), bb.end(), dst.begin());
+        }
+        else
+        {
+            memcpy(dst.data(), bb.data, bb.size);
+        }
     };
     return std::visit(copier, src);
 }

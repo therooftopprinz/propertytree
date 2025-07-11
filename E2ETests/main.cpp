@@ -32,8 +32,8 @@ void init_clients()
     client2.emplace(config2, reactor);
     // client1->get_logger().set_logbit(LB_DUMP_MSG_PROTO);
     // client2->get_logger().set_logbit(LB_DUMP_MSG_PROTO);
-    client1->get_logger().set_logbit(LB_DUMP_MSG_RAW | LB_DUMP_MSG_PROTO | LB_DUMP_MSG_SOCK);
-    client2->get_logger().set_logbit(LB_DUMP_MSG_RAW | LB_DUMP_MSG_PROTO | LB_DUMP_MSG_SOCK);
+    // client1->get_logger().set_logbit(LB_DUMP_MSG_RAW | LB_DUMP_MSG_PROTO | LB_DUMP_MSG_SOCK);
+    // client2->get_logger().set_logbit(LB_DUMP_MSG_RAW | LB_DUMP_MSG_PROTO | LB_DUMP_MSG_SOCK);
     // client1->get_logger().set_level(logless::FATAL);
     // client2->get_logger().set_level(logless::FATAL);
 }
@@ -55,7 +55,7 @@ void hot_delay(uint64_t n, uint64_t tt = now())
     while (tt+n > now()) std::this_thread::yield();
 }
 
-void TEST_SET_UPDATE_LATENCY(uint64_t id=0, uint64_t period=10, uint64_t N = 50)
+void TEST_SET_UPDATE_LATENCY(uint64_t id=0, uint64_t period=10, uint64_t N = 50000)
 {
     auto c1v0 = client1->get(id);
     auto c2v0 = client2->get(id);

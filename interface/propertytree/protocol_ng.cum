@@ -1,13 +1,13 @@
-type buffer      type=byte,   dynamic_array=256;
-type buffer8     type=byte,   array=8;
-type buffer16    type=byte,   array=16;
-type buffer32    type=byte,   array=32;
-type buffer64    type=byte,   array=64;
-type buffer128   type=byte,   array=128;
+type bufferD     type=byte,   dynamic_array=65536;
+type buffer8     type=byte,   buffer=8;
+type buffer16    type=byte,   buffer=16;
+type buffer32    type=byte,   buffer=32;
+type buffer64    type=byte,   buffer=64;
+type buffer128   type=byte,   buffer=128;
 
 choice bufferX
 {
-    buffer,
+    bufferD,
     buffer8,
     buffer16,
     buffer32,
